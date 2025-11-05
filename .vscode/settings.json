@@ -1,0 +1,33 @@
+{
+  "files.exclude": {
+    "**/__pycache__/": true,
+    "**/*.pyc": true,
+    "**/*.pyo": true,
+    "**/*.pyd": true,
+    "**/.Python": true,
+    "**/.env": false,
+    "**/.venv": true,
+    "**/env/": true,
+    "**/venv/": true,
+    "**/.mypy_cache/": true,
+    "**/.pytest_cache/": true,
+    "**/.vscode/": false, // set true kalau ingin sembunyikan folder konfigurasi VSCode
+    "**/.git": true,
+    "**/.DS_Store": true
+  },
+  "search.exclude": {
+    "**/__pycache__/": true,
+    "**/*.pyc": true,
+    "**/*.pyo": true,
+    "**/.env": true,
+    "**/.venv": true,
+    "**/env/": true,
+    "**/venv/": true,
+    "**/.mypy_cache/": true,
+    "**/.pytest_cache/": true,
+    "**/.git": true
+  },
+  "python-envs.defaultEnvManager": "ms-python.python:poetry",
+  "python-envs.defaultPackageManager": "ms-python.python:poetry",
+  "python-envs.pythonProjects": []
+}
