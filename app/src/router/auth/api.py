@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.src.models.user import User
 from app.src.utils.redis_client import redis
-from app.src.router.user.crud import CRUDUser
+from app.src.router.user.crud import CRUDUser 
+from app.src.utils.email_client import EmailClient 
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
 from app.src.router.user.schema import UserRegisterSchema
@@ -18,6 +19,7 @@ from app.src.core.security import Hasher, TokenService, AuthService
 router = APIRouter()
 crud_user = CRUDUser()
 auth_service = AuthService()
+email_client = EmailClient()
 token_service = TokenService()
 
 
@@ -29,7 +31,8 @@ async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get
             raise ValueError("Email is already registered. Please use another email.")
         user.password = Hasher.hash_password(user.password)
         code = randint(100000,999999)
-        await redis.set(f"user:verify:{user.email}:{code}", value=user.model_dump_json())
+        await redis.set(f"user:verify:{user.email}:{code}", value=user.model_dump_json(), ex=3600)
+        email_client.send_verification_email(recipient=user.email, code=code)
         response.status_code = 201
         response.message = "Account registered successfully."
         response.data = {"email": user.email}
