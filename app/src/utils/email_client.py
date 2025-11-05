@@ -16,7 +16,6 @@ class EmailClient:
         self.smtp_pass = settings.SMTP_PASSWORD
         self.from_email = settings.SMTP_SENDER
 
-        # Tentukan folder template utama (misalnya app/src/templates)
         templates_dir = Path("app/src/templates")
         self.env = Environment(
             loader=FileSystemLoader(str(templates_dir)),
