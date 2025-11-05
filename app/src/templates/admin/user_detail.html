@@ -1,0 +1,168 @@
+{% extends "admin/base.html" %}
+{% block title %}User Detail{% endblock %}
+{% block content %}
+
+<style>
+  body {
+    background-color: #0d1117;
+  }
+
+  .premium-card {
+    background-color: #161b22;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
+    transition: all 0.25s ease-in-out;
+  }
+
+  .premium-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(255, 152, 0, 0.2);
+  }
+
+  .data-label {
+    color: #9ca3af;
+  }
+
+  .data-value {
+    color: #f9fafb;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  .table-header {
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+  }
+
+  .pagination-btn {
+    border: 1px solid #2d333b;
+    background-color: #21262d;
+    color: #d1d5db;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .pagination-btn:hover {
+    background-color: var(--accent);
+    color: #fff;
+  }
+
+  .active-page {
+    background-color: var(--accent);
+    color: #fff;
+    font-weight: 700;
+  }
+</style>
+
+<div class="flex items-center mb-10 border-b border-gray-700 pb-4">
+  <a href="/dashboard/users"
+     class="text-gray-400 hover:text-[var(--accent)] transition mr-4 p-2 rounded-lg bg-[#21262d] hover:bg-gray-700">
+    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none"
+         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M15.75 19.5 8.25 12l7.5-7.5" />
+    </svg>
+  </a>
+  <h2 class="text-4xl font-extrabold text-white tracking-tight">
+    USER <span class="text-[var(--accent)]">DETAIL</span>
+  </h2>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+  <!-- Profile Section -->
+  <div class="premium-card p-8 space-y-7">
+    <h3 class="text-2xl font-bold text-[var(--accent)] border-b border-gray-700 pb-4">
+      PROFILE INFORMATION
+    </h3>
+
+    <div class="space-y-5">
+      {% set profile_fields = [
+          ('Fullname', user.fullname),
+          ('Email', user.email),
+          ('Nickname', user.nickname),
+          ('Phone', user.phone_number),
+          ('Gender', user.gender),
+          ('Date of Birth', user.date_of_birth)
+      ] %}
+
+      {% for label, value in profile_fields %}
+      <div class="flex justify-between items-center pb-2 border-b border-gray-800 last:border-b-0">
+        <span class="data-label text-sm font-medium">{{ label }}</span>
+        <span class="data-value font-semibold text-base">{{ value or 'N/A' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Nutrition Table Section -->
+  <div class="lg:col-span-2 premium-card overflow-hidden">
+    <h3 class="text-2xl font-bold text-white p-6 border-b border-gray-700 bg-[#21262d]">
+      NUTRITION HISTORY
+    </h3>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-700">
+        <thead class="table-header text-left text-gray-900">
+          <tr>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Status</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">BMI</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Height (cm)</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Weight (kg)</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">Ideal (kg)</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-800 text-gray-300">
+          {% if user.user_nutritions %}
+            {% for n in user.user_nutritions %}
+            <tr class="hover:bg-gray-800/70 transition">
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                {% if n.status == 'Ideal' %}
+                  <span class="status-badge bg-green-900 text-green-300">Ideal</span>
+                {% elif n.status == 'Overweight' %}
+                  <span class="status-badge bg-yellow-900 text-yellow-300">Overweight</span>
+                {% elif n.status == 'Underweight' %}
+                  <span class="status-badge bg-blue-900 text-blue-300">Underweight</span>
+                {% else %}
+                  <span class="status-badge bg-gray-700 text-gray-300">{{ n.status or 'N/A' }}</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">{{ n.bmi or 'N/A' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">{{ n.height_cm or 'N/A' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">{{ n.weight_kg or 'N/A' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">{{ n.ideal_weight_kg or 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="5" class="px-6 py-10 text-center text-gray-500 tracking-wider">
+                No nutrition data available.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 bg-[#21262d] flex justify-between items-center border-t border-gray-700">
+      <div class="text-sm text-gray-400">
+        Showing <strong>{{ user.user_nutritions|length or 0 }}</strong> of <strong>{{ user.user_nutritions|length or 0 }}</strong> records
+      </div>
+
+      <div class="flex space-x-2">
+        <button class="pagination-btn px-3 py-1 text-sm rounded-lg cursor-not-allowed opacity-50">Previous</button>
+        <button class="pagination-btn active-page px-3 py-1 text-sm rounded-lg">1</button>
+        <button class="pagination-btn px-3 py-1 text-sm rounded-lg">2</button>
+        <button class="pagination-btn px-3 py-1 text-sm rounded-lg">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

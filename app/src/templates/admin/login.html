@@ -1,0 +1,51 @@
+{% extends "admin/base_auth.html" %}
+
+{% block title %}Admin Login{% endblock %}
+
+{% block content %}
+<div class="bg-[var(--background)] shadow-xl rounded-3xl p-10 w-full max-w-md text-center animate-fade-in">
+  <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back 👋</h2>
+  <p class="text-gray-600 mb-6">Sign in to access your admin dashboard</p>
+
+  {% if request.query_params.error %}
+  <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-6 rounded-lg text-left">
+    <p class="font-bold">Error</p>
+    <p>{{ request.query_params.error }}</p>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/dashboard/login" class="space-y-6">
+    <div class="text-left">
+      <label class="block text-sm font-semibold mb-1">Email</label>
+      <input type="email" name="email" required
+             class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--accent)] outline-none transition"
+             placeholder="you@example.com">
+    </div>
+
+    <div class="text-left">
+      <div class="flex justify-between items-center mb-1">
+        <label class="block text-sm font-semibold">Password</label>
+        <a href="#" class="text-[var(--accent)] text-sm hover:underline">Forgot password?</a>
+      </div>
+      <input type="password" name="password" required
+             class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--accent)] outline-none transition"
+             placeholder="••••••••">
+    </div>
+
+    <button type="submit"
+      class="w-full bg-[var(--primary)] text-gray-900 py-3 rounded-xl font-semibold hover:bg-[var(--accent)] hover:text-white transition">
+      Sign In
+    </button>
+  </form>
+
+  <p class="text-xs text-gray-400 mt-8">© 2025 MRA Dashboard — Secure Admin Portal</p>
+</div>
+
+<style>
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.6s ease-in-out; }
+</style>
+{% endblock %}
