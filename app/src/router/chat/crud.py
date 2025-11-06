@@ -1,6 +1,7 @@
 from __future__ import annotations
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.chat import ChatRoom, ChatParticipant, ChatMessage
 
 class CRUDChat:
@@ -51,12 +52,59 @@ class CRUDChat:
         )
         result = await session.execute(stmt)
         return result.scalars().all()
-
-    async def get_user_rooms(self, session: AsyncSession, user_id: int) -> ChatRoom:
+    
+    async def get_user_room_by_key(
+        self,
+        session: AsyncSession,
+        room_key: str,
+        user_id: str
+    ) -> ChatRoom:
         stmt = (
             select(ChatRoom)
             .join(ChatParticipant)
             .where(ChatParticipant.user_id == user_id, ChatParticipant.deleted_at.__eq__(None))
+            .where(ChatRoom.room_key == room_key, ChatRoom.deleted_at.__eq__(None))
         )
         result = await session.execute(stmt)
-        return result.scalars().all()
+        return result.one_or_none()
+    
+    async def get_user_rooms(
+        self,
+        session: AsyncSession,
+        user_id: int,
+        limit: int = 20,
+        offset: int = 0
+    ):
+        stmt = (
+            select(ChatRoom)
+            .options(
+                selectinload(ChatRoom.participants).selectinload(ChatParticipant.user)
+            )
+            .join(ChatParticipant)
+            .where(
+                ChatParticipant.user_id == user_id,
+                ChatParticipant.deleted_at.is_(None)
+            )
+            .order_by(ChatRoom.updated_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await session.execute(stmt)
+        rooms = result.scalars().unique().all()
+
+        room_list = []
+        for room in rooms:
+            receiver = next(
+                (p.user for p in room.participants if p.user_id != user_id and p.deleted_at is None),
+                None
+            )
+            if receiver:
+                room_list.append({
+                    "room_id": room.id,
+                    "room_key": room.room_key,
+                    "receiver_id": receiver.id,
+                    "receiver_name": receiver.fullname,
+                    "receiver_picture": receiver.picture
+                })
+
+        return room_list

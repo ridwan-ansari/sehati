@@ -70,19 +70,22 @@ async def chat_endpoint(websocket: WebSocket, session: AsyncSession = Depends(ge
         manager.disconnect(sender_id)
         await websocket.close(code=1011)
 
-@router.get("/messages/{room_id}")
+@router.get("/messages/{room_key}")
 async def get_messages(
-    room_id: int,
+    user_id: str,
+    room_key: str,
+    limit: int = 20,
+    offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
         data = []
-        room = await crud_chat.get_user_rooms(session=session, user_id=authentication.get("id"))
+        room = await crud_chat.get_user_room_by_key(session=session, room_key=room_key, user_id=user_id)
         if room:
-            messages = await crud_chat.get_messages(session=session, room_id=room_id)
+            messages = await crud_chat.get_messages(session=session, room_id=room.id, limit=limit, offset=offset)
             for message in messages:
-                msg = {"user_id":message.sender_id,"message":message.message}
+                msg = {"id":message.id,"message":message.message, "created_at":message.created_at}
                 if message.sender_id == authentication.get("id"):
                     msg.update({"type":"sender"})
                 else:
@@ -95,18 +98,13 @@ async def get_messages(
 
 @router.get("/rooms")
 async def get_rooms(
+    limit: int = 20,
+    offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
-        data = []
-        room = await crud_chat.get_user_rooms(session=session, user_id=authentication.get("id"))
-        if room:
-            data.append({
-                "id":room.id,
-                "key":room.room_key,
-                "created_at":room.created_at
-            })
+        data = await crud_chat.get_user_rooms(session=session, user_id=authentication.get("id"), limit=limit, offset=offset)
         response.status_code = 200
         response.message = "Get Rooms Successfully."
         response.data = data
