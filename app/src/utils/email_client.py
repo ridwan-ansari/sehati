@@ -50,8 +50,7 @@ class EmailClient:
         msg.add_alternative(html_body, subtype="html")
 
         try:
-            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
-                server.starttls()
+            with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port) as server:
                 server.login(self.smtp_user, self.smtp_pass)
                 server.send_message(msg)
         except Exception as e:
