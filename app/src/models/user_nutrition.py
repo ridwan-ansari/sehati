@@ -1,24 +1,20 @@
 from __future__ import annotations
-
-from datetime import datetime
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy import func, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.src.core.session import Base
+from app.src.core.mixins import TimestampMixin
 
 
-class UserNutrition(Base):
-    __tablename__ = 'user_nutritions'
+class UserNutrition(Base, TimestampMixin):
+    __tablename__ = "user_nutritions"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     bmi: Mapped[float] = mapped_column(nullable=True)
     height_cm: Mapped[float] = mapped_column(nullable=True)
     weight_kg: Mapped[float] = mapped_column(nullable=True)
     ideal_weight_kg: Mapped[float] = mapped_column(nullable=True)
     status: Mapped[str] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(onupdate=func.now(), nullable=True)
-    deleted_at: Mapped[datetime] = mapped_column(nullable=True)
-    user: Mapped['User'] = relationship(back_populates="user_nutritions")# type: ignore
+    type_of_activity: Mapped[str] = mapped_column(nullable=False)
+
+    user = relationship("User", back_populates="user_nutritions")
