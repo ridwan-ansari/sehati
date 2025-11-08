@@ -4,11 +4,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.src.router.api import router
 from app.src.core.templates import get_templates
+from app.src.router.api import router, router_dashboard
 
 templates = get_templates()
-app = FastAPI(title="MRA Dashboard")
+app = FastAPI(title="SEHATI")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(router_dashboard)
 
 @app.get("/")
 async def root(request: Request):
