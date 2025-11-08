@@ -79,7 +79,7 @@ async def admin_logout():
 
 @router.get("/users")
 async def users_page(request: Request, auth=Depends(require_admin_cookie), session: AsyncSession = Depends(get_async_session)):
-    users = await crud_user.get_users(session=session)
+    users = await crud_user.get_user_admin_by_id(session=session, id=auth.get("id"))
     return templates.TemplateResponse("admin/users.html", {"request": request, "users": users, "auth": auth})
 
 @router.get("/users/{user_id}")

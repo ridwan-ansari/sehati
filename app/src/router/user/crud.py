@@ -21,6 +21,15 @@ class CRUDUser:
         )
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def get_user_admin_by_id(self, session: AsyncSession, id: int) -> Optional[User]:
+        stmt = (
+            select(User)
+            .where(User.id == id, User.verified.is_(True), User.role.in_("admin"))
+            .options(selectinload(User.user_nutritions))
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def get_user_by_email(self, session: AsyncSession, email: str) -> Optional[User]:
         stmt = select(User).where(User.email == email, User.verified.is_(True))
