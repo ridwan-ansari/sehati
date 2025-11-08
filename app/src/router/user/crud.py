@@ -16,7 +16,7 @@ class CRUDUser:
     async def get_user_by_id(self, session: AsyncSession, id: int) -> Optional[User]:
         stmt = (
             select(User)
-            .where(User.id == id, User.verified.is_(True), User.role.in_("user"))
+            .where(User.id == id, User.verified.is_(True), User.role.__eq__("user"))
             .options(selectinload(User.user_nutritions))
         )
         result = await session.execute(stmt)
@@ -25,7 +25,7 @@ class CRUDUser:
     async def get_user_admin_by_id(self, session: AsyncSession, id: int) -> Optional[User]:
         stmt = (
             select(User)
-            .where(User.id == id, User.verified.is_(True), User.role.in_("admin"))
+            .where(User.id == id, User.verified.is_(True), User.role.__eq__("admin"))
             .options(selectinload(User.user_nutritions))
         )
         result = await session.execute(stmt)
