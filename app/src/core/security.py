@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, Depends
+from fastapi import Depends
 from datetime import timedelta, datetime, timezone
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -17,20 +17,32 @@ class TokenService:
         self.algorithm = settings.ALGORITHM
         self.secret_key = settings.SECRET_KEY
 
-    def generate_access_token(self, payload: dict, expires: timedelta = timedelta(minutes=15)):
+    def generate_token(
+        self,
+        payload: dict,
+        token_type: str = "access",
+        expires_in_hours: float | None = None,
+        expires_in_minutes: float | None = None,
+    ) -> str:
+        default_expiry = {
+            "access": timedelta(minutes=15),
+            "refresh": timedelta(days=30),
+            "reset_password": timedelta(minutes=10),
+        }
+
+        if expires_in_hours is not None:
+            expires = timedelta(hours=expires_in_hours)
+        elif expires_in_minutes is not None:
+            expires = timedelta(minutes=expires_in_minutes)
+        else:
+            expires = default_expiry.get(token_type, timedelta(minutes=15))
+
         to_encode = payload.copy()
         to_encode.update({
-            "type": "access",
-            "exp": datetime.now(timezone.utc) + expires
+            "type": token_type,
+            "exp": datetime.now(timezone.utc) + expires,
         })
-        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-    
-    def generate_refresh_token(self, payload: dict, expires: timedelta = timedelta(hours=3600)):
-        to_encode = payload.copy()
-        to_encode.update({
-            "type": "refresh",
-            "exp": datetime.now(timezone.utc) + expires
-        })
+
         return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 
 
@@ -73,7 +85,6 @@ class AuthService:
         if payload.get("type") != "access" or payload.get("role") != "admin":
             raise ForbiddenException("Admin access required.")
         return payload
-
 
 
 class Hasher:

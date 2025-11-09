@@ -4,7 +4,6 @@ from email.message import EmailMessage
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
-
 from app.src.core.config import settings
 
 
@@ -16,34 +15,17 @@ class EmailClient:
         self.smtp_pass = settings.SMTP_PASSWORD
         self.from_email = settings.SMTP_SENDER
 
-        templates_dir = Path("app/src/templates")
         self.env = Environment(
-            loader=FileSystemLoader(str(templates_dir)),
+            loader=FileSystemLoader(str(Path("app/src/templates"))),
             autoescape=select_autoescape(["html", "xml"]),
         )
 
-    def _render(self, template_path: str, context: dict) -> str:
-        tpl = self.env.get_template(template_path)
-        return tpl.render(**context)
+    def _render(self, template_name: str, context: dict) -> str:
+        return self.env.get_template(template_name).render(**context)
 
-    def send_verification_email(self, recipient: str, code: int, fullname: str | None = None):
-        """Kirim email HTML verifikasi dengan kode OTP 6 digit."""
-        context = {
-            "fullname": fullname,
-            "code": f"{code:06d}",
-            "year": datetime.utcnow().year,
-        }
-
-        html_body = self._render("emails/verify.html", context)
-        text_body = (
-            f"Hi {fullname or 'there'},\n\n"
-            f"Your verification code is: {code:06d}\n"
-            "This code expires in 10 minutes.\n\n"
-            "— MRA Security Team"
-        )
-
+    def _send(self, recipient: str, subject: str, html_body: str, text_body: str):
         msg = EmailMessage()
-        msg["Subject"] = "MRA — Verify your account"
+        msg["Subject"] = subject
         msg["From"] = self.from_email
         msg["To"] = recipient
         msg.set_content(text_body)
@@ -54,4 +36,30 @@ class EmailClient:
                 server.login(self.smtp_user, self.smtp_pass)
                 server.send_message(msg)
         except Exception as e:
-            raise RuntimeError(f"Failed to send verification email: {e}")
+            raise RuntimeError(f"Failed to send email: {e}")
+
+    def send_verification_email(self, recipient: str, code: int, fullname: str | None = None):
+        context = {
+            "fullname": fullname,
+            "code": f"{code:06d}",
+            "year": datetime.utcnow().year,
+        }
+        html = self._render("emails/verify.html", context)
+        text = (
+            f"Hi {fullname or 'there'},\n\n"
+            f"Your verification code is: {code:06d}\n"
+            "This code expires in 10 minutes.\n\n"
+            "— SEHATI Security Team"
+        )
+        self._send(recipient, "SEHATI — Verify Your Account", html, text)
+
+    def send_password_reset_email(self, recipient: str, fullname: str, link: str):
+        context = {"fullname": fullname, "link": link, "year": datetime.utcnow().year}
+        html = self._render("emails/reset_password_admin.html", context)
+        text = (
+            f"Hi {fullname},\n\n"
+            f"Click the link below to reset your password:\n{link}\n\n"
+            "If you didn’t request this, please ignore it.\n\n"
+            "— SEHATI Security Team"
+        )
+        self._send(recipient, "SEHATI — Password Reset Request", html, text)

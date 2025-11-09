@@ -47,8 +47,8 @@ async def login(email: str = Form(...), password: str = Form(...), session: Asyn
             raise ValueError("Your email or password is incorrect. Please check and try again.")
         payload = {"id": user.id, "role": user.role}
         tokens = {
-            "access_token": token_service.generate_access_token(payload=payload),
-            "refresh_token": token_service.generate_refresh_token(payload=payload)
+            "access_token": token_service.generate_token(payload=payload, token_type="access", expires_in_hours=12),
+            "refresh_token": token_service.generate_token(payload=payload, token_type="refresh", expires_in_hours=24)
         }
         response.data = tokens
         response.status_code = 200
@@ -64,7 +64,7 @@ async def login(authentication: dict = Depends(auth_service.require_refresh_toke
         
         payload = {"id": user.id, "role": user.role}
         tokens = {
-            "access_token": token_service.generate_access_token(payload=payload)
+            "access_token": token_service.generate_token(payload=payload, token_type="access", expires_in_hours=12)
         }
         response.data = tokens
         response.status_code = 200
