@@ -53,13 +53,14 @@ class EmailClient:
         )
         self._send(recipient, "SEHATI — Verify Your Account", html, text)
 
-    def send_password_reset_email(self, recipient: str, fullname: str, link: str):
-        context = {"fullname": fullname, "link": link, "year": datetime.utcnow().year}
-        html = self._render("emails/reset_password_admin.html", context)
-        text = (
-            f"Hi {fullname},\n\n"
-            f"Click the link below to reset your password:\n{link}\n\n"
-            "If you didn’t request this, please ignore it.\n\n"
-            "— SEHATI Security Team"
-        )
-        self._send(recipient, "SEHATI — Password Reset Request", html, text)
+    def send_password_reset_email(
+            self, 
+            recipient: str, 
+            fullname: str, 
+            link: str = "", 
+            code: int = None, 
+            template_name: str = "emails/reset_password_admin.html"
+        ):
+        context = {"fullname": fullname, "link": link, "code":code, "year": datetime.utcnow().year}
+        html = self._render(template_name, context)
+        self._send(recipient, "SEHATI — Password Reset Request", html, "")

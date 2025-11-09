@@ -133,7 +133,7 @@ async def confirm_reset_password_post(
     session: AsyncSession = Depends(get_async_session),
 ):
     if new_password != confirm_password:
-        return render_page("admin/reset_confirm.html", request, token=token, error="Passwords do not match")
+        return render_page("admin/reset_confirm.html", request, token=token, error="Passwords do not match.")
 
     try:
         payload = await auth_service._decode_token(token)
