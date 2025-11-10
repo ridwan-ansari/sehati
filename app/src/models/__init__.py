@@ -2,6 +2,7 @@ from app.src.models.user import User
 from app.src.models.recipe import Recipe
 from app.src.models.reminder import Reminder
 from app.src.models.merchandise import Merchandise
+from app.src.models.bmi_reference import BMIReference
 from app.src.models.user_nutrition import UserNutrition
 from app.src.models.video import Video, VideoRewardClaim
 from app.src.models.professionals import Professional, Appointment

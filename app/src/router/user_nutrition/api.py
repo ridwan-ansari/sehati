@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from typing import List
-from fastapi import Depends, APIRouter
+from datetime import date
+from fastapi import Depends, APIRouter, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.src.core.security import AuthService
+from app.src.utils.handler import response_handler
+from app.src.utils.nutrition_calculator import NutritionCalculator
+from app.src.core.session import get_async_session
 from app.src.models.user_nutrition import UserNutrition
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
-from app.src.utils.handler import response_handler
-from app.src.core.session import get_async_session
 from app.src.router.user_nutrition.schema import UserNutrionBaseModel
-from app.src.core.security import AuthService
 
 router = APIRouter()
 
@@ -40,3 +41,21 @@ async def create(
         response.status_code = 201
         response.message = "Create Successfully."
     return response.build()
+
+@router.post("/calculator")
+async def nutrition_calculator(
+    dob: date = Form(...),
+    gender: str = Form(...),
+    weight: float = Form(...),
+    height: float = Form(...),
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(AuthService().require_access_token)
+):
+    with response_handler() as response:
+        calculator = NutritionCalculator(session=session)
+        response.status_code = 200
+        response.message = "Successfully Calculate."
+        response.data = await calculator.evaluate(gender, dob, weight, height)
+    return response.build()
+        
+    
