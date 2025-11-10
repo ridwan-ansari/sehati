@@ -13,7 +13,7 @@ router.include_router(user_router, prefix="/users", tags=["User Management"])
 router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 router.include_router(chat_router, prefix="/chat", tags=["Chat System"])
 router.include_router(ws_chat_router, prefix="/ws", tags=["Chat WebSocket"])
-router.include_router(food_router, prefix="/food", tags=["Food & Nutrition"])
+router.include_router(food_router, prefix="/habit", tags=["Food & Nutrition"])
 router.include_router(user_nutrition_router, prefix="/user/nutrition", tags=["User Nutrition Tracking"])
 
 router_dashboard = APIRouter()
