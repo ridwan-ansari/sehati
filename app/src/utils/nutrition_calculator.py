@@ -1,9 +1,10 @@
 from datetime import date
 from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.bmi_reference import BMIReference
 
 class NutritionCalculator:
-    def __init__(self, session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def get_reference(self, gender: str, years: int, months: int):
@@ -65,6 +66,9 @@ class NutritionCalculator:
     async def evaluate(self, gender: str, dob: date, weight: float, height: float, ref_date: date = date.today()):
         years = ref_date.year - dob.year
         months = ref_date.month - dob.month
+        if years > 19 or (years==19 and months > 0):
+            raise ValueError(f"You are {years} years and {months} months old. This calculator only supports up to 19 years and 0 months."
+)
         if months < 0:
             years -= 1
             months += 12
