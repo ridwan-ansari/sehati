@@ -1,8 +1,6 @@
 from __future__ import annotations
-
-from loguru import logger
-from json import loads, dumps
 from random import randint
+from json import loads, dumps
 from datetime import datetime
 from fastapi import Depends, APIRouter, Form
 from sqlalchemy.ext.asyncio import AsyncSession
