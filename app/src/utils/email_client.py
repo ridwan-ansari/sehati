@@ -9,6 +9,7 @@ from app.src.core.config import settings
 
 class EmailClient:
     def __init__(self):
+        self.is_ssl = settings.SMTP_IS_SSL
         self.smtp_host = settings.SMTP_HOST
         self.smtp_port = settings.SMTP_PORT
         self.smtp_user = settings.SMTP_USER
@@ -23,7 +24,7 @@ class EmailClient:
     def _render(self, template_name: str, context: dict) -> str:
         return self.env.get_template(template_name).render(**context)
 
-    def _send(self, recipient: str, subject: str, html_body: str, text_body: str):
+    def _send(self, recipient: str, subject: str, html_body: str, text_body: str, use_ssl: bool = True):
         msg = EmailMessage()
         msg["Subject"] = subject
         msg["From"] = self.from_email
@@ -32,9 +33,15 @@ class EmailClient:
         msg.add_alternative(html_body, subtype="html")
 
         try:
-            with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port) as server:
-                server.login(self.smtp_user, self.smtp_pass)
-                server.send_message(msg)
+            if self.is_ssl:
+                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port) as server:
+                    server.login(self.smtp_user, self.smtp_pass)
+                    server.send_message(msg)
+            else:
+                with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                    server.starttls()
+                    server.login(self.smtp_user, self.smtp_pass)
+                    server.send_message(msg)
         except Exception as e:
             raise RuntimeError(f"Failed to send email: {e}")
 

@@ -15,5 +15,6 @@ class Settings(BaseSettings):
     SMTP_USER: str
     SMTP_PASSWORD: str
     SMTP_SENDER: str
+    SMTP_IS_SSL: bool = True
 
 settings = Settings(_env_file='.env')
