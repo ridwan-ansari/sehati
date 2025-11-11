@@ -118,6 +118,10 @@ async def reset_password_confirm(
         user = loads(user)
         user = await crud_user.get_user_by_id(session=session, id=user.get("id"))
         user.password = Hasher.hash_password(new_password)
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        await redis.delete(key)
 
         response.status_code = 200
         response.message = "Password has been reset successfully. Please log in using your new password."
