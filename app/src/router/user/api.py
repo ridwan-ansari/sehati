@@ -42,7 +42,7 @@ async def upload_profile_picture(
     authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
-        ensure_dir()
+        ensure_dir("/var/sehati-media/avatars")
 
         if not file.content_type.startswith("image/"):
             raise ValueError("Only image files are allowed.")
