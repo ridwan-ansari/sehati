@@ -1,18 +1,23 @@
 from __future__ import annotations
+import os
+import uuid
 from typing import List, Optional
-from fastapi import Depends, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, APIRouter, UploadFile
 
 from app.src.models.user import User
+from app.src.core.config import settings
 from app.src.core.security import AuthService
 from app.src.router.user.crud import CRUDUser
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
 from app.src.router.user.schema import UserBaseModel, UserProfile
+from app.src.utils.avatars import ensure_dir, read_limited, verify_image
 
 router = APIRouter()
 crud_user = CRUDUser()
 auth_service = AuthService()
+AVATAR_DIR = os.path.join(settings.MEDIA_ROOT, "avatars")
 
 
 @router.get("/")
@@ -28,6 +33,43 @@ async def get_list(
         response.status_code = 200
         response.message = "Get List User Successfully."
         response.data = [UserBaseModel.model_validate(user) for user in users]
+    return response.build()
+
+@router.post("/profile/picture", status_code=201)
+async def upload_profile_picture(
+    file: UploadFile,
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token),
+):
+    with response_handler() as response:
+        ensure_dir()
+
+        if not file.content_type.startswith("image/"):
+            raise ValueError("Only image files are allowed.")
+
+        raw = await read_limited(file)
+        verify_image(raw)
+
+        ext = os.path.splitext(file.filename)[1].lower() or ".jpg"
+        if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
+            ext = ".jpg"
+
+        filename = f"{uuid.uuid4()}{ext}"
+        abs_path = os.path.join(AVATAR_DIR, filename)
+
+        with open(abs_path, "wb") as f:
+            f.write(raw)
+
+        rel_path = f"avatars/{filename}"
+        user = await crud_user.get_user_by_id(session=session, id=authentication["id"])
+        user.picture = f"{settings.MEDIA_URL}/{rel_path}"
+        await session.commit()
+
+        response.status_code = 201
+        response.message = "Profile picture updated."
+        response.data = f"{settings.MEDIA_URL}/{rel_path}"
+
+
     return response.build()
 
 @router.get("/profile")
