@@ -27,7 +27,7 @@ class FoodHabitQuestion(Base, TimestampMixin):
     question: Mapped[str] = mapped_column(String, nullable=False)
     example: Mapped[str | None] = mapped_column(String)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
-    reward_points: Mapped[int] = mapped_column(default=100, nullable=False)
+    reward_points: Mapped[int] = mapped_column(default=10, nullable=False)
 
     answers = relationship("FoodHabitAnswer", back_populates="question", cascade="all, delete-orphan")
 
