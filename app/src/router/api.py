@@ -11,7 +11,7 @@ from app.src.router.user_nutrition.api import router as user_nutrition_router
 router = APIRouter(prefix="/api")
 
 router.include_router(user_router, prefix="/users", tags=["User Management"])
-router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+router.include_router(auth_router, prefix="/auth", tags=["auth"])
 router.include_router(chat_router, prefix="/chat", tags=["Chat System"])
 router.include_router(video_router, prefix="/video", tags=["Video List"])
 router.include_router(ws_chat_router, prefix="/ws", tags=["Chat WebSocket"])

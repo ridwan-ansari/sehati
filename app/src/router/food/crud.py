@@ -20,7 +20,7 @@ class CRUDFood:
         await session.refresh(food)
         return food
 
-    async def get_all(self, session: AsyncSession, name: str = None, limit: int = 20, offset: int = 0) -> List[Food]:
+    async def get_all(self, session: AsyncSession, name: str = None, limit: int = 20, offset: int = 0, ids: List[str] = 0) -> List[Food]:
         stmt = (
             select(Food)
             .where(Food.deleted_at.is_(None))
@@ -30,6 +30,8 @@ class CRUDFood:
         
         if name:
             stmt = stmt.where(Food.name.ilike(f"%{name}%"))
+        if ids:
+            stmt = stmt.where(Food.id.in_(ids))
         result = await session.execute(stmt)
         return result.scalars().all()
 
@@ -112,7 +114,7 @@ class CRUDFoodHabitAnswer:
 
 
 class CRUDFoodDiaryAnalysis:
-    async def create(self, session: AsyncSession, **data) -> FoodDiaryAnalysis:
+    async def create(self, session: AsyncSession, data: dict) -> FoodDiaryAnalysis:
         record = FoodDiaryAnalysis(**data)
         session.add(record)
         await session.commit()
@@ -168,3 +170,8 @@ class CRUDFoodDiaryItem:
     async def delete(self, session: AsyncSession, item_id: str):
         await session.execute(delete(FoodDiaryItem).where(FoodDiaryItem.id == item_id))
         await session.commit()
+    
+    async def bulk_create(self, session: AsyncSession, diary_items: List[FoodDiaryItem]):
+        session.add_all(diary_items)
+        await session.commit()
+        return diary_items

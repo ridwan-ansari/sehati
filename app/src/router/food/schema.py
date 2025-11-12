@@ -9,5 +9,18 @@ class FoodHabitAnswerSchema(BaseModel):
     answer: bool
     frequency: int = 0
 
+
 class UserAnswer(BaseModel):
     answers: List[FoodHabitAnswerSchema]
+
+
+class FoodDiaryItem(BaseModel):
+    food_id: str
+    meal_type: str
+    quantity: int = 1
+
+
+class FoodDiarySchema(BaseModel):
+    activity: str
+    desired_energy_requirement: int
+    data: List[FoodDiaryItem]

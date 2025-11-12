@@ -63,7 +63,7 @@ class NutritionCalculator:
             return "Overweight"
         return "Obese"
 
-    async def evaluate(self, gender: str, dob: date, weight: float, height: float, ref_date: date = date.today()):
+    async def evaluate(self, gender: str, dob: date, weight: float, height: float, ref_date: date = date.today(), activity: str = None):
         years = ref_date.year - dob.year
         months = ref_date.month - dob.month
         if years > 19 or (years==19 and months > 0):
@@ -77,4 +77,20 @@ class NutritionCalculator:
         zscore = self.calculate_zscore(bmi, ref)
         status = self.classify_status(zscore)
         ibw = self.calculate_ibw(height, gender=gender)
-        return {"bmi": bmi, "zscore": zscore, "status": status, "ibw": ibw}
+        eer = 0 if not activity else self.calculate_eer(gender=gender, age=years, weight=weight, height=height, activity=activity)
+        return {"bmi": bmi, "zscore": zscore, "status": status, "ibw": ibw, "eer":eer}
+
+    def calculate_eer(self, gender: str, age: int, weight: float, height: float, activity: str):
+        pa_values = {
+            "sedentary": 1.0,
+            "low_active": 1.11 if gender.lower() == "male" else 1.12,
+            "active": 1.25 if gender.lower() == "male" else 1.27,
+            "very_active": 1.48 if gender.lower() == "male" else 1.45,
+        }
+        pa = pa_values.get(activity, 1.0)
+        h_m = height / 100
+        if gender.lower() == "male":
+            eer = 662 - (9.53 * age) + pa * ((15.91 * weight) + (539.6 * h_m))
+        else:
+            eer = 354 - (6.91 * age) + pa * ((9.36 * weight) + (726 * h_m))
+        return round(eer, 1)

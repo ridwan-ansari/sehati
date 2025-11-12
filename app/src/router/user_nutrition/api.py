@@ -21,23 +21,23 @@ async def get_list(
         limit: int = None,
         offset: int = None,
         session: AsyncSession = Depends(get_async_session),
-        authentication: dict = Depends(AuthService().require_access_token)
+        auth: dict = Depends(AuthService().require_access_token)
     ):
     with response_handler() as response:
         response.status_code = 200
         response.message = "Get List User Successfully"
-        response.data = await CRUDUserNutrition().get_list(session=session, user_id=authentication.get("id"), limit=limit, offset=offset)
+        response.data = await CRUDUserNutrition().get_list(session=session, user_id=auth.get("id"), limit=limit, offset=offset)
     return response.build()
 
 @router.post("/")
 async def create(
         user_nutrition: UserNutrionBaseModel,
         session: AsyncSession = Depends(get_async_session),
-        authentication: dict = Depends(AuthService().require_access_token)
+        auth: dict = Depends(AuthService().require_access_token)
     ):
     with response_handler() as response:
         calculator = NutritionCalculator(session=session)
-        user = await CRUDUser().get_user_by_id(session=session, id=authentication.get("id"))
+        user = await CRUDUser().get_user_by_id(session=session, id=auth.get("id"))
 
         result = await calculator.evaluate(
             gender=user.gender, 
@@ -67,14 +67,15 @@ async def nutrition_calculator(
     gender: str = Form(...),
     weight: float = Form(...),
     height: float = Form(...),
+    activity: str = Form(None),
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(AuthService().require_access_token)
+    auth: dict = Depends(AuthService().require_access_token)
 ):
     with response_handler() as response:
         calculator = NutritionCalculator(session=session)
         response.status_code = 200
         response.message = "Successfully Calculate."
-        response.data = await calculator.evaluate(gender, dob, weight, height)
+        response.data = await calculator.evaluate(gender, dob, weight, height, activity=activity)
     return response.build()
         
     

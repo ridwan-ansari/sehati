@@ -54,6 +54,7 @@ class FoodDiaryAnalysis(Base, TimestampMixin):
     desired_energy_requirement: Mapped[int] = mapped_column(default=0)
     total_calories: Mapped[int] = mapped_column(default=0)
     reward_points: Mapped[int] = mapped_column(default=100, nullable=False)
+    activity: Mapped[str] = mapped_column(nullable=False)
 
     user = relationship("User", back_populates="food_diary_analysis")
     items = relationship("FoodDiaryItem", back_populates="analysis", cascade="all, delete-orphan")

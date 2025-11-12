@@ -77,7 +77,7 @@ async def get_messages(
     limit: int = 20,
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    auth: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
         data = []
@@ -86,7 +86,7 @@ async def get_messages(
             messages = await crud_chat.get_messages(session=session, room_id=room.id, limit=limit, offset=offset)
             for message in messages:
                 msg = {"id":message.id,"message":message.message, "created_at":message.created_at}
-                if message.sender_id == authentication.get("id"):
+                if message.sender_id == auth.get("id"):
                     msg.update({"type":"sender"})
                 else:
                     msg.update({"type":"receiver"})
@@ -101,10 +101,10 @@ async def get_rooms(
     limit: int = 20,
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    auth: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
-        data = await crud_chat.get_user_rooms(session=session, user_id=authentication.get("id"), limit=limit, offset=offset)
+        data = await crud_chat.get_user_rooms(session=session, user_id=auth.get("id"), limit=limit, offset=offset)
         response.status_code = 200
         response.message = "Get Rooms Successfully."
         response.data = data

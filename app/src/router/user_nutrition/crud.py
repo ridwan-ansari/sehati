@@ -27,3 +27,18 @@ class CRUDUserNutrition:
         )
         result = await session.execute(stmt)
         return result.scalars().all()
+    
+    async def get_latest(
+        self,
+        session: AsyncSession,
+        user_id: int
+    ) -> Optional[UserNutrition]:
+        stmt = (
+            select(UserNutrition)
+            .where(UserNutrition.user_id == user_id)
+            .order_by(UserNutrition.created_at.desc())
+            .limit(1)
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+

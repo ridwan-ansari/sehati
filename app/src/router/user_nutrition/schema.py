@@ -10,4 +10,3 @@ class UserNutrionBaseModel(BaseModel):
     weight_kg: Optional[float] = None
     ideal_weight_kg: Optional[float] = None
     status: Optional[str] = None
-    type_of_activity: Optional[str] = None

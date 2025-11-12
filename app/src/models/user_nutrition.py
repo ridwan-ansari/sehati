@@ -15,6 +15,5 @@ class UserNutrition(Base, TimestampMixin):
     weight_kg: Mapped[float] = mapped_column(nullable=True)
     ideal_weight_kg: Mapped[float] = mapped_column(nullable=True)
     status: Mapped[str] = mapped_column(nullable=True)
-    type_of_activity: Mapped[str] = mapped_column(nullable=False)
 
     user = relationship("User", back_populates="user_nutritions")
