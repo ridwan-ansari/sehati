@@ -14,7 +14,7 @@ from app.src.utils.nutrition_calculator import NutritionCalculator
 from app.src.router.user_nutrition.schema import UserNutrionBaseModel
 
 router = APIRouter()
-
+crud_nutrition = CRUDUserNutrition()
 
 @router.get("/")
 async def get_list(
@@ -26,7 +26,7 @@ async def get_list(
     with response_handler() as response:
         response.status_code = 200
         response.message = "Get List User Successfully"
-        response.data = await CRUDUserNutrition().get_list(session=session, user_id=auth.get("id"), limit=limit, offset=offset)
+        response.data = await crud_nutrition.get_list(session=session, user_id=auth.get("id"), limit=limit, offset=offset)
     return response.build()
 
 @router.post("/")
@@ -46,7 +46,7 @@ async def create(
             height=user_nutrition.height_cm
         )
         
-        response.data = await CRUDUserNutrition().create(
+        response.data = await crud_nutrition.create(
             session=session, 
             user_nutrition=UserNutrition(**{
                     **user_nutrition.model_dump(),
@@ -59,6 +59,17 @@ async def create(
         )
         response.status_code = 201
         response.message = "Create Successfully."
+    return response.build()
+
+@router.get("/latest")
+async def get_latest_data(
+    session: AsyncSession = Depends(get_async_session),
+    auth: dict = Depends(AuthService().require_access_token)
+):
+    with response_handler() as response:
+        response.status_code = 200
+        response.message = "Get Latest Data Successfully."
+        response.data = await crud_nutrition.get_latest(session=session, user_id=auth.get("id"))
     return response.build()
 
 @router.post("/calculator")
