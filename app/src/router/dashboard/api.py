@@ -76,7 +76,7 @@ async def users_page(request: Request, auth=Depends(require_admin_cookie), sessi
 @router.get("/users/{user_id}")
 async def user_detail_page(
     request: Request,
-    user_id: int,
+    user_id: str,
     page: int = 1,
     limit: int = 10,
     auth=Depends(require_admin_cookie),
