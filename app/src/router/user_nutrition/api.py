@@ -51,7 +51,7 @@ async def create(
             user_nutrition=UserNutrition(**{
                     **user_nutrition.model_dump(),
                     "user_id":user.id,
-                    "bmi":result.get(""),
+                    "bmi":result.get("bmi"),
                     "status":result.get("status"),
                     "ideal_weight_kg":result.get("ibw")   
                 }
