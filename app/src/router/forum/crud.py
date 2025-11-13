@@ -67,3 +67,21 @@ class CRUDForum:
         await session.commit()
         await session.refresh(comment)
         return comment
+    
+    async def get_user_liked_posts(
+        self, session: AsyncSession, user_id: str, post_ids: list[str]
+    ) -> set[str]:
+
+        if not post_ids:
+            return set()
+
+        result = await session.execute(
+            select(ForumLike.post_id)
+            .where(
+                ForumLike.user_id == user_id,
+                ForumLike.post_id.in_(post_ids)
+            )
+        )
+        rows = result.scalars().all()
+        return set(rows)
+

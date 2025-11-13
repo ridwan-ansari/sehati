@@ -60,18 +60,31 @@ async def add_comment(
     return response.build()
 
 @router.get("/")
-async def get_posts(limit: int = 20, offset: int = 0, session: AsyncSession = Depends(get_async_session)):
+async def get_posts(
+    limit: int = 20, 
+    offset: int = 0, 
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token)
+):
     with response_handler() as response:
         posts = await crud_forum.list_posts(session, limit, offset)
+
+        post_ids = [p.id for p in posts]
+        liked_posts = await crud_forum.get_user_liked_posts(session, authentication["id"], post_ids)
         response.data = [
             {
-                "nickname": post.user.nickname,
                 "id": post.id,
                 "like_count": post.like_count,
                 "created_at": post.created_at,
                 "image_url": post.image_url,
                 "caption": post.caption,
+                "is_liked": post.id in liked_posts,
                 "comment_count": post.comment_count,
+                "user": {
+                    "id": post.user.id,
+                    "nickname": post.user.nickname,
+                    "avatar": post.user.profile_picture
+                }
             } for post in posts]
         response.message = "OK"
     return response.build()
@@ -84,15 +97,33 @@ async def get_post_detail(
 ):
     with response_handler() as response:
         post = await crud_forum.get_post(session, post_id)
+        liked = await crud_forum.user_liked(session, post_id, authentication["id"])
+
         data = {
-            "nickname": post.user.nickname,
             "id": post.id,
-            "like_count": post.like_count,
-            "created_at": post.created_at,
-            "image_url": post.image_url,
             "caption": post.caption,
+            "image_url": post.image_url,
+            "like_count": post.like_count,
             "comment_count": post.comment_count,
-            "comments":[{"nickname":comment.user.nickname, "comment":comment, "created_at":comment.created_at} for comment in post.comments]
+            "is_liked": liked,
+            "created_at": post.created_at,
+            "user": {
+                "id": post.user.id,
+                "nickname": post.user.nickname,
+                "avatar": post.user.profile_picture
+            },
+            "comments": [
+                {
+                    "comment": c.comment,
+                    "created_at": c.created_at,
+                    "user": {
+                        "id": c.user.id,
+                        "nickname": c.user.nickname,
+                        "avatar": c.user.profile_picture
+                    }
+                }
+                for c in post.comments
+            ]
         }
         response.data = data
         response.message = "OK"
