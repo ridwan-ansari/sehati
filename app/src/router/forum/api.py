@@ -97,7 +97,7 @@ async def get_post_detail(
 ):
     with response_handler() as response:
         post = await crud_forum.get_post(session, post_id)
-        liked = await crud_forum.get_user_liked_posts(session, post_id, authentication["id"])
+        liked = await crud_forum.get_user_liked(session=session, post_id=post_id, user_id=authentication["id"])
 
         data = {
             "id": post.id,

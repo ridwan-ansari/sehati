@@ -86,3 +86,11 @@ class CRUDForum:
         rows = result.scalars().all()
         return set(rows)
 
+    async def get_user_liked(self, session: AsyncSession, post_id: str, user_id: str) -> bool:
+        result = await session.execute(
+            select(ForumLike.id).where(
+                ForumLike.post_id == post_id,
+                ForumLike.user_id == user_id
+            )
+        )
+        return result.scalar_one_or_none() is not None
