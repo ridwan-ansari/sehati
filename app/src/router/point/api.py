@@ -16,6 +16,19 @@ async def leaderboard(
     auth: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
-        response.message = "Successfully Get Leaderboard."
-        response.data = await crud_wallet.get_all(session=session)
+        wallets = await crud_wallet.get_all(session=session)
+
+        data = [
+            {
+                "nickname": wallet.user.nickname,
+                "achievement_points": wallet.achievement_points,
+                "credit_points": wallet.credit_points
+            }
+            for wallet in wallets
+        ]
+
+        response.status_code = 200
+        response.message = "Wallet ranking retrieved successfully."
+        response.data = data
+
     return response.build()

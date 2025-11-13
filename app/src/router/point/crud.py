@@ -1,5 +1,6 @@
 from __future__ import annotations
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.point import (
     PointCategory,
@@ -32,15 +33,16 @@ class CRUDPointCategory:
 
 
 class CRUDPointWallet:
+
     async def get_all(self, session: AsyncSession):
         stmt = (
             select(PointWallet)
+            .options(selectinload(PointWallet.user))
             .order_by(PointWallet.achievement_points.desc())
         )
         result = await session.execute(stmt)
         return result.scalars().all()
 
-    
     async def get_by_user(self, session: AsyncSession, user_id: str):
         result = await session.execute(
             select(PointWallet).where(PointWallet.user_id == user_id)
