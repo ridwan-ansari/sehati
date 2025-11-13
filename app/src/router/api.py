@@ -5,6 +5,7 @@ from app.src.router.user.api import router as user_router
 from app.src.router.food.api import router as food_router
 from app.src.router.video.api import router as video_router
 from app.src.router.point.api import router as point_router
+from app.src.router.forum.api import router as forum_router
 from app.src.router.recipe.api import router as recipe_router
 from app.src.router.exercise.api import router as exercise_router
 from app.src.router.dashboard.api import router as dashboard_router
@@ -12,6 +13,7 @@ from app.src.router.user_nutrition.api import router as user_nutrition_router
 
 router = APIRouter(prefix="/api")
 
+router.include_router(forum_router, prefix="/forum", tags=["Forum"]) 
 router.include_router(chat_router, prefix="/chat", tags=["Chat System"])
 router.include_router(video_router, prefix="/video", tags=["Video List"])
 router.include_router(point_router, prefix="/point", tags=["Leaderboard"])

@@ -15,6 +15,6 @@ auth_service = AuthService()
 async def get_recipe(session: AsyncSession = Depends(get_async_session)):
     with response_handler() as response:
         response.status_code = 200
-        response.message = "Recipe habit questions retrieved successfully."
+        response.message = "Recipe retrieved successfully."
         response.data = await CRUDRecipe().get_all(session=session)
     return response.build()
