@@ -35,6 +35,11 @@ class CRUDUser:
         stmt = select(User).where(User.email == email, User.verified.is_(True))
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def get_user_by_nickname(self, session: AsyncSession, nickname: str) -> Optional[User]:
+        stmt = select(User).where(User.nickname == nickname, User.verified.is_(True))
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def get_users(
         self,

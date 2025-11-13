@@ -26,9 +26,14 @@ crud_wallet = CRUDPointWallet()
 @router.post("/register")
 async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get_async_session)):
     with response_handler() as response:
-        existing_user = await crud_user.get_user_by_email(session=session, email=user.email)
-        if existing_user:
+        existing_user_email = await crud_user.get_user_by_email(session=session, email=user.email)
+        existing_nickname = await crud_user.get_user_by_nickname(session=session, nickname=user.nickname)
+        if existing_user_email:
             raise ValueError("Email is already registered. Please use another email.")
+        if existing_nickname:
+            raise ValueError("Nickname is already registered. Please use another nickname.")
+        if user.picture and "/media/avatars/" not in user.picture:
+            raise ValueError("The format picture is wrong, please check again.")
         user.password = Hasher.hash_password(user.password)
         code = randint(100000,999999)
         await redis.set(f"user:verify:{user.email}:{code}", value=user.model_dump_json(), ex=3600)
