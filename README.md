@@ -1,8 +1,8 @@
-#SEHATI
+SEHATI
 SEHATI is a modular backend platform built with FastAPI, designed to help users monitor nutrition, eating habits, physical activity, and overall health status. It integrates scoring, habit tracking, nutrition analytics, and educational content into a unified health monitoring system.
 
 -----------------------------------------------------
-##PROJECT OVERVIEW
+PROJECT OVERVIEW
 -----------------------------------------------------
 SEHATI provides a comprehensive backend architecture that supports:
 - Nutritional monitoring and evaluation
@@ -16,7 +16,7 @@ SEHATI provides a comprehensive backend architecture that supports:
 It is designed to support adolescent and adult health programs focusing on diet quality, physical activity, and lifestyle improvement.
 
 -----------------------------------------------------
-##CORE TECHNOLOGIES
+CORE TECHNOLOGIES
 -----------------------------------------------------
 - FastAPI (asynchronous backend framework)
 - PostgreSQL with SQLAlchemy Async ORM
@@ -28,7 +28,7 @@ It is designed to support adolescent and adult health programs focusing on diet 
 - TailwindCSS + Jinja2 for admin dashboard rendering
 
 -----------------------------------------------------
-##KEY FEATURES
+KEY FEATURES
 -----------------------------------------------------
 
 USER & AUTHENTICATION MODULE
@@ -36,7 +36,7 @@ USER & AUTHENTICATION MODULE
 - Role-based access (Admin / User)
 - Secure avatar upload with file validation and Nginx-protected media routes
 
-##NUTRITION & FOOD DIARY
+NUTRITION & FOOD DIARY
 - Daily food diary submission with total calorie calculation
 - Integrated NutritionCalculator:
   - BMI, Z-Score, IBW (Broca/Devine)
@@ -44,20 +44,20 @@ USER & AUTHENTICATION MODULE
   - EER (Estimated Energy Requirement) & Desired Intake
 - Automatic reward points for diary completion
 
-##DIET QUALITY QUESTIONNAIRE (DQQ)
+DIET QUALITY QUESTIONNAIRE (DQQ)
 - Structured food habit questions categorized by food types
 - Stored in food_habit_questions
 - User answers stored in food_habit_answers
 - Reward points system included
 
-##PHYSICAL ACTIVITY ASSESSMENT (PAQ-A)
+PHYSICAL ACTIVITY ASSESSMENT (PAQ-A)
 - Complete PAQ-A questionnaire modeled into exercise_habit_questions and exercise_habit_answers
 - Supports multiple-choice and open-response items
 - Endpoints:
   - GET /exercise/questions
   - POST /exercise/answers
 
-##POINT & REWARD SYSTEM
+POINT & REWARD SYSTEM
 - Automatic point assignment for:
   - Daily login
   - Food diary submission
@@ -65,7 +65,7 @@ USER & AUTHENTICATION MODULE
   - Completing DQQ or PAQ-A
 - Wallet and transaction tracking
 
-##EDUCATIONAL VIDEO MODULE
+EDUCATIONAL VIDEO MODULE
 - Video catalog with reward points
 - Admin-configurable content
 - Linked with user activities
