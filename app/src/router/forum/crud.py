@@ -33,6 +33,7 @@ class CRUDForum:
         return result.scalars().all()
 
     async def toggle_like(self, session: AsyncSession, post_id: str, user_id: str):
+        new_like = None
         post = await self.get_post(session, post_id)
         if not post:
             raise FileNotFoundError("Post not found.")
@@ -55,7 +56,7 @@ class CRUDForum:
             post.like_count -= 1
 
         await session.commit()
-        return {"like":True if existing else False,"like_count":post.like_count}
+        return {"like":True if new_like else False,"like_count":post.like_count}
 
     async def add_comment(self, session: AsyncSession, data: dict):
         comment = ForumComment(**data)
