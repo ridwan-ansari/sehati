@@ -11,12 +11,14 @@ from app.src.core.security import AuthService
 from app.src.router.user.crud import CRUDUser
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
+from app.src.router.point.crud import CRUDPointWallet
 from app.src.router.user.schema import UserBaseModel, UserProfile
 from app.src.utils.avatars import ensure_dir, read_limited, verify_image
 
 router = APIRouter()
 crud_user = CRUDUser()
 auth_service = AuthService()
+crud_wallet = CRUDPointWallet()
 AVATAR_DIR = os.path.join(settings.MEDIA_ROOT, "avatars")
 
 
@@ -77,11 +79,19 @@ async def profile(
     auth: dict = Depends(auth_service.require_access_token),
     session: AsyncSession = Depends(get_async_session)
 ):
-    user = await crud_user.get_user_by_id(session=session, id=auth.get("id"))
+    user = await crud_user.get_user_by_id(session=session, id=auth["id"])
+    wallet = await crud_wallet.get_by_user(session=session, user_id=user.id)
+
     with response_handler() as response:
+        profile_data = UserProfile.model_validate(user).model_dump()
+
+        profile_data["achievement_points"] = wallet.achievement_points if wallet else 0
+        profile_data["credit_points"] = wallet.credit_points if wallet else 0
+
         response.status_code = 200
         response.message = "Get Profile Successfully."
-        response.data = UserProfile.model_validate(user)
+        response.data = profile_data
+
     return response.build()
 
 @router.get("/{id}")

@@ -11,6 +11,7 @@ from app.src.router.user.crud import CRUDUser
 from app.src.utils.email_client import EmailClient 
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
+from app.src.router.point.crud import CRUDPointWallet
 from app.src.router.user.schema import UserRegisterSchema
 from app.src.utils.execeptions import UnauthorizedException
 from app.src.core.security import Hasher, TokenService, AuthService 
@@ -20,7 +21,7 @@ crud_user = CRUDUser()
 auth_service = AuthService()
 email_client = EmailClient()
 token_service = TokenService()
-
+crud_wallet = CRUDPointWallet()
 
 @router.post("/register")
 async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get_async_session)):
@@ -81,7 +82,8 @@ async def verify(email: str, code: str, session: AsyncSession = Depends(get_asyn
         user["verified"] = True
         if date_of_birth:
             user["date_of_birth"] = datetime.strptime(date_of_birth, "%Y-%m-%d").date()
-        await CRUDUser().create(session=session, user=User(**user))
+        user = await crud_user.create(session=session, user=User(**user))
+        await crud_wallet.create_wallet(session=session, user_id=user.id)
         await redis.delete(key)
         response.status_code = 200
         response.message = "Your account has been successfully verified. Please log in to continue."

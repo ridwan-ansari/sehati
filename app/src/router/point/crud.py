@@ -32,6 +32,15 @@ class CRUDPointCategory:
 
 
 class CRUDPointWallet:
+    async def get_all(self, session: AsyncSession):
+        stmt = (
+            select(PointWallet)
+            .order_by(PointWallet.achievement_points.desc())
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+    
     async def get_by_user(self, session: AsyncSession, user_id: str):
         result = await session.execute(
             select(PointWallet).where(PointWallet.user_id == user_id)
