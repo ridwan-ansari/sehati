@@ -16,14 +16,14 @@ auth_service = AuthService()
 async def create_post(
     caption: str | None = None,
     image: UploadFile = File(...),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
     session: AsyncSession = Depends(get_async_session)
 ):
     with response_handler() as response:
         url = await save_forum_image(image)
         post = await crud_forum.create_post(
             session=session,
-            data={"user_id": auth["id"], "image_url": url, "caption": caption}
+            data={"user_id": authentication["id"], "image_url": url, "caption": caption}
         )
         response.data = {"id": post.id, "image_url": post.image_url}
         response.message = "Post created"
@@ -34,11 +34,10 @@ async def create_post(
 async def like_post(
     post_id: str,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
-        count = await crud_forum.toggle_like(session, post_id, auth["id"])
-        response.data = {"like_count": count}
+        response.data = await crud_forum.toggle_like(session, post_id, authentication["id"])
         response.message = "Updated"
         response.status_code = 200
     return response.build()
@@ -47,13 +46,13 @@ async def like_post(
 async def add_comment(
     post_id: str,
     comment: str,
-    auth: dict = Depends(auth_service.require_access_token),
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
         c = await crud_forum.add_comment(
             session,
-            {"post_id": post_id, "user_id": auth["id"], "comment": comment}
+            {"post_id": post_id, "user_id": authentication["id"], "comment": comment}
         )
         response.data = {"id": c.id, "comment": c.comment}
         response.message = "Comment added"
@@ -64,14 +63,37 @@ async def add_comment(
 async def get_posts(limit: int = 20, offset: int = 0, session: AsyncSession = Depends(get_async_session)):
     with response_handler() as response:
         posts = await crud_forum.list_posts(session, limit, offset)
-        response.data = posts
+        response.data = [
+            {
+                "nickname": post.user.nickname,
+                "id": post.id,
+                "like_count": post.like_count,
+                "created_at": post.created_at,
+                "image_url": post.image_url,
+                "caption": post.caption,
+                "comment_count": post.comment_count,
+            } for post in posts]
         response.message = "OK"
     return response.build()
 
 @router.get("/{post_id}")
-async def get_post_detail(post_id: str, session: AsyncSession = Depends(get_async_session)):
+async def get_post_detail(
+    post_id: str, 
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token),
+):
     with response_handler() as response:
         post = await crud_forum.get_post(session, post_id)
+        {
+            "nickname": post.user.nickname,
+            "id": post.id,
+            "like_count": post.like_count,
+            "created_at": post.created_at,
+            "image_url": post.image_url,
+            "caption": post.caption,
+            "comment_count": post.comment_count,
+            "comments":[{"nickname":comment.nickname.user.nickname, "comment":comment, "created_at":comment.created_at} for comment in post.comments]
+        }
         response.data = post
         response.message = "OK"
     return response.build()

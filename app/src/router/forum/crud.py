@@ -1,5 +1,7 @@
+from __future__ import annotations
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 from app.src.models.forum import ForumPost, ForumLike, ForumComment
 
 class CRUDForum:
@@ -12,13 +14,18 @@ class CRUDForum:
 
     async def get_post(self, session: AsyncSession, post_id: str):
         result = await session.execute(
-            select(ForumPost).where(ForumPost.id == post_id)
+            select(ForumPost)
+            .options(
+                selectinload(ForumPost.user),
+                selectinload(ForumPost.comments).selectinload(ForumComment.user),
+            ).where(ForumPost.id == post_id)
         )
         return result.scalar_one_or_none()
 
     async def list_posts(self, session: AsyncSession, limit=20, offset=0):
         result = await session.execute(
             select(ForumPost)
+            .options(selectinload(ForumPost.user))
             .order_by(ForumPost.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -48,7 +55,7 @@ class CRUDForum:
             post.like_count -= 1
 
         await session.commit()
-        return post.like_count
+        return {"like":True if existing else False,"like_count":post.like_count}
 
     async def add_comment(self, session: AsyncSession, data: dict):
         comment = ForumComment(**data)
