@@ -18,6 +18,7 @@ manager = ConnectionManager()
 @ws_router.websocket("/chat")
 async def chat_endpoint(websocket: WebSocket, session: AsyncSession = Depends(get_async_session)):
     try:
+        await websocket.accept()
         token = websocket.headers.get("Authorization")
         if token and token.startswith("Bearer "):
             token_value = token.split(" ")[1]
