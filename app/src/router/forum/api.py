@@ -83,7 +83,7 @@ async def get_posts(
                 "user": {
                     "id": post.user.id,
                     "nickname": post.user.nickname,
-                    "avatar": post.user.profile_picture
+                    "avatar": post.user.picture
                 }
             } for post in posts]
         response.message = "OK"
@@ -110,7 +110,7 @@ async def get_post_detail(
             "user": {
                 "id": post.user.id,
                 "nickname": post.user.nickname,
-                "avatar": post.user.profile_picture
+                "avatar": post.user.picture
             },
             "comments": [
                 {
@@ -119,7 +119,7 @@ async def get_post_detail(
                     "user": {
                         "id": c.user.id,
                         "nickname": c.user.nickname,
-                        "avatar": c.user.profile_picture
+                        "avatar": c.user.picture
                     }
                 }
                 for c in post.comments
