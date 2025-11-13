@@ -15,10 +15,17 @@ crud_chat = CRUDChat()
 auth_service = AuthService()
 manager = ConnectionManager()
 
+
 @ws_router.websocket("/chat")
-async def chat_endpoint(websocket: WebSocket, session: AsyncSession = Depends(get_async_session)):
+async def chat_endpoint(
+    websocket: WebSocket,
+    session: AsyncSession = Depends(get_async_session)
+):
+    sender_id = None
+
     try:
         await websocket.accept()
+
         token = websocket.headers.get("Authorization")
         if token and token.startswith("Bearer "):
             token_value = token.split(" ")[1]
@@ -36,10 +43,12 @@ async def chat_endpoint(websocket: WebSocket, session: AsyncSession = Depends(ge
             await websocket.close(code=4003)
             return
 
+        await manager.connect(websocket, sender_id)
 
         while True:
             data = await websocket.receive_text()
             msg = json.loads(data)
+
             receiver_id = msg.get("to")
             text = msg.get("message")
 
@@ -71,9 +80,10 @@ async def chat_endpoint(websocket: WebSocket, session: AsyncSession = Depends(ge
     except WebSocketDisconnect:
         manager.disconnect(sender_id)
     except Exception as e:
-        print(f"⚠️ WebSocket error: {e}")
+        print("WebSocket Error:", e)
         manager.disconnect(sender_id)
         await websocket.close(code=1011)
+
 
 @router.get("/messages/{room_key}")
 async def get_messages(
@@ -86,20 +96,34 @@ async def get_messages(
 ):
     with response_handler() as response:
         data = []
-        room = await crud_chat.get_user_room_by_key(session=session, room_key=room_key, user_id=user_id)
+
+        room = await crud_chat.get_user_room_by_key(
+            session=session,
+            room_key=room_key,
+            user_id=user_id
+        )
+
         if room:
-            messages = await crud_chat.get_messages(session=session, room_id=room.id, limit=limit, offset=offset)
+            messages = await crud_chat.get_messages(
+                session=session,
+                room_id=room.id,
+                limit=limit,
+                offset=offset
+            )
             for message in messages:
-                msg = {"id":message.id,"message":message.message, "created_at":message.created_at}
-                if message.sender_id == auth.get("id"):
-                    msg.update({"type":"sender"})
-                else:
-                    msg.update({"type":"receiver"})
-                data.append(msg)
+                item = {
+                    "id": message.id,
+                    "message": message.message,
+                    "created_at": message.created_at,
+                    "type": "sender" if message.sender_id == auth["id"] else "receiver"
+                }
+                data.append(item)
+
         response.status_code = 200
         response.message = "Get Messages Successfully."
         response.data = data
     return response.build()
+
 
 @router.get("/rooms")
 async def get_rooms(
@@ -109,8 +133,13 @@ async def get_rooms(
     auth: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
-        data = await crud_chat.get_user_rooms(session=session, user_id=auth.get("id"), limit=limit, offset=offset)
+        rooms = await crud_chat.get_user_rooms(
+            session=session,
+            user_id=auth["id"],
+            limit=limit,
+            offset=offset
+        )
         response.status_code = 200
         response.message = "Get Rooms Successfully."
-        response.data = data
+        response.data = rooms
     return response.build()
