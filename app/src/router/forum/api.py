@@ -84,7 +84,7 @@ async def get_post_detail(
 ):
     with response_handler() as response:
         post = await crud_forum.get_post(session, post_id)
-        {
+        data = {
             "nickname": post.user.nickname,
             "id": post.id,
             "like_count": post.like_count,
@@ -94,6 +94,6 @@ async def get_post_detail(
             "comment_count": post.comment_count,
             "comments":[{"nickname":comment.user.nickname, "comment":comment, "created_at":comment.created_at} for comment in post.comments]
         }
-        response.data = post
+        response.data = data
         response.message = "OK"
     return response.build()
