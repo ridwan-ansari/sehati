@@ -21,7 +21,7 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(router_dashboard)
-router.include_router(ws_router, prefix="/ws", tags=["Chat WebSocket"])
+app.include_router(ws_router, prefix="/ws", tags=["Chat WebSocket"])
 
 @app.get("/")
 async def root(request: Request):
