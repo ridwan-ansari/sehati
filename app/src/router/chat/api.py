@@ -19,6 +19,7 @@ manager = ConnectionManager()
 async def chat_endpoint(websocket: WebSocket, session: AsyncSession = Depends(get_async_session)):
     try:
         token = websocket.headers.get("Authorization")
+        print(token)
         if not token or not token.startswith("Bearer "):
             await websocket.close(code=4001)
             return
