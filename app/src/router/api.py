@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.src.router.chat import api as chat
+from app.src.router.chat.api import router as chat_router
 from app.src.router.auth.api import router as auth_router
 from app.src.router.user.api import router as user_router
 from app.src.router.food.api import router as food_router
@@ -12,11 +12,10 @@ from app.src.router.user_nutrition.api import router as user_nutrition_router
 
 router = APIRouter(prefix="/api")
 
-router.include_router(chat.router, prefix="/chat", tags=["Chat System"])
+router.include_router(chat_router, prefix="/chat", tags=["Chat System"])
 router.include_router(video_router, prefix="/video", tags=["Video List"])
 router.include_router(point_router, prefix="/point", tags=["Leaderboard"])
 router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
-router.include_router(chat.ws_router, prefix="/ws", tags=["Chat WebSocket"])
 router.include_router(recipe_router, prefix="/recipe", tags=["Recipe List"])
 router.include_router(user_router, prefix="/users", tags=["User Management"])
 router.include_router(food_router, prefix="/habit", tags=["Food & Nutrition"])

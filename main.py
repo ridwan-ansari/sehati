@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.src.router.chat.api import ws_router
 from app.src.core.templates import get_templates
 from app.src.router.api import router, router_dashboard
 
@@ -20,6 +21,7 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(router_dashboard)
+router.include_router(ws_router, prefix="/ws", tags=["Chat WebSocket"])
 
 @app.get("/")
 async def root(request: Request):
