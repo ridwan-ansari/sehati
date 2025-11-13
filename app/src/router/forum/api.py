@@ -92,7 +92,7 @@ async def get_post_detail(
             "image_url": post.image_url,
             "caption": post.caption,
             "comment_count": post.comment_count,
-            "comments":[{"nickname":comment.nickname.user.nickname, "comment":comment, "created_at":comment.created_at} for comment in post.comments]
+            "comments":[{"nickname":comment.user.nickname, "comment":comment, "created_at":comment.created_at} for comment in post.comments]
         }
         response.data = post
         response.message = "OK"
