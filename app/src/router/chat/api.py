@@ -24,7 +24,7 @@ async def chat_endpoint(
     sender_id = None
 
     try:
-        await websocket.accept()
+        # await websocket.accept()
 
         token = websocket.headers.get("Authorization")
         if token and token.startswith("Bearer "):
