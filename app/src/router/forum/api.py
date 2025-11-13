@@ -33,12 +33,11 @@ async def create_post(
 @router.post("/{post_id}/like")
 async def like_post(
     post_id: str,
-    like: bool,
+    session: AsyncSession = Depends(get_async_session),
     auth: dict = Depends(auth_service.require_access_token),
-    session: AsyncSession = Depends(get_async_session)
 ):
     with response_handler() as response:
-        count = await crud_forum.toggle_like(session, post_id, auth["id"], like)
+        count = await crud_forum.toggle_like(session, post_id, auth["id"])
         response.data = {"like_count": count}
         response.message = "Updated"
         response.status_code = 200

@@ -25,7 +25,11 @@ class CRUDForum:
         )
         return result.scalars().all()
 
-    async def toggle_like(self, session: AsyncSession, post_id: str, user_id: str, like: bool):
+    async def toggle_like(self, session: AsyncSession, post_id: str, user_id: str):
+        post = await self.get_post(session, post_id)
+        if not post:
+            raise FileNotFoundError("Post not found.")
+        
         result = await session.execute(
             select(ForumLike).where(
                 ForumLike.post_id == post_id,
@@ -34,14 +38,12 @@ class CRUDForum:
         )
         existing = result.scalar_one_or_none()
 
-        post = await self.get_post(session, post_id)
-
-        if like and not existing:
+        if not existing:
             new_like = ForumLike(post_id=post_id, user_id=user_id)
             session.add(new_like)
             post.like_count += 1
 
-        elif not like and existing:
+        else:
             await session.delete(existing)
             post.like_count -= 1
 
