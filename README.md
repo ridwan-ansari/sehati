@@ -1,4 +1,6 @@
+-----------------------------------------------------
 SEHATI
+-----------------------------------------------------
 SEHATI is a modular backend platform built with FastAPI, designed to help users monitor nutrition, eating habits, physical activity, and overall health status. It integrates scoring, habit tracking, nutrition analytics, and educational content into a unified health monitoring system.
 
 -----------------------------------------------------
