@@ -5,6 +5,7 @@ from app.src.router.chat.api import router as chat_router
 from app.src.router.food.api import router as food_router
 from app.src.router.video.api import router as video_router
 from app.src.router.point.api import router as point_router
+from app.src.router.recipe.api import router as recipe_router
 from app.src.router.chat.api import ws_router as ws_chat_router
 from app.src.router.exercise.api import router as exercise_router
 from app.src.router.dashboard.api import router as dashboard_router
@@ -16,6 +17,7 @@ router.include_router(chat_router, prefix="/chat", tags=["Chat System"])
 router.include_router(video_router, prefix="/video", tags=["Video List"])
 router.include_router(point_router, prefix="/point", tags=["Leaderboard"])
 router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+router.include_router(recipe_router, prefix="/recipe", tags=["Recipe List"])
 router.include_router(ws_chat_router, prefix="/ws", tags=["Chat WebSocket"])
 router.include_router(user_router, prefix="/users", tags=["User Management"])
 router.include_router(food_router, prefix="/habit", tags=["Food & Nutrition"])
