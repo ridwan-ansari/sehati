@@ -38,14 +38,14 @@ async def create_sleep_record(
 async def list_sleep_records(
     limit: int = 20,
     offset: int = 0,
-    auth: dict = Depends(auth_service.require_access_token),
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
 
         records = await sleep_crud.get_by_user(
             session=session,
-            user_id=auth["id"],
+            user_id=authentication["id"],
             limit=limit,
             offset=offset
         )
