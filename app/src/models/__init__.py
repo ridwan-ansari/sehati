@@ -1,4 +1,5 @@
 from app.src.models.user import User
+from app.src.models.sleep import Sleep
 from app.src.models.recipe import Recipe
 from app.src.models.reminder import Reminder
 from app.src.models.merchandise import Merchandise
