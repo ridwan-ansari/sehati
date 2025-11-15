@@ -49,7 +49,7 @@ class CRUDUser:
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
     ) -> List[User]:
-        stmt = select(User).where(*filters, User.role.__eq__("user"))
+        stmt = select(User).where(*filters, User.role.__eq__("user")).order_by(User.created_at.desc())
         if keyword:
             stmt = stmt.where(User.fullname.ilike(f"%{keyword}%"))
         stmt = stmt.offset(offset).limit(limit)

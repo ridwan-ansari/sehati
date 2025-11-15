@@ -22,6 +22,7 @@ class CRUDUserNutrition:
         stmt = (
             select(UserNutrition)
             .where(UserNutrition.user_id == user_id)
+            .order_by(UserNutrition.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
