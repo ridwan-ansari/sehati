@@ -124,8 +124,8 @@ class CRUDFoodDiaryAnalysis:
     async def get_by_user(self, session: AsyncSession, user_id: str, limit: int = None, offset: int = None) -> List[FoodDiaryAnalysis]:
         result = await session.execute(
             select(FoodDiaryAnalysis)
-            .options(joinedload(FoodDiaryAnalysis.items))
             .where(FoodDiaryAnalysis.user_id == user_id)
+            .order_by(FoodDiaryAnalysis.created_at.desc())
             .limit(limit=limit)
             .offset(offset=offset)
         )
