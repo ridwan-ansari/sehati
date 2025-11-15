@@ -121,11 +121,13 @@ class CRUDFoodDiaryAnalysis:
         await session.refresh(record)
         return record
 
-    async def get_by_user(self, session: AsyncSession, user_id: str) -> List[FoodDiaryAnalysis]:
+    async def get_by_user(self, session: AsyncSession, user_id: str, limit: int = None, offset: int = None) -> List[FoodDiaryAnalysis]:
         result = await session.execute(
             select(FoodDiaryAnalysis)
             .options(joinedload(FoodDiaryAnalysis.items))
             .where(FoodDiaryAnalysis.user_id == user_id)
+            .limit(limit=limit)
+            .offset(offset=offset)
         )
         return result.scalars().all()
 

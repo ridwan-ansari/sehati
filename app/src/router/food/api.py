@@ -35,7 +35,7 @@ async def get_all_foods(
     limit: int | None = None,
     offset: int | None = None,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
         foods = await crud_food.get_all(session=session, name=name, limit=limit, offset=offset)
@@ -44,11 +44,10 @@ async def get_all_foods(
         response.data = foods
     return response.build()
 
-
 @router.get("/food/questions")
 async def get_food_questions(
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
         questions = await crud_habit_question.get_all(session=session)
@@ -57,12 +56,11 @@ async def get_food_questions(
         response.data = questions
     return response.build()
 
-
 @router.post("/food/answers")
 async def submit_food_habit_answers(
     user_answers: UserAnswer,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
         answers = [
@@ -82,10 +80,10 @@ async def submit_food_habit_answers(
 async def submit_food_diary(
     data: FoodDiarySchema,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
-        user_id = auth["id"]
+        user_id = authentication["id"]
         user = await crud_user.get_user_by_id(session=session, id=user_id)
         user_nutrition = await crud_nutrition.get_latest(session=session, user_id=user_id)
 
@@ -123,3 +121,15 @@ async def submit_food_diary(
         response.message = "Food diary submitted successfully."
     return response.build()
 
+@router.get("/food/diary/analysis")
+async def get_diary_analysis(
+    limit: int = 20,
+    offset: int = 0,
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token),
+):
+    with response_handler() as response:
+        response.status_code = 200
+        response.message = "Diary retrieved successfully."
+        response.data = await crud_diary_analysis.get_by_user(session=session, user_id=authentication["id"], limit=limit, offset=offset)
+    return response.build()
