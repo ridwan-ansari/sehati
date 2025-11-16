@@ -28,7 +28,7 @@ async def get_list(
     limit: Optional[int] = 20,
     offset: Optional[int] = 0,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
         users =  await crud_user.get_users(session=session, keyword=keyword, limit=limit, offset=offset)
@@ -41,7 +41,7 @@ async def get_list(
 async def upload_profile_picture(
     file: UploadFile,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
         ensure_dir("/var/sehati-media/avatars")
@@ -63,7 +63,7 @@ async def upload_profile_picture(
             f.write(raw)
 
         rel_path = f"avatars/{filename}"
-        user = await crud_user.get_user_by_id(session=session, id=auth["id"])
+        user = await crud_user.get_user_by_id(session=session, id=authentication["id"])
         user.picture = f"{settings.MEDIA_URL}/{rel_path}"
         await session.commit()
 
@@ -76,10 +76,10 @@ async def upload_profile_picture(
 
 @router.get("/profile")
 async def profile(
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
     session: AsyncSession = Depends(get_async_session)
 ):
-    user = await crud_user.get_user_by_id(session=session, id=auth["id"])
+    user = await crud_user.get_user_by_id(session=session, id=authentication["id"])
     wallet = await crud_wallet.get_by_user(session=session, user_id=user.id)
 
     with response_handler() as response:
@@ -97,7 +97,7 @@ async def profile(
 @router.get("/{id}")
 async def profile(
     id: int,
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
     session: AsyncSession = Depends(get_async_session)
 ):
     user = await crud_user.get_user_by_id(session=session, id=id)

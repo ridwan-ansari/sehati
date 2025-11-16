@@ -66,7 +66,7 @@ async def submit_food_habit_answers(
         answers = [
             FoodHabitAnswer(**{
                 **answer.model_dump(),
-                "user_id": auth.get("id"),
+                "user_id": authentication.get("id"),
             })
             for answer in user_answers.answers
         ]

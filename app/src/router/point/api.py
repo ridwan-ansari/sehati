@@ -13,7 +13,7 @@ crud_wallet = CRUDPointWallet()
 @router.get("/leaderboard")
 async def leaderboard(
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token),
+    authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
         wallets = await crud_wallet.get_all(session=session)

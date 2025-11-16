@@ -60,9 +60,9 @@ async def login(email: str = Form(...), password: str = Form(...), session: Asyn
     return response.build()
 
 @router.post("/refresh")
-async def login(auth: dict = Depends(auth_service.require_refresh_token), session: AsyncSession = Depends(get_async_session)):
+async def login(authentication: dict = Depends(auth_service.require_refresh_token), session: AsyncSession = Depends(get_async_session)):
     with response_handler() as response:
-        user = await CRUDUser().get_user_by_id(session=session, id=auth.get("id"))
+        user = await CRUDUser().get_user_by_id(session=session, id=authentication.get("id"))
         if not user:
             raise UnauthorizedException("Invalid or expired token")
         

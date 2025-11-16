@@ -92,7 +92,7 @@ async def get_messages(
     limit: int = 20,
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
         data = []
@@ -115,7 +115,7 @@ async def get_messages(
                     "id": message.id,
                     "message": message.message,
                     "created_at": message.created_at,
-                    "type": "sender" if message.sender_id == auth["id"] else "receiver"
+                    "type": "sender" if message.sender_id == authentication["id"] else "receiver"
                 }
                 data.append(item)
 
@@ -130,12 +130,12 @@ async def get_rooms(
     limit: int = 20,
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
         rooms = await crud_chat.get_user_rooms(
             session=session,
-            user_id=auth["id"],
+            user_id=authentication["id"],
             limit=limit,
             offset=offset
         )

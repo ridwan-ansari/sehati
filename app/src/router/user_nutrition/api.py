@@ -21,23 +21,23 @@ async def get_list(
         limit: int = None,
         offset: int = None,
         session: AsyncSession = Depends(get_async_session),
-        auth: dict = Depends(AuthService().require_access_token)
+        authentication: dict = Depends(AuthService().require_access_token)
     ):
     with response_handler() as response:
         response.status_code = 200
         response.message = "Get List User Successfully"
-        response.data = await crud_nutrition.get_list(session=session, user_id=auth.get("id"), limit=limit, offset=offset)
+        response.data = await crud_nutrition.get_list(session=session, user_id=authentication.get("id"), limit=limit, offset=offset)
     return response.build()
 
 @router.post("/")
 async def create(
         user_nutrition: UserNutrionBaseModel,
         session: AsyncSession = Depends(get_async_session),
-        auth: dict = Depends(AuthService().require_access_token)
+        authentication: dict = Depends(AuthService().require_access_token)
     ):
     with response_handler() as response:
         calculator = NutritionCalculator(session=session)
-        user = await CRUDUser().get_user_by_id(session=session, id=auth.get("id"))
+        user = await CRUDUser().get_user_by_id(session=session, id=authentication.get("id"))
 
         result = await calculator.evaluate(
             gender=user.gender, 
@@ -64,12 +64,12 @@ async def create(
 @router.get("/latest")
 async def get_latest_data(
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(AuthService().require_access_token)
+    authentication: dict = Depends(AuthService().require_access_token)
 ):
     with response_handler() as response:
         response.status_code = 200
         response.message = "Get Latest Data Successfully."
-        response.data = await crud_nutrition.get_latest(session=session, user_id=auth.get("id"))
+        response.data = await crud_nutrition.get_latest(session=session, user_id=authentication.get("id"))
     return response.build()
 
 @router.post("/calculator")
@@ -80,7 +80,7 @@ async def nutrition_calculator(
     height: float = Form(...),
     activity: str = Form(None),
     session: AsyncSession = Depends(get_async_session),
-    auth: dict = Depends(AuthService().require_access_token)
+    authentication: dict = Depends(AuthService().require_access_token)
 ):
     with response_handler() as response:
         calculator = NutritionCalculator(session=session)
