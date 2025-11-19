@@ -32,7 +32,7 @@ crud_habit_question = CRUDFoodHabitQuestion()
 @router.get("/food")
 async def get_all_foods(
     name: str | None = None,
-    limit: int | None = None,
+    limit: int | None = 20,
     offset: int | None = None,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
