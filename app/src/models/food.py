@@ -65,7 +65,7 @@ class FoodDiaryItem(Base, TimestampMixin):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     food_diary_analysis_id: Mapped[str] = mapped_column(ForeignKey("food_diary_analysis.id", ondelete="CASCADE"))
-    meal_type: Mapped[str] = mapped_column(Enum("breakfast", "lunch", "dinner", name="meal_type_enum"))
+    meal_type: Mapped[str] = mapped_column(Enum("breakfast", "lunch", "dinner", "morning_snack","afternoon_snack", name="meal_type_enum"))
     food_id: Mapped[str | None] = mapped_column(ForeignKey("foods.id", ondelete="SET NULL"))
     quantity: Mapped[int] = mapped_column(default=1)
 
