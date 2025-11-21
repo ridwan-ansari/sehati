@@ -3,217 +3,384 @@
 {% block content %}
 
 <style>
- body { background-color: #0d1117; }
+body { background-color: #0d1117; }
 
- .premium-card {
-  background-color: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.75rem;
-  overflow: hidden; 
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
-  transition: all 0.3s ease; 
- }
- .premium-card:hover {
-  border-color: var(--accent); 
-  box-shadow: 0 0 18px rgba(255, 152, 0, 0.4); 
-  transform: translateY(-2px); 
- }
+.premium-card {
+ background-color: #161b22;
+ border: 1px solid rgba(255, 255, 255, 0.08);
+ border-radius: 0.75rem;
+ overflow: hidden; 
+ box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
+ transition: all 0.3s ease; 
+}
+.premium-card:hover {
+ border-color: var(--accent); 
+ box-shadow: 0 0 18px rgba(255, 152, 0, 0.4); 
+ transform: translateY(-2px); 
+}
 
- .compact-card .card-header {
-  padding: 16px 24px; 
-  background-color: #21262d;
-  border-bottom: 1px solid #2d333b; 
- }
- .compact-card h3 {
-  margin: 0; 
- }
+.compact-card .card-header {
+ padding: 16px 24px; 
+ background-color: #21262d;
+ border-bottom: 1px solid #2d333b; 
+}
+.compact-card h3 {
+ margin: 0; 
+}
 
- .data-label { color: #9ca3af; font-size: 0.875rem; } 
- .data-value { color: #f9fafb; font-weight: 700; font-size: 1rem; } 
+.data-label { color: #9ca3af; font-size: 0.875rem; } 
+.data-value { color: #f9fafb; font-weight: 700; font-size: 1rem; } 
 
- .data-table-container {
-   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); 
-   border-radius: 0.75rem; 
-   overflow: hidden; 
- }
- .data-table {
-   table-layout: auto; 
-   width: 100%;
- }
- .data-table th,
- .data-table td {
-  padding: 14px 20px; 
-  text-align: left;
-  font-size: 0.875rem;
- }
- .data-table thead {
-  background-color: #2d333b; 
-  color: var(--accent);
- }
- 
- .data-table tbody tr {
-  transition: background-color 0.2s ease;
- }
- .data-table tbody tr:hover {
-  background-color: rgba(45, 51, 59, 0.5); 
- }
- .data-table tbody td {
-  border-bottom: 1px solid #2d333b; 
- }
- .data-table tbody tr:last-child td {
-  border-bottom: none; 
- }
+.data-table-container {
+ box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); 
+ border-radius: 0.75rem; 
+ overflow: hidden; 
+ margin-bottom: 1.5rem; /* Memberi jarak ke card di bawahnya */
+}
+.data-table {
+ table-layout: auto; 
+ width: 100%;
+}
+.data-table th,
+.data-table td {
+ padding: 14px 20px; 
+ text-align: left;
+ font-size: 0.875rem;
+}
+.data-table thead {
+ background-color: #2d333b; 
+ color: var(--accent);
+}
 
- .status-badge {
-  padding: 4px 10px; 
-  border-radius: 9999px; 
-  font-weight: 600;
-  font-size: 0.75rem;
-  background-color: #3b424d; 
-  color: #c1c8d0;
-  display: inline-block;
- }
+.data-table tbody tr {
+ transition: background-color 0.2s ease;
+}
+.data-table tbody tr:hover {
+ background-color: rgba(45, 51, 59, 0.5); 
+}
+.data-table tbody td {
+ border-bottom: 1px solid #2d333b; 
+}
+.data-table tbody tr:last-child td {
+ border-bottom: none; 
+}
 
- .pagination-container {
-  background-color: #21262d;
-  padding: 16px 24px;
-  border-top: 1px solid #2d333b;
- }
- .pagination-btn {
-  border: 1px solid #2d333b;
-  background: #21262d;
-  color: #d1d5db;
-  padding: 8px 16px;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: 0.2s;
- }
+.status-badge {
+ padding: 4px 10px; 
+ border-radius: 9999px; 
+ font-weight: 600;
+ font-size: 0.75rem;
+ background-color: #3b424d; 
+ color: #c1c8d0;
+ display: inline-block;
+}
 
- .pagination-btn:hover:not(.active-page):not(.opacity-50) { 
-  background: var(--accent); 
-  color: #0d1117; 
-  border-color: var(--accent);
- }
- .active-page { 
-  background: var(--accent); 
-  color: #0d1117; 
-  font-weight: 700; 
-  border-color: var(--accent);
- }
+.pagination-container {
+ background-color: #21262d;
+ padding: 16px 24px;
+ border-top: 1px solid #2d333b;
+}
+.pagination-btn {
+ border: 1px solid #2d333b;
+ background: #21262d;
+ color: #d1d5db;
+ padding: 8px 16px;
+ border-radius: 0.5rem;
+ font-weight: 500;
+ transition: 0.2s;
+}
+
+.pagination-btn:hover:not(.active-page):not(.opacity-50) { 
+ background: var(--accent); 
+ color: #0d1117; 
+ border-color: var(--accent);
+}
+.active-page { 
+ background: var(--accent); 
+ color: #0d1117; 
+ font-weight: 700; 
+ border-color: var(--accent);
+}
 </style>
 
 <div class="flex items-center mb-8 border-b border-gray-700 pb-4">
- <a href="/dashboard/users"
-  class="text-gray-400 hover:text-[var(--accent)] p-3 rounded-xl bg-[#21262d] hover:bg-gray-700 mr-5 transition duration-200 ease-in-out">
-  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-  </svg>
- </a>
- <h2 class="text-4xl font-extrabold text-white tracking-tight">
-  <span class="text-[var(--accent)]">USER DETAIL</span>
- </h2>
+<a href="/dashboard/users"
+ class="text-gray-400 hover:text-[var(--accent)] p-3 rounded-xl bg-[#21262d] hover:bg-gray-700 mr-5 transition duration-200 ease-in-out">
+ <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+ <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+ </svg>
+</a>
+<h2 class="text-4xl font-extrabold text-white tracking-tight">
+ <span class="text-[var(--accent)]">USER DETAIL</span>
+</h2>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
- <div class="premium-card">
-  <div class="card-header border-b border-gray-700 bg-[#21262d]">
-   <h3 class="text-xl font-bold text-[var(--accent)] py-3 px-6">
-    PROFILE INFORMATION
-   </h3>
-  </div>
-  
-  <div class="p-6 space-y-4">
-   {% set profile_fields = [
-     ('Fullname', user.fullname),
-     ('Email', user.email),
-     ('Nickname', user.nickname),
-     ('Phone', user.phone_number),
-     ('Gender', user.gender),
-     ('Date of Birth', user.date_of_birth)
-   ] %}
-
-   {% for label, value in profile_fields %}
-   <div class="flex justify-between items-center py-2 border-b border-gray-800 last:border-b-0">
-    <span class="data-label">{{ label }}</span>
-    <span class="data-value">{{ value or 'N/A' }}</span>
-   </div>
-   {% endfor %}
-  </div>
+<div class="premium-card">
+ <div class="card-header border-b border-gray-700 bg-[#21262d]">
+ <h3 class="text-xl font-bold text-[var(--accent)] py-3 px-6">
+  PROFILE INFORMATION
+ </h3>
  </div>
+ 
+ <div class="p-6 space-y-4">
+ {% set profile_fields = [
+  ('Fullname', user.fullname),
+  ('Email', user.email),
+  ('Nickname', user.nickname),
+  ('Phone', user.phone_number),
+  ('Gender', user.gender),
+  ('Date of Birth', user.date_of_birth)
+ ] %}
 
- <div class="lg:col-span-2 premium-card compact-card">
-
-  <div class="card-header">
-   <h3 class="text-xl font-bold text-white">
-    NUTRITION HISTORY
-   </h3>
-  </div>
-
-  <div class="overflow-x-auto data-table-container">
-   <table class="min-w-full divide-y divide-gray-700 data-table">
-    <thead class="text-gray-900">
-     <tr>
-      <th class="text-xs font-bold uppercase tracking-wider">Status</th>
-      <th class="text-xs font-bold uppercase tracking-wider">BMI</th>
-      <th class="text-xs font-bold uppercase tracking-wider">Height (cm)</th>
-      <th class="text-xs font-bold uppercase tracking-wider">Weight (kg)</th>
-      <th class="text-xs font-bold uppercase tracking-wider">Ideal (kg)</th>
-      <th class="text-xs font-bold uppercase tracking-wider">Date</th> 
-     </tr>
-    </thead>
-
-    <tbody class="divide-y divide-gray-800 text-gray-300">
-     {% if user_nutritions %}
-      {% for n in user_nutritions %}
-      <tr>
-       <td><span class="status-badge">{{ n.status }}</span></td>
-       <td class="font-mono">{{ n.bmi }}</td>
-       <td class="font-mono">{{ n.height_cm }}</td>
-       <td class="font-mono text-white">{{ n.weight_kg }}</td> 
-       <td class="font-mono">{{ n.ideal_weight_kg }}</td>
-       <td class="text-gray-400 text-sm">{{ n.created_at | default('N/A') }}</td> 
-      </tr>
-      {% endfor %}
-     {% else %}
-      <tr><td colspan="6" class="py-10 text-center text-gray-500">No nutrition data available.</td></tr>
-     {% endif %}
-    </tbody>
-   </table>
-  </div>
-
-  <div class="pagination-container flex justify-between items-center">
-   <div class="text-sm text-gray-400">
-    Showing page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
-   </div>
-
-   <div class="flex space-x-2">
-    {% if page > 1 %}
-    <a href="?page={{ page - 1 }}&limit={{ limit }}"
-     class="pagination-btn">Previous</a>
-    {% else %}
-    <span class="pagination-btn opacity-50 cursor-not-allowed">Previous</span>
-    {% endif %}
-
-    {% for p in range(1, total_pages + 1) %}
-     {% if p == page %}
-     <span class="pagination-btn active-page">{{ p }}</span>
-     {% else %}
-     <a href="?page={{ p }}&limit={{ limit }}"
-      class="pagination-btn">{{ p }}</a>
-     {% endif %}
-    {% endfor %}
-
-    {% if page < total_pages %}
-    <a href="?page={{ page + 1 }}&limit={{ limit }}"
-     class="pagination-btn">Next</a>
-    {% else %}
-    <span class="pagination-btn opacity-50 cursor-not-allowed">Next</span>
-    {% endif %}
-   </div>
-  </div>
-
+ {% for label, value in profile_fields %}
+ <div class="flex justify-between items-center py-2 border-b border-gray-800 last:border-b-0">
+  <span class="data-label">{{ label }}</span>
+  <span class="data-value">{{ value or 'N/A' }}</span>
+ </div>
+ {% endfor %}
  </div>
 </div>
+
+<div class="lg:col-span-2 premium-card compact-card data-table-container">
+
+ <div class="card-header">
+ <h3 class="text-xl font-bold text-white">
+  NUTRITION HISTORY
+ </h3>
+ </div>
+
+ <div class="overflow-x-auto">
+ <table class="min-w-full divide-y divide-gray-700 data-table">
+  <thead class="text-gray-900">
+  <tr>
+   <th class="text-xs font-bold uppercase tracking-wider">Status</th>
+   <th class="text-xs font-bold uppercase tracking-wider">BMI</th>
+   <th class="text-xs font-bold uppercase tracking-wider">Height (cm)</th>
+   <th class="text-xs font-bold uppercase tracking-wider">Weight (kg)</th>
+   <th class="text-xs font-bold uppercase tracking-wider">Ideal (kg)</th>
+   <th class="text-xs font-bold uppercase tracking-wider">Date</th> 
+  </tr>
+  </thead>
+
+  <tbody class="divide-y divide-gray-800 text-gray-300">
+  {% if user_nutritions %}
+   {% for n in user_nutritions %}
+   <tr>
+   <td><span class="status-badge">{{ n.status }}</span></td>
+   <td class="font-mono">{{ n.bmi }}</td>
+   <td class="font-mono">{{ n.height_cm }}</td>
+   <td class="font-mono text-white">{{ n.weight_kg }}</td> 
+   <td class="font-mono">{{ n.ideal_weight_kg }}</td>
+   <td class="text-gray-400 text-sm">{{ n.created_at | default('N/A') }}</td> 
+   </tr>
+   {% endfor %}
+  {% else %}
+   <tr><td colspan="6" class="py-10 text-center text-gray-500">No nutrition data available.</td></tr>
+  {% endif %}
+  </tbody>
+ </table>
+ </div>
+
+ <div class="pagination-container flex justify-between items-center">
+ <div class="text-sm text-gray-400">
+  Showing page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+ </div>
+
+ <div class="flex space-x-2">
+  {% if page > 1 %}
+  <a href="?page={{ page - 1 }}&limit={{ limit }}"
+  class="pagination-btn">Previous</a>
+  {% else %}
+  <span class="pagination-btn opacity-50 cursor-not-allowed">Previous</span>
+  {% endif %}
+
+  {% for p in range(1, total_pages + 1) %}
+  {% if p == page %}
+  <span class="pagination-btn active-page">{{ p }}</span>
+  {% else %}
+  <a href="?page={{ p }}&limit={{ limit }}"
+   class="pagination-btn">{{ p }}</a>
+  {% endif %}
+  {% endfor %}
+
+  {% if page < total_pages %}
+  <a href="?page={{ page + 1 }}&limit={{ limit }}"
+  class="pagination-btn">Next</a>
+  {% else %}
+  <span class="pagination-btn opacity-50 cursor-not-allowed">Next</span>
+  {% endif %}
+ </div>
+ </div>
+
+</div>
+</div>
+
+<div class="grid grid-cols-1 gap-8 mt-8">
+  <div class="lg:col-span-3 premium-card compact-card">
+    <div class="card-header">
+      <h3 class="text-xl font-bold text-white">
+        TREND DATA VISUALIZATION
+      </h3>
+    </div>
+
+    <div class="p-6 border-b border-gray-800">
+      <h3 class="text-base font-semibold text-gray-300 mb-3">📈 BMI Trend Over Time</h3>
+      <canvas id="bmiChart" height="120"></canvas> 
+    </div>
+
+    <div class="p-6">
+      <h3 class="text-base font-semibold text-gray-300 mb-3">⚖️ Weight vs Ideal Weight (kg)</h3>
+      <canvas id="weightIdealChart" height="120"></canvas> 
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// CHART 1: BMI Trend (dengan garis kategori BMI)
+(() => {
+  // Data Extraction (Anti-Error with default filter)
+  const labels = {{ all_nutritions | map(attribute="created_at") | map("default", "N/A") | list | tojson }};
+  const values = {{ all_nutritions | map(attribute="bmi") | map("default", 0) | list | tojson }};
+
+  // Plugin untuk menambahkan garis kategori BMI
+  const bmiLinesPlugin = {
+    id: 'bmiLinesPlugin',
+    beforeDraw: (chart) => {
+      const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+      ctx.save();
+
+      // Zona BMI Ideal (18.5 - 24.9)
+      const idealTop = y.getPixelForValue(24.9);
+      const idealBottom = y.getPixelForValue(18.5);
+      const idealHeight = idealBottom - idealTop;
+
+      ctx.fillStyle = 'rgba(60, 179, 113, 0.1)'; 
+      ctx.fillRect(left, idealTop, right - left, idealHeight);
+
+      // Garis Batas Kategori
+      ctx.strokeStyle = '#3CB371'; 
+      ctx.lineWidth = 1.5;
+
+      // Garis 24.9 (Overweight Boundary)
+      ctx.beginPath();
+      ctx.moveTo(left, idealTop);
+      ctx.lineTo(right, idealTop);
+      ctx.stroke();
+
+      // Garis 18.5 (Underweight Boundary)
+      ctx.beginPath();
+      ctx.moveTo(left, idealBottom);
+      ctx.lineTo(right, idealBottom);
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#A9A9A9';
+      ctx.font = '10px sans-serif';
+      ctx.fillText('Ideal BMI (24.9)', right - 80, idealTop - 5);
+      ctx.fillText('Ideal BMI (18.5)', right - 80, idealBottom + 15);
+
+      ctx.restore();
+    }
+  };
+
+
+  new Chart(document.getElementById("bmiChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "BMI Over Time",
+        data: values,
+        borderColor: "#fbbf24",
+        backgroundColor: "rgba(251,191,36,0.15)",
+        borderWidth: 2,
+        tension: 0.4, 
+        fill: true,
+        pointBackgroundColor: "#fbbf24", 
+        pointRadius: 4 
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false, 
+      scales: {
+        x: { 
+          grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
+          ticks: { color: "#ddd" } 
+        },
+        y: { 
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: "#ddd" } 
+        }
+      },
+      plugins: { 
+        legend: { labels: { color: "#fff" } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+    },
+    plugins: [bmiLinesPlugin]
+  });
+})();
+</script>
+
+<script>
+// CHART 2: Weight vs Ideal Weight
+(() => {
+  // Data Extraction (Anti-Error with default filter)
+  const labels = {{ all_nutritions | map(attribute="created_at") | map("default", "N/A") | list | tojson }};
+  const weightData = {{ all_nutritions | map(attribute="weight_kg") | map("default", 0) | list | tojson }};
+  const idealData = {{ all_nutritions | map(attribute="ideal_weight_kg") | map("default", 0) | list | tojson }};
+
+  new Chart(document.getElementById("weightIdealChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Current Weight (kg)",
+          data: weightData, 
+          borderColor: "#ff4d4d",
+          backgroundColor: "rgba(255,77,77,0.1)", 
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: "#ff4d4d",
+          pointRadius: 4
+        },
+        {
+          label: "Ideal Weight (kg)",
+          data: idealData,
+          borderColor: "#3b82f6",
+          backgroundColor: "rgba(59,130,246,0.1)",
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: "#3b82f6",
+          pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { 
+          grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
+          ticks: { color: "#ddd" } 
+        },
+        y: { 
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: "#ddd" } 
+        }
+      },
+      plugins: { legend: { labels: { color: "#fff" } } }
+    }
+  });
+})();
+</script>
 
 {% endblock %}
