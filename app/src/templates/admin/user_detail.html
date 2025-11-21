@@ -11,61 +11,72 @@
     background-color: #161b22;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.75rem;
-    overflow: hidden; /* Added to contain inner elements like the header/table */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Added subtle shadow */
-    transition: all 0.3s ease; /* Adjusted transition for smoother hover */
+    overflow: hidden; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Shadow sedikit lebih jelas */
+    transition: all 0.3s ease; 
   }
   .premium-card:hover {
-    border-color: var(--accent); /* Keep accent color */
-    box-shadow: 0 0 15px rgba(255, 152, 0, 0.3); /* Slightly stronger shadow on hover */
-    transform: translateY(-2px); /* Subtle lift on hover */
+    border-color: var(--accent); 
+    box-shadow: 0 0 18px rgba(255, 152, 0, 0.4); 
+    transform: translateY(-2px); 
   }
 
   /* Compact Card for Nutrition History */
   .compact-card .card-header {
-    padding: 14px 24px; /* Slightly larger header padding */
+    padding: 14px 24px; 
     background-color: #21262d;
-    border-bottom: 1px solid #2d333b; /* More distinct header separation */
+    border-bottom: 1px solid #2d333b; 
   }
   .compact-card h3 {
-    margin: 0; /* Ensure no unwanted margin */
+    margin: 0; 
   }
 
   /* Data Display Styles */
-  .data-label { color: #9ca3af; font-size: 0.875rem; } /* Slightly larger label text */
-  .data-value { color: #f9fafb; font-weight: 700; font-size: 1rem; } /* Stronger value emphasis */
+  .data-label { color: #9ca3af; font-size: 0.875rem; } 
+  .data-value { color: #f9fafb; font-weight: 700; font-size: 1rem; } 
 
   /* Table Styles */
+  .data-table-container {
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow for table */
+      margin-bottom: 1rem;
+  }
+  .data-table {
+      table-layout: fixed; /* Mencegah tumpang tindih dengan memaksa lebar kolom */
+  }
   .data-table th,
   .data-table td {
-    padding: 12px 24px; /* Increased padding for table cells */
+    padding: 12px 18px; /* Padding sedikit dikurangi agar kolom muat */
     text-align: left;
     font-size: 0.875rem;
   }
   .data-table thead {
-    background-color: #21262d; /* Header background for contrast */
+    background-color: #2d333b; /* Header background lebih gelap */
     color: var(--accent);
   }
+  .data-table th:nth-child(1) { width: 15%; } /* Status */
+  .data-table th:nth-child(2) { width: 10%; } /* BMI */
+  .data-table th:nth-child(3) { width: 15%; } /* Height */
+  .data-table th:nth-child(4) { width: 15%; } /* Weight */
+  .data-table th:nth-child(5) { width: 15%; } /* Ideal */
+  .data-table th:nth-child(6) { width: 30%; } /* Date - Kolom terpanjang */
+  
   .data-table tbody tr {
     transition: background-color 0.2s ease;
   }
   .data-table tbody tr:hover {
-    background-color: rgba(45, 51, 59, 0.5); /* Clearer hover effect */
+    background-color: rgba(45, 51, 59, 0.5); 
   }
   .data-table tbody td {
-    border-bottom: 1px solid #2d333b; /* Cleaner separator color */
-  }
-  .data-table tbody tr:last-child td {
-    border-bottom: none; /* Remove border from last row */
+    border-bottom: 1px solid #2d333b; 
   }
 
   /* Status Badge */
   .status-badge {
-    padding: 4px 12px;
-    border-radius: 1rem;
+    padding: 4px 10px; /* Padding lebih kecil */
+    border-radius: 9999px; /* Penuh bulat */
     font-weight: 600;
     font-size: 0.75rem;
-    background-color: #3b424d; /* Slightly different gray for better visibility */
+    background-color: #3b424d; 
     color: #c1c8d0;
     display: inline-block;
   }
@@ -88,12 +99,12 @@
 
   .pagination-btn:hover:not(.active-page):not(.opacity-50) { 
     background: var(--accent); 
-    color: #0d1117; /* Darker text on accent hover */
+    color: #0d1117; 
     border-color: var(--accent);
   }
   .active-page { 
     background: var(--accent); 
-    color: #0d1117; /* Dark text on accent background */
+    color: #0d1117; 
     font-weight: 700; 
     border-color: var(--accent);
   }
@@ -152,7 +163,7 @@
       <canvas id="bmiChart" height="90"></canvas> 
     </div>
 
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto data-table-container">
       <table class="min-w-full divide-y divide-gray-700 data-table">
         <thead class="text-gray-900">
           <tr>
@@ -161,7 +172,8 @@
             <th class="text-xs font-bold uppercase tracking-wider">Height (cm)</th>
             <th class="text-xs font-bold uppercase tracking-wider">Weight (kg)</th>
             <th class="text-xs font-bold uppercase tracking-wider">Ideal (kg)</th>
-            <th class="text-xs font-bold uppercase tracking-wider">Date</th> </tr>
+            <th class="text-xs font-bold uppercase tracking-wider">Date</th> 
+          </tr>
         </thead>
 
         <tbody class="divide-y divide-gray-800 text-gray-300">
@@ -170,9 +182,11 @@
             <tr>
               <td><span class="status-badge">{{ n.status }}</span></td>
               <td class="font-mono">{{ n.bmi }}</td>
-              <td>{{ n.height_cm }}</td>
-              <td class="font-mono text-white">{{ n.weight_kg }}</td> <td>{{ n.ideal_weight_kg }}</td>
-              <td class="text-gray-400 text-sm">{{ n.created_at | default('N/A') }}</td> </tr>
+              <td class="font-mono">{{ n.height_cm }}</td>
+              <td class="font-mono text-white">{{ n.weight_kg }}</td> 
+              <td class="font-mono">{{ n.ideal_weight_kg }}</td>
+              <td class="text-gray-400 text-sm">{{ n.created_at | default('N/A') }}</td> 
+            </tr>
             {% endfor %}
           {% else %}
             <tr><td colspan="6" class="py-10 text-center text-gray-500">No nutrition data available.</td></tr>
@@ -213,7 +227,7 @@
     </div>
 
     <div class="p-6 border-t border-gray-800">
-      <h3 class="text-base font-semibold text-gray-300 mb-3">⚖️ Weight vs Ideal Weight</h3>
+      <h3 class="text-base font-semibold text-gray-300 mb-3">⚖️ Weight vs Ideal Weight (kg)</h3>
       <canvas id="bmiIdealChart" height="100"></canvas> 
     </div>
 
@@ -227,6 +241,48 @@
   const labels = {{ all_nutritions | map(attribute="created_at") | list | tojson }};
   const values = {{ all_nutritions | map(attribute="bmi") | list | tojson }};
 
+  // Plugin untuk menambahkan garis kategori BMI
+  const bmiLinesPlugin = {
+    id: 'bmiLinesPlugin',
+    beforeDraw: (chart) => {
+      const { ctx, chartArea: { top, bottom, left, right, height }, scales: { y } } = chart;
+      ctx.save();
+
+      // Zona BMI Ideal (18.5 - 24.9)
+      const idealTop = y.getPixelForValue(24.9);
+      const idealBottom = y.getPixelForValue(18.5);
+      const idealHeight = idealBottom - idealTop;
+
+      ctx.fillStyle = 'rgba(60, 179, 113, 0.1)'; /* Medium Sea Green for ideal zone */
+      ctx.fillRect(left, idealTop, right - left, idealHeight);
+
+      // Garis Batas Kategori
+      ctx.strokeStyle = '#3CB371'; // Hijau untuk garis ideal
+      ctx.lineWidth = 1.5;
+
+      // Garis 24.9 (Overweight Boundary)
+      ctx.beginPath();
+      ctx.moveTo(left, idealTop);
+      ctx.lineTo(right, idealTop);
+      ctx.stroke();
+
+      // Garis 18.5 (Underweight Boundary)
+      ctx.beginPath();
+      ctx.moveTo(left, idealBottom);
+      ctx.lineTo(right, idealBottom);
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#A9A9A9';
+      ctx.font = '10px sans-serif';
+      ctx.fillText('Ideal BMI (24.9)', right - 80, idealTop - 5);
+      ctx.fillText('Ideal BMI (18.5)', right - 80, idealBottom + 15);
+
+      ctx.restore();
+    }
+  };
+
+
   new Chart(document.getElementById("bmiChart"), {
     type: "line",
     data: {
@@ -237,18 +293,18 @@
         borderColor: "#fbbf24",
         backgroundColor: "rgba(251,191,36,0.15)",
         borderWidth: 2,
-        tension: 0.4, /* Adjusted tension for slightly smoother curve */
+        tension: 0.4, 
         fill: true,
-        pointBackgroundColor: "#fbbf24", /* Added point color */
-        pointRadius: 4 /* Added point radius */
+        pointBackgroundColor: "#fbbf24", 
+        pointRadius: 4 
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false, /* Allows finer control over height */
+      maintainAspectRatio: false, 
       scales: {
         x: { 
-          grid: { color: 'rgba(255, 255, 255, 0.05)' }, /* Subtle grid lines */
+          grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
           ticks: { color: "#ddd" } 
         },
         y: { 
@@ -256,8 +312,12 @@
           ticks: { color: "#ddd" } 
         }
       },
-      plugins: { legend: { labels: { color: "#fff" } } }
-    }
+      plugins: { 
+        legend: { labels: { color: "#fff" } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+    },
+    plugins: [bmiLinesPlugin]
   });
 })();
 </script>
@@ -265,7 +325,7 @@
 <script>
 (() => {
   const labels = {{ all_nutritions | map(attribute="created_at") | list | tojson }};
-  const bmiData = {{ all_nutritions | map(attribute="bmi") | list | tojson }};
+  const weightData = {{ all_nutritions | map(attribute="weight_kg") | list | tojson }};
   const idealData = {{ all_nutritions | map(attribute="ideal_weight_kg") | list | tojson }};
 
   new Chart(document.getElementById("bmiIdealChart"), {
@@ -274,10 +334,10 @@
       labels,
       datasets: [
         {
-          label: "BMI",
-          data: bmiData,
+          label: "Current Weight (kg)",
+          data: weightData, // Data Berat Badan saat ini
           borderColor: "#ff4d4d",
-          backgroundColor: "rgba(255,77,77,0.1)", /* Lighter fill for distinction */
+          backgroundColor: "rgba(255,77,77,0.1)", 
           borderWidth: 2,
           tension: 0.4,
           fill: true,
@@ -285,7 +345,7 @@
           pointRadius: 4
         },
         {
-          label: "Ideal Weight",
+          label: "Ideal Weight (kg)",
           data: idealData,
           borderColor: "#3b82f6",
           backgroundColor: "rgba(59,130,246,0.1)",
