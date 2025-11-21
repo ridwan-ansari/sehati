@@ -111,7 +111,7 @@ async def user_detail_page(
         ordering=ordering
     )
 
-    all_nutritions_raw = await CRUDUserNutrition().get_all_by_user(session, user_id)
+    all_nutritions_raw = await crud_nutrition.get_list(session, user_id)
 
     all_nutritions = [
         {
