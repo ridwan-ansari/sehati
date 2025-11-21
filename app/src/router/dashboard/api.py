@@ -79,7 +79,7 @@ async def user_detail_page(
     request: Request,
     user_id: str,
     page: int = 1,
-    limit: int = 10,
+    limit: int = 5,
     sort: str = "created_at",
     order: str = "desc",
     auth=Depends(require_admin_cookie),

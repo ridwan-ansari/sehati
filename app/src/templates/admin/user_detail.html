@@ -3,178 +3,166 @@
 {% block content %}
 
 <style>
-  body {
-    background-color: #0d1117;
-  }
+  body { background-color: #0d1117; }
+
   .premium-card {
     background-color: #161b22;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.75rem;
-    transition: all 0.25s ease-in-out;
+    transition: all 0.25s ease;
   }
   .premium-card:hover {
     border-color: var(--accent);
-    box-shadow: 0 0 12px rgba(255, 152, 0, 0.2);
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.25);
   }
-  .data-label {
-    color: #9ca3af;
+
+  .compact-card h3 {
+    padding: 10px 16px !important;
   }
-  .data-value {
-    color: #f9fafb;
+
+  .compact-row td,
+  .compact-row th {
+    padding: 8px 14px !important;
   }
+
+  .data-label { color: #9ca3af; }
+  .data-value { color: #f9fafb; }
+
   .status-badge {
     padding: 4px 10px;
     border-radius: 9999px;
     font-weight: 600;
     font-size: 0.75rem;
-    letter-spacing: 0.05em;
   }
-  .table-header {
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-  }
+
   .pagination-btn {
     border: 1px solid #2d333b;
-    background-color: #21262d;
+    background: #21262d;
     color: #d1d5db;
-    transition: all 0.2s ease-in-out;
+    transition: 0.2s;
   }
-  .pagination-btn:hover {
-    background-color: var(--accent);
-    color: #fff;
-  }
-  .active-page {
-    background-color: var(--accent);
-    color: #fff;
-    font-weight: 700;
-  }
+
+  .pagination-btn:hover { background: var(--accent); color: #fff; }
+  .active-page { background: var(--accent); color: #fff; font-weight: 700; }
 </style>
 
-<div class="flex items-center mb-10 border-b border-gray-700 pb-4">
+<div class="flex items-center mb-6 border-b border-gray-700 pb-3">
   <a href="/dashboard/users"
-     class="text-gray-400 hover:text-[var(--accent)] transition mr-4 p-2 rounded-lg bg-[#21262d] hover:bg-gray-700">
-    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none"
-         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round"
-            d="M15.75 19.5 8.25 12l7.5-7.5" />
+     class="text-gray-400 hover:text-[var(--accent)] p-2 rounded-lg bg-[#21262d] hover:bg-gray-700 mr-4">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
     </svg>
   </a>
-  <h2 class="text-4xl font-extrabold text-white tracking-tight">
+  <h2 class="text-3xl font-extrabold text-white tracking-tight">
     <span class="text-[var(--accent)]">USER DETAIL</span>
   </h2>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-  <!-- Profile Section -->
-  <div class="premium-card p-8 space-y-7">
-    <h3 class="text-2xl font-bold text-[var(--accent)] border-b border-gray-700 pb-4">
+  <!-- Profile Card -->
+  <div class="premium-card p-6 space-y-5">
+    <h3 class="text-xl font-bold text-[var(--accent)] border-b border-gray-700 pb-2">
       PROFILE INFORMATION
     </h3>
 
-    <div class="space-y-5">
-      {% set profile_fields = [
-          ('Fullname', user.fullname),
-          ('Email', user.email),
-          ('Nickname', user.nickname),
-          ('Phone', user.phone_number),
-          ('Gender', user.gender),
-          ('Date of Birth', user.date_of_birth)
-      ] %}
-      {% for label, value in profile_fields %}
-      <div class="flex justify-between items-center pb-2 border-b border-gray-800 last:border-b-0">
-        <span class="data-label text-sm font-medium">{{ label }}</span>
-        <span class="data-value font-semibold text-base">{{ value or 'N/A' }}</span>
-      </div>
-      {% endfor %}
+    {% set profile_fields = [
+        ('Fullname', user.fullname),
+        ('Email', user.email),
+        ('Nickname', user.nickname),
+        ('Phone', user.phone_number),
+        ('Gender', user.gender),
+        ('Date of Birth', user.date_of_birth)
+    ] %}
+
+    {% for label, value in profile_fields %}
+    <div class="flex justify-between items-center pb-2 border-b border-gray-800 last:border-b-0">
+      <span class="data-label text-sm font-medium">{{ label }}</span>
+      <span class="data-value font-semibold text-base">{{ value or 'N/A' }}</span>
     </div>
+    {% endfor %}
   </div>
 
-  <!-- Nutrition Section -->
-  <div class="lg:col-span-2 premium-card overflow-hidden">
-    <h3 class="text-2xl font-bold text-white p-6 border-b border-gray-700 bg-[#21262d]">
+  <!-- Nutrition History -->
+  <div class="lg:col-span-2 premium-card compact-card overflow-hidden">
+
+    <h3 class="text-xl font-bold text-white border-b border-gray-700 bg-[#21262d] px-4 py-3">
       NUTRITION HISTORY
     </h3>
 
-    <!-- BMI Chart -->
-    <div class="p-6">
-      <canvas id="bmiChart" height="80"></canvas>
+    <!-- CHART 1: BMI TREND -->
+    <div class="px-4 py-3">
+      <h3 class="text-sm font-bold text-gray-300 mb-2">BMI Trend</h3>
+      <canvas id="bmiChart" height="70"></canvas>
     </div>
 
+    <!-- TABLE -->
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-700">
-        <thead class="table-header text-left text-gray-900">
+        <thead class="text-gray-900 table-header compact-row">
           <tr>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">
-              <a href="?page=1&limit={{ limit }}&sort=status&order={{ 'asc' if order=='desc' else 'desc' }}">Status</a>
-            </th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">
-              <a href="?page=1&limit={{ limit }}&sort=bmi&order={{ 'asc' if order=='desc' else 'desc' }}">BMI</a>
-            </th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">
-              <a href="?page=1&limit={{ limit }}&sort=height&order={{ 'asc' if order=='desc' else 'desc' }}">Height (cm)</a>
-            </th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">
-              <a href="?page=1&limit={{ limit }}&sort=weight&order={{ 'asc' if order=='desc' else 'desc' }}">Weight (kg)</a>
-            </th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider">
-              <a href="?page=1&limit={{ limit }}&sort=ideal&order={{ 'asc' if order=='desc' else 'desc' }}">Ideal (kg)</a>
-            </th>
+            <th class="text-xs font-bold uppercase tracking-wider">Status</th>
+            <th class="text-xs font-bold uppercase tracking-wider">BMI</th>
+            <th class="text-xs font-bold uppercase tracking-wider">Height (cm)</th>
+            <th class="text-xs font-bold uppercase tracking-wider">Weight (kg)</th>
+            <th class="text-xs font-bold uppercase tracking-wider">Ideal (kg)</th>
           </tr>
         </thead>
 
         <tbody class="divide-y divide-gray-800 text-gray-300">
           {% if user_nutritions %}
             {% for n in user_nutritions %}
-            <tr class="hover:bg-gray-800/70 transition">
-              <td class="px-6 py-4 text-sm">
-                <span class="status-badge bg-gray-700 text-gray-300">{{ n.status or 'N/A' }}</span>
-              </td>
-              <td class="px-6 py-4 text-sm font-mono">{{ n.bmi or 'N/A' }}</td>
-              <td class="px-6 py-4 text-sm">{{ n.height_cm or 'N/A' }}</td>
-              <td class="px-6 py-4 text-sm font-mono">{{ n.weight_kg or 'N/A' }}</td>
-              <td class="px-6 py-4 text-sm">{{ n.ideal_weight_kg or 'N/A' }}</td>
+            <tr class="hover:bg-gray-800/50 compact-row">
+              <td><span class="status-badge bg-gray-700 text-gray-300">{{ n.status }}</span></td>
+              <td class="font-mono">{{ n.bmi }}</td>
+              <td>{{ n.height_cm }}</td>
+              <td class="font-mono">{{ n.weight_kg }}</td>
+              <td>{{ n.ideal_weight_kg }}</td>
             </tr>
             {% endfor %}
           {% else %}
-            <tr>
-              <td colspan="5" class="px-6 py-10 text-center text-gray-500 tracking-wider">
-                No nutrition data available.
-              </td>
-            </tr>
+            <tr><td colspan="5" class="py-8 text-center text-gray-500">No nutrition data available.</td></tr>
           {% endif %}
         </tbody>
       </table>
     </div>
 
-    <div class="px-6 py-4 bg-[#21262d] flex justify-between items-center border-t border-gray-700">
+    <!-- Pagination -->
+    <div class="px-4 py-3 bg-[#21262d] flex justify-between items-center border-t border-gray-700">
       <div class="text-sm text-gray-400">
         Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
       </div>
 
       <div class="flex space-x-2">
         {% if page > 1 %}
-        <a href="?page={{ page - 1 }}&limit={{ limit }}&sort={{ sort }}&order={{ order }}"
-           class="pagination-btn px-3 py-1 text-sm rounded-lg">Previous</a>
+        <a href="?page={{ page - 1 }}&limit={{ limit }}"
+           class="pagination-btn px-3 py-1 rounded-lg">Previous</a>
         {% else %}
-        <span class="pagination-btn px-3 py-1 text-sm rounded-lg opacity-50 cursor-not-allowed">Previous</span>
+        <span class="pagination-btn px-3 py-1 rounded-lg opacity-50 cursor-not-allowed">Previous</span>
         {% endif %}
 
         {% for p in range(1, total_pages + 1) %}
           {% if p == page %}
-          <span class="pagination-btn active-page px-3 py-1 text-sm rounded-lg">{{ p }}</span>
+          <span class="pagination-btn active-page px-3 py-1 rounded-lg">{{ p }}</span>
           {% else %}
-          <a href="?page={{ p }}&limit={{ limit }}&sort={{ sort }}&order={{ order }}"
-             class="pagination-btn px-3 py-1 text-sm rounded-lg">{{ p }}</a>
+          <a href="?page={{ p }}&limit={{ limit }}"
+             class="pagination-btn px-3 py-1 rounded-lg">{{ p }}</a>
           {% endif %}
         {% endfor %}
 
         {% if page < total_pages %}
-        <a href="?page={{ page + 1 }}&limit={{ limit }}&sort={{ sort }}&order={{ order }}"
-           class="pagination-btn px-3 py-1 text-sm rounded-lg">Next</a>
+        <a href="?page={{ page + 1 }}&limit={{ limit }}"
+           class="pagination-btn px-3 py-1 rounded-lg">Next</a>
         {% else %}
-        <span class="pagination-btn px-3 py-1 text-sm rounded-lg opacity-50 cursor-not-allowed">Next</span>
+        <span class="pagination-btn px-3 py-1 rounded-lg opacity-50 cursor-not-allowed">Next</span>
         {% endif %}
       </div>
+    </div>
+
+    <!-- CHART 2: BMI vs IDEAL -->
+    <div class="px-4 py-4">
+      <h3 class="text-sm font-bold text-gray-300 mb-2">BMI vs Ideal Weight</h3>
+      <canvas id="bmiIdealChart" height="90"></canvas>
     </div>
 
   </div>
@@ -182,35 +170,80 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- CHART 1 -->
 <script>
-const bmiLabels = {{ all_nutritions | map(attribute="created_at") | list | tojson }};
-const bmiValues = {{ all_nutritions | map(attribute="bmi") | list | tojson }};
+(() => {
+  const labels = {{ all_nutritions | map(attribute="created_at") | list | tojson }};
+  const values = {{ all_nutritions | map(attribute="bmi") | list | tojson }};
 
-new Chart(document.getElementById("bmiChart"), {
-  type: "line",
-  data: {
-    labels: bmiLabels,
-    datasets: [{
-      label: "BMI Over Time",
-      data: bmiValues,
-      borderColor: "#fbbf24",
-      backgroundColor: "rgba(251, 191, 36, 0.15)",
-      borderWidth: 2,
-      tension: 0.3,
-      fill: true
-    }]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      x: { ticks: { color: "#ddd" } },
-      y: { ticks: { color: "#ddd" } }
+  new Chart(document.getElementById("bmiChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "BMI Over Time",
+        data: values,
+        borderColor: "#fbbf24",
+        backgroundColor: "rgba(251,191,36,0.15)",
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+      }]
     },
-    plugins: {
-      legend: { labels: { color: "#fff" } }
+    options: {
+      responsive: true,
+      scales: {
+        x: { ticks: { color: "#ddd" } },
+        y: { ticks: { color: "#ddd" } }
+      },
+      plugins: { legend: { labels: { color: "#fff" } } }
     }
-  }
-});
+  });
+})();
+</script>
+
+<!-- CHART 2 -->
+<script>
+(() => {
+  const labels = {{ all_nutritions | map(attribute="created_at") | list | tojson }};
+  const bmiData = {{ all_nutritions | map(attribute="bmi") | list | tojson }};
+  const idealData = {{ all_nutritions | map(attribute="ideal_weight_kg") | list | tojson }};
+
+  new Chart(document.getElementById("bmiIdealChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "BMI",
+          data: bmiData,
+          borderColor: "#ff4d4d",
+          backgroundColor: "rgba(255,77,77,0.15)",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+        },
+        {
+          label: "Ideal Weight",
+          data: idealData,
+          borderColor: "#3b82f6",
+          backgroundColor: "rgba(59,130,246,0.15)",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { ticks: { color: "#ddd" } },
+        y: { ticks: { color: "#ddd" } }
+      },
+      plugins: { legend: { labels: { color: "#fff" } } }
+    }
+  });
+})();
 </script>
 
 {% endblock %}
