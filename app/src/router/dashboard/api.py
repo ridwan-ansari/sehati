@@ -116,7 +116,7 @@ async def user_detail_page(
     all_nutritions = [
         {
             "created_at": n.created_at.strftime("%Y-%m-%d"),
-            "bmi": n.bmi,
+            "weight_kg": n.weight_kg,
             "ideal_weight_kg": n.ideal_weight_kg,
         }
         for n in all_nutritions_raw
