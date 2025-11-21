@@ -35,7 +35,7 @@ margin: 0;
 box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); 
 border-radius: 0.75rem; 
 overflow: hidden; 
-margin-bottom: 1.5rem; /* Memberi jarak ke card di bawahnya */
+margin-bottom: 1.5rem;
 }
 .data-table {
 table-layout: auto; 
@@ -120,24 +120,24 @@ class="text-gray-400 hover:text-[var(--accent)] p-3 rounded-xl bg-[#21262d] hove
 <div class="premium-card">
 <div class="card-header border-b border-gray-700 bg-[#21262d]">
 <h3 class="text-xl font-bold text-[var(--accent)] py-3 px-6">
- PROFILE INFORMATION
+PROFILE INFORMATION
 </h3>
 </div>
 
 <div class="p-6 space-y-4">
 {% set profile_fields = [
- ('Fullname', user.fullname),
- ('Email', user.email),
- ('Nickname', user.nickname),
- ('Phone', user.phone_number),
- ('Gender', user.gender),
- ('Date of Birth', user.date_of_birth)
+('Fullname', user.fullname),
+('Email', user.email),
+('Nickname', user.nickname),
+('Phone', user.phone_number),
+('Gender', user.gender),
+('Date of Birth', user.date_of_birth)
 ] %}
 
 {% for label, value in profile_fields %}
 <div class="flex justify-between items-center py-2 border-b border-gray-800 last:border-b-0">
- <span class="data-label">{{ label }}</span>
- <span class="data-value">{{ value or 'N/A' }}</span>
+<span class="data-label">{{ label }}</span>
+<span class="data-value">{{ value or 'N/A' }}</span>
 </div>
 {% endfor %}
 </div>
@@ -147,70 +147,70 @@ class="text-gray-400 hover:text-[var(--accent)] p-3 rounded-xl bg-[#21262d] hove
 
 <div class="card-header">
 <h3 class="text-xl font-bold text-white">
- NUTRITION HISTORY
+NUTRITION HISTORY
 </h3>
 </div>
 
 <div class="overflow-x-auto">
 <table class="min-w-full divide-y divide-gray-700 data-table">
- <thead class="text-gray-900">
- <tr>
- <th class="text-xs font-bold uppercase tracking-wider">Status</th>
- <th class="text-xs font-bold uppercase tracking-wider">BMI</th>
- <th class="text-xs font-bold uppercase tracking-wider">Height (cm)</th>
- <th class="text-xs font-bold uppercase tracking-wider">Weight (kg)</th>
- <th class="text-xs font-bold uppercase tracking-wider">Ideal (kg)</th>
- <th class="text-xs font-bold uppercase tracking-wider">Date</th> 
- </tr>
- </thead>
+<thead class="text-gray-900">
+<tr>
+<th class="text-xs font-bold uppercase tracking-wider">Status</th>
+<th class="text-xs font-bold uppercase tracking-wider">BMI</th>
+<th class="text-xs font-bold uppercase tracking-wider">Height (cm)</th>
+<th class="text-xs font-bold uppercase tracking-wider">Weight (kg)</th>
+<th class="text-xs font-bold uppercase tracking-wider">Ideal (kg)</th>
+<th class="text-xs font-bold uppercase tracking-wider">Date</th> 
+</tr>
+</thead>
 
- <tbody class="divide-y divide-gray-800 text-gray-300">
- {% if user_nutritions %}
- {% for n in user_nutritions %}
- <tr>
- <td><span class="status-badge">{{ n.status }}</span></td>
- <td class="font-mono">{{ n.bmi }}</td>
- <td class="font-mono">{{ n.height_cm }}</td>
- <td class="font-mono text-white">{{ n.weight_kg }}</td> 
- <td class="font-mono">{{ n.ideal_weight_kg }}</td>
- <td class="text-gray-400 text-sm">{{ n.created_at | default('N/A') }}</td> 
- </tr>
- {% endfor %}
- {% else %}
- <tr><td colspan="6" class="py-10 text-center text-gray-500">No nutrition data available.</td></tr>
- {% endif %}
- </tbody>
+<tbody class="divide-y divide-gray-800 text-gray-300">
+{% if user_nutritions %}
+{% for n in user_nutritions %}
+<tr>
+<td><span class="status-badge">{{ n.status }}</span></td>
+<td class="font-mono">{{ n.bmi }}</td>
+<td class="font-mono">{{ n.height_cm }}</td>
+<td class="font-mono text-white">{{ n.weight_kg }}</td> 
+<td class="font-mono">{{ n.ideal_weight_kg }}</td>
+<td class="text-gray-400 text-sm">{{ n.created_at | default('N/A') }}</td> 
+</tr>
+{% endfor %}
+{% else %}
+<tr><td colspan="6" class="py-10 text-center text-gray-500">No nutrition data available.</td></tr>
+{% endif %}
+</tbody>
 </table>
 </div>
 
 <div class="pagination-container flex justify-between items-center">
 <div class="text-sm text-gray-400">
- Showing page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+Showing page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
 </div>
 
 <div class="flex space-x-2">
- {% if page > 1 %}
- <a href="?page={{ page - 1 }}&limit={{ limit }}"
- class="pagination-btn">Previous</a>
- {% else %}
- <span class="pagination-btn opacity-50 cursor-not-allowed">Previous</span>
- {% endif %}
+{% if page > 1 %}
+<a href="?page={{ page - 1 }}&limit={{ limit }}"
+class="pagination-btn">Previous</a>
+{% else %}
+<span class="pagination-btn opacity-50 cursor-not-allowed">Previous</span>
+{% endif %}
 
- {% for p in range(1, total_pages + 1) %}
- {% if p == page %}
- <span class="pagination-btn active-page">{{ p }}</span>
- {% else %}
- <a href="?page={{ p }}&limit={{ limit }}"
- class="pagination-btn">{{ p }}</a>
- {% endif %}
- {% endfor %}
+{% for p in range(1, total_pages + 1) %}
+{% if p == page %}
+<span class="pagination-btn active-page">{{ p }}</span>
+{% else %}
+<a href="?page={{ p }}&limit={{ limit }}"
+class="pagination-btn">{{ p }}</a>
+{% endif %}
+{% endfor %}
 
- {% if page < total_pages %}
- <a href="?page={{ page + 1 }}&limit={{ limit }}"
- class="pagination-btn">Next</a>
- {% else %}
- <span class="pagination-btn opacity-50 cursor-not-allowed">Next</span>
- {% endif %}
+{% if page < total_pages %}
+<a href="?page={{ page + 1 }}&limit={{ limit }}"
+class="pagination-btn">Next</a>
+{% else %}
+<span class="pagination-btn opacity-50 cursor-not-allowed">Next</span>
+{% endif %}
 </div>
 </div>
 
@@ -218,79 +218,79 @@ class="text-gray-400 hover:text-[var(--accent)] p-3 rounded-xl bg-[#21262d] hove
 </div>
 
 <div class="grid grid-cols-1 gap-8 mt-8">
- <div class="lg:col-span-3 premium-card compact-card">
-  <div class="card-header">
-   <h3 class="text-xl font-bold text-white">
-    WEIGHT TREND VISUALIZATION
-   </h3>
-  </div>
-
-    <div class="p-6">
-   <h3 class="text-base font-semibold text-gray-300 mb-3">⚖️ Weight vs Ideal Weight (kg)</h3>
-   <canvas id="weightIdealChart" height="120"></canvas> 
-  </div>
+<div class="lg:col-span-3 premium-card compact-card">
+ <div class="card-header">
+ <h3 class="text-xl font-bold text-white">
+  WEIGHT TREND VISUALIZATION
+ </h3>
  </div>
+
+  <div class="p-6">
+ <h3 class="text-base font-semibold text-gray-300 mb-3">⚖️ Weight vs Ideal Weight (kg)</h3>
+ <canvas id="weightIdealChart" height="120"></canvas> 
+ </div>
+</div>
 </div>
 
 <script 
-  src="https://cdn.jsdelivr.net/npm/chart.js"
-  crossorigin="anonymous"
-  referrerpolicy="no-referrer"
+ src="https://cdn.jsdelivr.net/npm/chart.js"
+ crossorigin="anonymous"
+ referrerpolicy="no-referrer"
 ></script>
 
 <script>
-// --- CHART: Weight vs Ideal Weight ---
 (() => {
- // Data Extraction (Anti-Error with default filter)
- const labels = {{ all_nutritions | map(attribute="created_at") | map("default", "N/A") | list | tojson }};
- const weightData = {{ all_nutritions | map(attribute="weight_kg") | map("default", 0) | list | tojson }};
- const idealData = {{ all_nutritions | map(attribute="ideal_weight_kg") | map("default", 0) | list | tojson }};
+const labels = {{ all_nutritions | map(attribute="created_at") | map("default", "N/A") | list | tojson }};
+const weightData = {{ all_nutritions | map(attribute="weight_kg") | map("default", 0) | list | tojson }};
+const idealData = {{ all_nutritions | map(attribute="ideal_weight_kg") | map("default", 0) | list | tojson }};
 
- new Chart(document.getElementById("weightIdealChart"), {
-  type: "line",
-  data: {
-   labels,
-   datasets: [
-    {
-     label: "Current Weight (kg)",
-     data: weightData, 
-     borderColor: "#ff4d4d",
-     backgroundColor: "rgba(255,77,77,0.1)", 
-     borderWidth: 2,
-     tension: 0.4,
-     fill: true,
-     pointBackgroundColor: "#ff4d4d",
-     pointRadius: 4
-    },
-    {
-     label: "Ideal Weight (kg)",
-     data: idealData,
-     borderColor: "#3b82f6",
-     backgroundColor: "rgba(59,130,246,0.1)",
-     borderWidth: 2,
-     tension: 0.4,
-     fill: true,
-     pointBackgroundColor: "#3b82f6",
-     pointRadius: 4
-    }
-   ]
+new Chart(document.getElementById("weightIdealChart"), {
+ type: "line",
+ data: {
+ labels,
+ datasets: [
+  {
+  label: "Current Weight (kg)",
+  data: weightData, 
+  borderColor: "#ff4d4d",
+  backgroundColor: "rgba(255,77,77,0.1)", 
+  borderWidth: 2,
+  tension: 0.4,
+  fill: true,
+  pointBackgroundColor: "#ff4d4d",
+  pointRadius: 4
   },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   scales: {
-    x: { 
-     grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
-     ticks: { color: "#ddd" } 
-    },
-    y: { 
-     grid: { color: 'rgba(255, 255, 255, 0.05)' },
-     ticks: { color: "#ddd" } 
-    }
-   },
-   plugins: { legend: { labels: { color: "#fff" } } }
+  {
+  label: "Ideal Weight (kg)",
+  data: idealData,
+  borderColor: "#3b82f6",
+  backgroundColor: "rgba(59,130,246,0.1)",
+  borderWidth: 2,
+  tension: 0.4,
+  fill: true,
+  pointBackgroundColor: "#3b82f6",
+  pointRadius: 4
   }
- });
+ ]
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ scales: {
+  x: { 
+  grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
+  ticks: { color: "#ddd" } 
+  },
+  y: { 
+  min: 40,
+  max: 100,
+  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+  ticks: { color: "#ddd" } 
+  }
+ },
+ plugins: { legend: { labels: { color: "#fff" } } }
+ }
+});
 })();
 </script>
 
