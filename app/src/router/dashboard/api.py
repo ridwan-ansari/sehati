@@ -111,6 +111,17 @@ async def user_detail_page(
         ordering=ordering
     )
 
+    all_nutritions_raw = await CRUDUserNutrition().get_all_by_user(session, user_id)
+
+    all_nutritions = [
+        {
+            "created_at": n.created_at.strftime("%Y-%m-%d"),
+            "bmi": n.bmi,
+            "ideal_weight_kg": n.ideal_weight_kg,
+        }
+        for n in all_nutritions_raw
+    ]
+
     total_records = await crud_nutrition.count_by_user(session, user_id)
     total_pages = (total_records + limit - 1) // limit
 
@@ -119,6 +130,7 @@ async def user_detail_page(
         request,
         user=user,
         user_nutritions=nutritions,
+        all_nutritions=all_nutritions,
         page=page,
         total_pages=total_pages,
         limit=limit,

@@ -16,8 +16,8 @@ class CRUDUserNutrition:
         self,
         session: AsyncSession,
         user_id: int,
-        limit: Optional[int] = 20,
-        offset: Optional[int] = 0
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
     ) -> List[UserNutrition]:
         stmt = (
             select(UserNutrition)
