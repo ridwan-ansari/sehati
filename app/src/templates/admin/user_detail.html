@@ -239,7 +239,7 @@
 <script>
 (() => {
   const labels = {{ all_nutritions | map(attribute="created_at") | list | tojson }};
-  const values = {{ all_nutritions | map(attribute="bmi") | list | tojson }};
+  const values = {{ all_nutritions | map(attribute="weight_kg") | list | tojson }};
 
   // Plugin untuk menambahkan garis kategori BMI
   const bmiLinesPlugin = {
