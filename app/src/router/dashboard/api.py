@@ -8,6 +8,7 @@ from app.src.router.user.crud import CRUDUser
 from app.src.core.templates import get_templates
 from app.src.core.session import get_async_session
 from app.src.utils.email_client import EmailClient
+from app.src.models.user_nutrition import UserNutrition
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
 from app.src.core.security import Hasher, TokenService, AuthService
 
@@ -79,16 +80,40 @@ async def user_detail_page(
     user_id: str,
     page: int = 1,
     limit: int = 10,
+    sort: str = "created_at",
+    order: str = "desc",
     auth=Depends(require_admin_cookie),
     session: AsyncSession = Depends(get_async_session),
 ):
     user = await crud_user.get_user_by_id(session, id=user_id)
     if not user:
         raise HTTPException(404, "User not found")
+
     offset = (page - 1) * limit
-    nutritions = await CRUDUserNutrition().get_list(session, user_id=user_id, limit=limit, offset=offset)
-    total_records = len(user.user_nutritions or [])
+
+    valid_sorts = {
+        "bmi": UserNutrition.bmi,
+        "height": UserNutrition.height_cm,
+        "weight": UserNutrition.weight_kg,
+        "ideal": UserNutrition.ideal_weight_kg,
+        "created_at": UserNutrition.created_at,
+    }
+
+    sort_column = valid_sorts.get(sort, UserNutrition.created_at)
+    ordering = sort_column.desc() if order == "desc" else sort_column.asc()
+
+    crud_nutrition = CRUDUserNutrition()
+    nutritions = await crud_nutrition.get_list_sorted(
+        session=session,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+        ordering=ordering
+    )
+
+    total_records = await crud_nutrition.count_by_user(session, user_id)
     total_pages = (total_records + limit - 1) // limit
+
     return render_page(
         "admin/user_detail.html",
         request,
