@@ -13,7 +13,7 @@
             <tr class="border-b">
                 <th class="py-2">Title</th>
                 <th class="py-2">Category</th>
-                <th class="py-2">Created</th>
+                <th class="py-2">Image</th>
                 <th class="py-2">File</th>
             </tr>
         </thead>
@@ -22,7 +22,7 @@
             <tr class="border-b">
                 <td class="py-3">{{ r.title }}</td>
                 <td>{{ r.category or '-' }}</td>
-                <td>{{ r.created_at }}</td>
+                <td><a class="text-blue-600 underline" href="{{ r.image_url }}" target="_blank">Open</a></td>
                 <td><a class="text-blue-600 underline" href="{{ r.file_url }}" target="_blank">Open</a></td>
             </tr>
         {% endfor %}
