@@ -7,10 +7,15 @@ from app.src.router.forum.crud import CRUDForum
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
 from app.src.utils.forum_utils import save_forum_image
+from app.src.models.point import CategoryCode, WalletKind, TxType
+from app.src.router.point.crud import CRUDPointWallet, CRUDPointCategory, CRUDPointTransaction
 
 router = APIRouter()
 crud_forum = CRUDForum()
 auth_service = AuthService()
+crud_wallet = CRUDPointWallet()
+crud_category = CRUDPointCategory()
+crud_transaction = CRUDPointTransaction()
 
 @router.post("/")
 async def create_post(
@@ -20,11 +25,41 @@ async def create_post(
     session: AsyncSession = Depends(get_async_session)
 ):
     with response_handler() as response:
+        user_id = authentication["id"]
         url = await save_forum_image(image)
         post = await crud_forum.create_post(
             session=session,
-            data={"user_id": authentication["id"], "image_url": url, "caption": caption}
+            data={"user_id": user_id, "image_url": url, "caption": caption}
         )
+        forum_post_category = await crud_category.get_by_code(session=session, code=CategoryCode.forum_post)
+        amount = forum_post_category.default_points
+
+        wallet_credit = await crud_wallet.update_balance(
+            session=session, user_id=user_id, wallet_type=WalletKind.credit, amount=amount, tx_type=TxType.earn
+        )
+        wallet_achievement = await crud_wallet.update_balance(
+            session=session, user_id=user_id, wallet_type=WalletKind.achievement, amount=amount, tx_type=TxType.earn
+        )
+
+        await crud_transaction.create(
+            session=session,
+            user_id=user_id,
+            wallet=WalletKind.credit,
+            tx_type=TxType.earn,
+            category_code=CategoryCode.forum_post,
+            delta=amount,
+            balance_after=wallet_credit.credit_points
+        )
+        await crud_transaction.create(
+            session=session,
+            user_id=user_id,
+            wallet=WalletKind.achievement,
+            tx_type=TxType.earn,
+            category_code=CategoryCode.forum_post,
+            delta=amount,
+            balance_after=wallet_achievement.achievement_points
+        )
+    
         response.data = {"id": post.id, "image_url": post.image_url}
         response.message = "Post created"
         response.status_code = 201

@@ -13,12 +13,19 @@ from app.src.core.mixins import TimestampMixin
 class CategoryCode(str, Enum):
     login = "login"
     watch_video = "watch_video"
-    admin_bonus = "admin_bonus"
     food_diary = "food_diary"
     food_habit_answer = "food_habit_answer"
     exercise_answer = "exercise_answer"
     playing_game = "playing_game"
     merchandise_redeem = "merchandise_redeem"
+
+    bodyweight_monitoring = "bodyweight_monitoring"
+    konseling_gizi = "konseling_gizi"
+    konseling_psikolog = "konseling_psikolog"
+    forum_post = "forum_post"
+    chat_friend = "chat_friend"
+    read_menu_sehat = "read_menu_sehat"
+    set_reminder = "set_reminder"
 
 
 class PointFlow(str, Enum):
