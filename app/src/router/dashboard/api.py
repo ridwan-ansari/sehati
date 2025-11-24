@@ -201,11 +201,26 @@ async def confirm_reset_password_post(
 @router.get("/recipes")
 async def recipes_page(
     request: Request,
+    page: int = 1,
+    limit: int = 10,
     auth=Depends(require_admin_cookie),
     session: AsyncSession = Depends(get_async_session),
 ):
-    recipes = await crud_recipe.get_all(session)
-    return render_page("admin/recipes.html", request, recipes=recipes, auth=auth)
+    offset = (page - 1) * limit
+
+    recipes = await crud_recipe.get_all(session, limit=limit, offset=offset)
+    total = await crud_recipe.count(session)
+    total_pages = (total + limit - 1) // limit
+
+    return render_page(
+        "admin/recipes.html",
+        request,
+        recipes=recipes,
+        page=page,
+        total_pages=total_pages,
+        limit=limit,
+        auth=auth,
+    )
 
 @router.get("/recipes/upload")
 async def recipe_upload_page(

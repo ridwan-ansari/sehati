@@ -1,5 +1,5 @@
 from __future__ import annotations
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.recipe import Recipe, RecipeRewardClaim
 
@@ -10,7 +10,7 @@ class CRUDRecipe:
         await session.commit()
         return result.scalar_one()
     
-    async def get_all(self, session: AsyncSession, limit: int, offset: int):
+    async def get_all(self, session: AsyncSession, limit: int = None, offset: int = None):
         stmt = select(Recipe).limit(limit=limit).offset(offset=offset)
         result = await session.execute(stmt)
         return result.scalars().all()
@@ -19,6 +19,11 @@ class CRUDRecipe:
         stmt = select(Recipe).where(Recipe.id.__eq__(id), Recipe.deleted_at.is_(None))
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def count(self, session: AsyncSession) -> int:
+        stmt = select(func.count()).select_from(Recipe)
+        result = await session.execute(stmt)
+        return result.scalar_one()
 
     
 class CRUDRecipeRewardClaim:
