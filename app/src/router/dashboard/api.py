@@ -9,6 +9,7 @@ from app.src.core.templates import get_templates
 from app.src.router.recipe.crud import CRUDRecipe
 from app.src.core.session import get_async_session
 from app.src.utils.email_client import EmailClient
+from app.src.router.point.crud import CRUDPointWallet
 from app.src.models.user_nutrition import UserNutrition
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
@@ -20,6 +21,7 @@ crud_recipe = CRUDRecipe()
 templates = get_templates()
 email_client = EmailClient()
 auth_service = AuthService()
+crud_wallet = CRUDPointWallet()
 token_service = TokenService()
 
 def render_page(template, request, **context):
@@ -205,14 +207,12 @@ async def recipes_page(
     recipes = await crud_recipe.get_all(session)
     return render_page("admin/recipes.html", request, recipes=recipes, auth=auth)
 
-
 @router.get("/recipes/upload")
 async def recipe_upload_page(
     request: Request,
     auth=Depends(require_admin_cookie)
 ):
     return render_page("admin/recipe_upload.html", request, auth=auth)
-
 
 @router.post("/recipes/upload")
 async def recipe_upload(
@@ -240,3 +240,22 @@ async def recipe_upload(
     )
 
     return RedirectResponse("/dashboard/recipes", status_code=302)
+
+@router.get("/leaderboard")
+async def leaderboard_page(
+    request: Request,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session)
+):
+    wallets = await crud_wallet.get_all(session=session)
+    data = [
+        {
+            "nickname": w.user.nickname,
+            "fullname": w.user.fullname,
+            "achievement_points": w.achievement_points,
+            "credit_points": w.credit_points,
+        }
+        for w in wallets
+    ]
+
+    return render_page("admin/leaderboard.html", request, leaderboard=data, auth=auth)

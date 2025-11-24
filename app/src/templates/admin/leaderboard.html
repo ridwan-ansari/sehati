@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="premium-card p-6">
+    <div class="card-header border-b border-gray-700 pb-4 mb-4">
+        <h3 class="text-2xl font-bold text-[var(--accent)]">Leaderboard</h3>
+        <p class="text-gray-400 mt-1">Top users based on achievement points</p>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-700 data-table">
+            <thead>
+                <tr>
+                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">Rank</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">User</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">Achievement</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">Credit</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-800 text-gray-300">
+                {% for row in leaderboard %}
+                <tr>
+                    <td class="px-3 py-2 font-bold">
+
+                        {% if loop.index == 1 %}
+                            <span class="text-yellow-400">🥇 {{ loop.index }}</span>
+                        {% elif loop.index == 2 %}
+                            <span class="text-gray-300">🥈 {{ loop.index }}</span>
+                        {% elif loop.index == 3 %}
+                            <span class="text-amber-700">🥉 {{ loop.index }}</span>
+                        {% else %}
+                            <span class="text-gray-500">{{ loop.index }}</span>
+                        {% endif %}
+
+                    </td>
+
+                    <td class="px-3 py-2">
+                        <div class="text-white font-semibold">{{ row.nickname }}</div>
+                        <div class="text-gray-400 text-sm">{{ row.fullname }}</div>
+                    </td>
+
+                    <td class="px-3 py-2 text-green-400 font-semibold">
+                        {{ row.achievement_points }}
+                    </td>
+
+                    <td class="px-3 py-2 text-blue-400 font-semibold">
+                        {{ row.credit_points }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
