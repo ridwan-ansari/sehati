@@ -31,3 +31,7 @@ async def root(request: Request):
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
+
+@app.exception_handler(403)
+async def not_found_handler(request: Request, exc):
+    return templates.TemplateResponse("admin/login.html", {"request": request}, status_code=404)

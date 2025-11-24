@@ -30,14 +30,14 @@ def render_page(template, request, **context):
 
 async def require_admin_cookie(admin_access: str = Cookie(None)):
     if not admin_access:
-        return RedirectResponse("/dashboard/login")
+        raise HTTPException(status_code=403, detail="Unauthorized")
     try:
-        payload = await auth_service.decode_token(admin_access)
+        payload = await auth_service._decode_token(admin_access)
         if payload.get("role") != "admin":
-            return RedirectResponse("/dashboard/login")
+            raise HTTPException(status_code=403, detail="Unauthorized")
         return payload
-    except Exception:
-        return RedirectResponse("/dashboard/login")
+    except:
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
 @router.get("/login")
 async def login_page(request: Request, admin_access: str = Cookie(None)):
