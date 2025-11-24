@@ -14,7 +14,6 @@ class Video(Base, TimestampMixin):
     description: Mapped[str] = mapped_column(Text, nullable=True)
     youtube_url: Mapped[str] = mapped_column(Text, nullable=False)
     thumbnail: Mapped[str] = mapped_column(Text, nullable=True)
-    reward_points: Mapped[int] = mapped_column(default=20)
     category: Mapped[str] = mapped_column(String(100), nullable=True)
     duration_seconds: Mapped[int] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
