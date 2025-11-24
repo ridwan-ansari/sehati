@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import date
 from typing import List, Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,3 +59,18 @@ class CRUDUserNutrition:
             select(func.count()).select_from(UserNutrition).where(UserNutrition.user_id == user_id)
         )
         return result.scalar() or 0
+    
+    async def exists_today(
+        self,
+        session: AsyncSession,
+        user_id: str
+    ):
+        stmt = (
+            select(UserNutrition)
+            .where(UserNutrition.user_id == user_id)
+            .where(func.date(UserNutrition.created_at) == date.today())
+            .limit(1)
+        )
+
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()

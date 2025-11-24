@@ -4,11 +4,13 @@ from datetime import date
 from fastapi import Depends, APIRouter, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.src.models.point import CategoryCode
 from app.src.router.user.crud import CRUDUser
 from app.src.core.security import AuthService
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
 from app.src.models.user_nutrition import UserNutrition
+from app.src.utils.point_service import reward_user_points
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
 from app.src.utils.nutrition_calculator import NutritionCalculator
 from app.src.router.user_nutrition.schema import UserNutrionBaseModel
@@ -36,8 +38,12 @@ async def create(
         authentication: dict = Depends(AuthService().require_access_token)
     ):
     with response_handler() as response:
+        user_id = authentication["id"]
+        if await crud_nutrition.exists_today(session=session, user_id=user_id):
+            raise ValueError("Your submission has been received today. Please submit again tomorrow.")
+        
         calculator = NutritionCalculator(session=session)
-        user = await CRUDUser().get_user_by_id(session=session, id=authentication.get("id"))
+        user = await CRUDUser().get_user_by_id(session=session, id=user_id)
 
         result = await calculator.evaluate(
             gender=user.gender, 
@@ -57,6 +63,7 @@ async def create(
                 }
             )
         )
+        await reward_user_points(session=session, user_id=user_id, category=CategoryCode.bodyweight_monitoring)
         response.status_code = 201
         response.message = "Create Successfully."
     return response.build()
