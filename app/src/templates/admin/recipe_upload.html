@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+{% block title %}Upload Recipe{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow">
+    <h2 class="text-xl font-bold mb-4">Upload Recipe</h2>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+
+        <div>
+            <label class="font-semibold">Title</label>
+            <input type="text" name="title" required class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="font-semibold">Description</label>
+            <textarea name="description" required class="w-full p-2 border rounded"></textarea>
+        </div>
+
+        <div>
+            <label class="font-semibold">Category</label>
+            <input type="text" name="category" class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="font-semibold">Recipe Image (JPG/PNG/WebP)</label>
+            <input type="file" name="image" accept="image/*" class="w-full" required>
+        </div>
+
+        <div>
+            <label class="font-semibold">Recipe File (PDF / Image)</label>
+            <input type="file" name="file" accept="application/pdf,image/*" class="w-full" required>
+        </div>
+
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg w-full font-semibold">
+            Upload
+        </button>
+
+    </form>
+</div>
+{% endblock %}

@@ -13,5 +13,6 @@ class Recipe(Base, TimestampMixin):
     title: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     image_url: Mapped[str] = mapped_column(Text, nullable=True)
+    file_url: Mapped[str] = mapped_column(String, nullable=False)
     category: Mapped[str] = mapped_column(String(100), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)

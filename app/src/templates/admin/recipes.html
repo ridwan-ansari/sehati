@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% block title %}Recipes{% endblock %}
+
+{% block content %}
+<div class="flex justify-between mb-6">
+    <h2 class="text-2xl font-bold">Recipes</h2>
+    <a href="/dashboard/recipes/upload" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Upload New</a>
+</div>
+
+<div class="bg-white shadow rounded-lg p-6">
+    <table class="w-full text-left">
+        <thead>
+            <tr class="border-b">
+                <th class="py-2">Title</th>
+                <th class="py-2">Category</th>
+                <th class="py-2">Created</th>
+                <th class="py-2">File</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in recipes %}
+            <tr class="border-b">
+                <td class="py-3">{{ r.title }}</td>
+                <td>{{ r.category or '-' }}</td>
+                <td>{{ r.created_at }}</td>
+                <td><a class="text-blue-600 underline" href="{{ r.file_url }}" target="_blank">Open</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -2,19 +2,22 @@ from __future__ import annotations
 from datetime import datetime
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie, UploadFile
 
 from app.src.router.user.crud import CRUDUser
 from app.src.core.templates import get_templates
+from app.src.router.recipe.crud import CRUDRecipe
 from app.src.core.session import get_async_session
 from app.src.utils.email_client import EmailClient
 from app.src.models.user_nutrition import UserNutrition
+from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
 from app.src.core.security import Hasher, TokenService, AuthService
 
 router = APIRouter()
-templates = get_templates()
 crud_user = CRUDUser()
+crud_recipe = CRUDRecipe()
+templates = get_templates()
 email_client = EmailClient()
 auth_service = AuthService()
 token_service = TokenService()
@@ -192,3 +195,48 @@ async def confirm_reset_password_post(
         return render_page("admin/reset_confirm.html", request, error="Database error. Try again later.")
 
     return render_page("admin/reset_success.html", request, message="Password successfully updated.")
+
+@router.get("/recipes")
+async def recipes_page(
+    request: Request,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    recipes = await crud_recipe.get_all(session)
+    return render_page("admin/recipes.html", request, recipes=recipes, auth=auth)
+
+
+@router.get("/recipes/upload")
+async def recipe_upload_page(
+    request: Request,
+    auth=Depends(require_admin_cookie)
+):
+    return render_page("admin/recipe_upload.html", request, auth=auth)
+
+
+@router.post("/recipes/upload")
+async def recipe_upload(
+    request: Request,
+    title: str = Form(...),
+    description: str = Form(...),
+    category: str = Form(None),
+    file: UploadFile = Form(...),
+    image: UploadFile = Form(None),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+):
+    file_url = await save_upload_with_uuid(file, folder="recipe")
+    image_url = await save_upload_with_uuid(image, folder="recipe")
+
+    await crud_recipe.create(
+        session=session,
+        data={
+            "title": title,
+            "description": description,
+            "file_url": f"/media/recipe/{file_url}",
+            "image_url": f"/media/recipe/{image_url}",
+            "category": category,
+        }
+    )
+
+    return RedirectResponse("/dashboard/recipes", status_code=302)
