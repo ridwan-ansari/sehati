@@ -1,5 +1,6 @@
 from __future__ import annotations
-from sqlalchemy import select
+from datetime import date
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.point import (
@@ -63,7 +64,7 @@ class CRUDPointWallet:
         wallet_type: WalletKind,
         amount: int,
         tx_type: TxType,
-    ):
+    ) -> PointWallet:
         wallet = await self.get_by_user(session, user_id)
         if not wallet:
             wallet = await self.create_wallet(session, user_id)
@@ -117,3 +118,21 @@ class CRUDPointTransaction:
             .limit(limit)
         )
         return result.scalars().all()
+    
+    
+    async def exists_today(
+        self,
+        session: AsyncSession,
+        user_id: str,
+        category_code: CategoryCode,
+    ):
+        stmt = (
+            select(PointTransaction)
+            .where(PointTransaction.user_id == user_id)
+            .where(PointTransaction.category_code == category_code)
+            .where(func.date(PointTransaction.created_at) == date.today())
+            .limit(1)
+        )
+
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none() 

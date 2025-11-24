@@ -11,10 +11,11 @@ from app.src.router.user.crud import CRUDUser
 from app.src.utils.email_client import EmailClient 
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
-from app.src.router.point.crud import CRUDPointWallet
 from app.src.router.user.schema import UserRegisterSchema
 from app.src.utils.execeptions import UnauthorizedException
+from app.src.models.point import CategoryCode, WalletKind, TxType
 from app.src.core.security import Hasher, TokenService, AuthService 
+from app.src.router.point.crud import CRUDPointWallet, CRUDPointCategory, CRUDPointTransaction
 
 router = APIRouter()
 crud_user = CRUDUser()
@@ -22,6 +23,8 @@ auth_service = AuthService()
 email_client = EmailClient()
 token_service = TokenService()
 crud_wallet = CRUDPointWallet()
+crud_category = CRUDPointCategory()
+crud_transaction = CRUDPointTransaction()
 
 @router.post("/register")
 async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get_async_session)):
@@ -44,20 +47,62 @@ async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get
     return response.build()
 
 @router.post("/login")
-async def login(email: str = Form(...), password: str = Form(...), session: AsyncSession = Depends(get_async_session)):
+async def login(
+    email: str = Form(...),
+    password: str = Form(...),
+    session: AsyncSession = Depends(get_async_session),
+):
     with response_handler() as response:
         user = await crud_user.get_user_by_email(session=session, email=email)
         if not user or not Hasher.verify_password(password, user.password):
             raise ValueError("Your email or password is incorrect. Please check and try again.")
+
         payload = {"id": user.id, "role": user.role}
         tokens = {
             "access_token": token_service.generate_token(payload=payload, token_type="access", expires_in_hours=12),
             "refresh_token": token_service.generate_token(payload=payload, token_type="refresh", expires_in_hours=24)
         }
+
+        login_category = await crud_category.get_by_code(session=session, code=CategoryCode.login)
+        has_login_today = await crud_transaction.exists_today(
+            session=session,
+            user_id=user.id,
+            category_code=CategoryCode.login
+        )
+
+        if not has_login_today:
+            amount = login_category.default_points
+
+            wallet_credit = await crud_wallet.update_balance(
+                session=session, user_id=user.id, wallet_type=WalletKind.credit, amount=amount, tx_type=TxType.earn
+            )
+            wallet_achievement = await crud_wallet.update_balance(
+                session=session, user_id=user.id, wallet_type=WalletKind.achievement, amount=amount, tx_type=TxType.earn
+            )
+
+            await crud_transaction.create(
+                session=session,
+                user_id=user.id,
+                wallet=WalletKind.credit,
+                tx_type=TxType.earn,
+                category_code=CategoryCode.login,
+                delta=amount,
+                balance_after=wallet_credit.credit_points
+            )
+            await crud_transaction.create(
+                session=session,
+                user_id=user.id,
+                wallet=WalletKind.achievement,
+                tx_type=TxType.earn,
+                category_code=CategoryCode.login,
+                delta=amount,
+                balance_after=wallet_achievement.achievement_points
+            )
+
         response.data = tokens
         response.status_code = 200
         response.message = "Successfully logged in."
-    return response.build()
+        return response.build()
 
 @router.post("/refresh")
 async def login(authentication: dict = Depends(auth_service.require_refresh_token), session: AsyncSession = Depends(get_async_session)):
