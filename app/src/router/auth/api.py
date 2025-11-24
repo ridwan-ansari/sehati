@@ -7,15 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.src.models.user import User
 from app.src.utils.redis_client import redis
+from app.src.models.point import CategoryCode
 from app.src.router.user.crud import CRUDUser 
 from app.src.utils.email_client import EmailClient 
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
 from app.src.router.user.schema import UserRegisterSchema
+from app.src.utils.point_service import reward_user_points
 from app.src.utils.execeptions import UnauthorizedException
-from app.src.models.point import CategoryCode, WalletKind, TxType
 from app.src.core.security import Hasher, TokenService, AuthService 
-from app.src.router.point.crud import CRUDPointWallet, CRUDPointCategory, CRUDPointTransaction
+from app.src.router.point.crud import CRUDPointWallet, CRUDPointTransaction
 
 router = APIRouter()
 crud_user = CRUDUser()
@@ -23,7 +24,6 @@ auth_service = AuthService()
 email_client = EmailClient()
 token_service = TokenService()
 crud_wallet = CRUDPointWallet()
-crud_category = CRUDPointCategory()
 crud_transaction = CRUDPointTransaction()
 
 @router.post("/register")
@@ -63,7 +63,6 @@ async def login(
             "refresh_token": token_service.generate_token(payload=payload, token_type="refresh", expires_in_hours=24)
         }
 
-        login_category = await crud_category.get_by_code(session=session, code=CategoryCode.login)
         has_login_today = await crud_transaction.exists_today(
             session=session,
             user_id=user.id,
@@ -71,33 +70,7 @@ async def login(
         )
 
         if not has_login_today:
-            amount = login_category.default_points
-
-            wallet_credit = await crud_wallet.update_balance(
-                session=session, user_id=user.id, wallet_type=WalletKind.credit, amount=amount, tx_type=TxType.earn
-            )
-            wallet_achievement = await crud_wallet.update_balance(
-                session=session, user_id=user.id, wallet_type=WalletKind.achievement, amount=amount, tx_type=TxType.earn
-            )
-
-            await crud_transaction.create(
-                session=session,
-                user_id=user.id,
-                wallet=WalletKind.credit,
-                tx_type=TxType.earn,
-                category_code=CategoryCode.login,
-                delta=amount,
-                balance_after=wallet_credit.credit_points
-            )
-            await crud_transaction.create(
-                session=session,
-                user_id=user.id,
-                wallet=WalletKind.achievement,
-                tx_type=TxType.earn,
-                category_code=CategoryCode.login,
-                delta=amount,
-                balance_after=wallet_achievement.achievement_points
-            )
+            await reward_user_points(session=session, user_id=user.id, category=CategoryCode.login)
 
         response.data = tokens
         response.status_code = 200

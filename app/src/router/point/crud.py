@@ -135,4 +135,9 @@ class CRUDPointTransaction:
         )
 
         result = await session.execute(stmt)
-        return result.scalar_one_or_none() 
+        return result.scalar_one_or_none()
+
+
+crud_wallet = CRUDPointWallet()
+crud_category = CRUDPointCategory()
+crud_transaction = CRUDPointTransaction()

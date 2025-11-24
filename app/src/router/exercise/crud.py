@@ -1,6 +1,8 @@
 from __future__ import annotations
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import date
+from sqlalchemy import func
 from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.exercise_habit import ExerciseHabitQuestion, ExerciseHabitAnswer
 
 
@@ -50,6 +52,21 @@ class CRUDExerciseHabitAnswer:
         session.add_all(objects)
         await session.commit()
         return objects
+    
+    async def exists_today(
+        self,
+        session: AsyncSession,
+        user_id: str
+    ):
+        stmt = (
+            select(ExerciseHabitAnswer)
+            .where(ExerciseHabitAnswer.user_id == user_id)
+            .where(func.date(ExerciseHabitAnswer.created_at) == date.today())
+            .limit(1)
+        )
+
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
 
 crud_exercise_habit_answer = CRUDExerciseHabitAnswer()

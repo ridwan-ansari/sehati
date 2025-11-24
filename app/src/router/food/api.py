@@ -2,14 +2,16 @@ from __future__ import annotations
 from fastapi import Depends, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.src.core.security import AuthService
 from app.src.router.user.crud import CRUDUser
+from app.src.models.point import CategoryCode
+from app.src.core.security import AuthService
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
+from app.src.utils.point_service import reward_user_points
+from app.src.models.food import FoodHabitAnswer, FoodDiaryItem
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
 from app.src.router.food.schema import UserAnswer, FoodDiarySchema
 from app.src.utils.nutrition_calculator import NutritionCalculator
-from app.src.models.food import FoodHabitAnswer, FoodDiaryItem, FoodDiaryAnalysis
 from app.src.router.food.crud import (
     CRUDFood,
     CRUDFoodDiaryItem,   
@@ -63,14 +65,18 @@ async def submit_food_habit_answers(
     authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
+        user_id = authentication["id"]
+        if await crud_habit_answer.exists_today(session=session, user_id=user_id):
+            raise ValueError("Your submission has been received today. Please submit again tomorrow.")
         answers = [
             FoodHabitAnswer(**{
                 **answer.model_dump(),
-                "user_id": authentication.get("id"),
+                "user_id": user_id,
             })
             for answer in user_answers.answers
         ]
         created = await crud_habit_answer.bulk_create(session=session, answers=answers)
+        await reward_user_points(session=session, user_id=user_id, category=CategoryCode.food_habit_answer)
         response.status_code = 201
         response.message = "Food habit answers submitted successfully."
         response.data = created
@@ -84,6 +90,8 @@ async def submit_food_diary(
 ):
     with response_handler() as response:
         user_id = authentication["id"]
+        if await crud_diary_analysis.exists_today(session=session, user_id=user_id):
+            raise ValueError("Your submission has been received today. Please submit again tomorrow.")
         user = await crud_user.get_user_by_id(session=session, id=user_id)
         user_nutrition = await crud_nutrition.get_latest(session=session, user_id=user_id)
 
@@ -116,7 +124,7 @@ async def submit_food_diary(
             for item in data.data
         ]
         await crud_diary_item.bulk_create(session=session, diary_items=diary_items)
-
+        await reward_user_points(session=session, user_id=user_id, category=CategoryCode.food_diary)
         response.status_code = 201
         response.message = "Food diary submitted successfully."
     return response.build()

@@ -1,7 +1,10 @@
 from __future__ import annotations
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
+from datetime import date
+from typing import List, Optional
 from sqlalchemy.orm import joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update, delete, func
+
 from app.src.models.food import (
     Food,
     FoodHabitQuestion,
@@ -9,7 +12,6 @@ from app.src.models.food import (
     FoodDiaryAnalysis,
     FoodDiaryItem,
 )
-from typing import List, Optional
 
 
 class CRUDFood:
@@ -111,6 +113,22 @@ class CRUDFoodHabitAnswer:
         session.add_all(answers)
         await session.commit()
         return answers
+    
+    async def exists_today(
+        self,
+        session: AsyncSession,
+        user_id: str
+    ):
+        stmt = (
+            select(FoodHabitAnswer)
+            .where(FoodHabitAnswer.user_id == user_id)
+            .where(func.date(FoodHabitAnswer.created_at) == date.today())
+            .limit(1)
+        )
+
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+    
 
 
 class CRUDFoodDiaryAnalysis:
@@ -142,6 +160,21 @@ class CRUDFoodDiaryAnalysis:
     async def delete(self, session: AsyncSession, analysis_id: str):
         await session.execute(delete(FoodDiaryAnalysis).where(FoodDiaryAnalysis.id == analysis_id))
         await session.commit()
+    
+    async def exists_today(
+        self,
+        session: AsyncSession,
+        user_id: str
+    ):
+        stmt = (
+            select(FoodDiaryAnalysis)
+            .where(FoodDiaryAnalysis.user_id == user_id)
+            .where(func.date(FoodDiaryAnalysis.created_at) == date.today())
+            .limit(1)
+        )
+
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
 
 class CRUDFoodDiaryItem:
