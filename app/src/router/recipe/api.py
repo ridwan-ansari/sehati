@@ -13,6 +13,8 @@ auth_service = AuthService()
 
 @router.get("/")
 async def get_recipe(
+    limit: int = 20,
+    offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
 ):
