@@ -3,55 +3,80 @@
 
 {% block content %}
 <div class="premium-card p-6">
-    <div class="card-header border-b border-gray-700 pb-4 mb-4">
-        <h3 class="text-2xl font-bold text-[var(--accent)]">Leaderboard</h3>
-        <p class="text-gray-400 mt-1">Top users based on achievement points</p>
+    <div class="card-header flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-700 pb-6 mb-6">
+        <div>
+            <h3 class="text-2xl font-bold text-[var(--accent)] flex items-center gap-2">
+                🏆 Leaderboard
+            </h3>
+            <p class="text-gray-400 mt-1 text-sm">Top users based on achievement points</p>
+        </div>
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-700 data-table">
-            <thead>
-                <tr>
-                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">Rank</th>
-                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">User</th>
-                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">Achievement</th>
-                    <th class="px-3 py-2 text-left text-xs font-bold uppercase">Credit</th>
-                </tr>
-            </thead>
+    <div class="overflow-hidden rounded-xl border border-gray-700 bg-gray-900/50">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead>
+                    <tr class="bg-gray-800/50">
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider w-16">Rank</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">User Profile</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Achievement</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Credit</th>
+                    </tr>
+                </thead>
 
-            <tbody class="divide-y divide-gray-800 text-gray-300">
-                {% for row in leaderboard %}
-                <tr>
-                    <td class="px-3 py-2 font-bold">
+                <tbody class="divide-y divide-gray-800 text-gray-300">
+                    {% for row in leaderboard %}
+                    <tr class="hover:bg-gray-800 transition-colors duration-150 group">
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if loop.index == 1 %}
+                                <div class="text-2xl scale-110 transform transition-transform">🥇</div>
+                            {% elif loop.index == 2 %}
+                                <div class="text-2xl">🥈</div>
+                            {% elif loop.index == 3 %}
+                                <div class="text-2xl">🥉</div>
+                            {% else %}
+                                <span class="text-gray-500 font-mono font-bold text-lg">#{{ loop.index }}</span>
+                            {% endif %}
+                        </td>
 
-                        {% if loop.index == 1 %}
-                            <span class="text-yellow-400">🥇 {{ loop.index }}</span>
-                        {% elif loop.index == 2 %}
-                            <span class="text-gray-300">🥈 {{ loop.index }}</span>
-                        {% elif loop.index == 3 %}
-                            <span class="text-amber-700">🥉 {{ loop.index }}</span>
-                        {% else %}
-                            <span class="text-gray-500">{{ loop.index }}</span>
-                        {% endif %}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center text-[var(--accent)] font-bold text-lg ring-2 ring-transparent group-hover:ring-[var(--accent)] transition-all mr-4 shrink-0">
+                                    {{ row.nickname[:1]|upper }}
+                                </div>
+                                
+                                <div>
+                                    <div class="text-white font-bold text-base group-hover:text-[var(--accent)] transition-colors">
+                                        {{ row.nickname }}
+                                    </div>
+                                    <div class="text-gray-500 text-xs flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ row.fullname }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
 
-                    </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <span class="text-green-400 font-bold text-lg font-mono tracking-tight">
+                                {{ "{:,}".format(row.achievement_points) }}
+                            </span>
+                            <span class="text-xs text-green-500/50 block">PTS</span>
+                        </td>
 
-                    <td class="px-3 py-2">
-                        <div class="text-white font-semibold">{{ row.nickname }}</div>
-                        <div class="text-gray-400 text-sm">{{ row.fullname }}</div>
-                    </td>
-
-                    <td class="px-3 py-2 text-green-400 font-semibold">
-                        {{ row.achievement_points }}
-                    </td>
-
-                    <td class="px-3 py-2 text-blue-400 font-semibold">
-                        {{ row.credit_points }}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <span class="text-blue-400 font-bold text-base font-mono">
+                                {{ "{:,}".format(row.credit_points) }}
+                            </span>
+                            <span class="text-xs text-blue-500/50 block">CRD</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
