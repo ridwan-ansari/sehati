@@ -81,12 +81,17 @@ async def profile(
 ):
     user = await crud_user.get_user_by_id(session=session, id=authentication["id"])
     wallet = await crud_wallet.get_by_user(session=session, user_id=user.id)
+    leaderboards = await crud_wallet.get_all(session=session)
 
     with response_handler() as response:
         profile_data = UserProfile.model_validate(user).model_dump()
 
         profile_data["achievement_points"] = wallet.achievement_points if wallet else 0
         profile_data["credit_points"] = wallet.credit_points if wallet else 0
+        profile_data["rank"] = next(
+            (index + 1 for index, w in enumerate(leaderboards) if w.user_id == user.id),
+            None
+        )
 
         response.status_code = 200
         response.message = "Get Profile Successfully."
