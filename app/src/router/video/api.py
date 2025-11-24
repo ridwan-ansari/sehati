@@ -40,7 +40,7 @@ async def claim_reward(
 ):
     with response_handler() as response:
         video = await crud_video.get_by_id(session=session, id=video_id)
-        if video:
+        if not video:
             raise ValueError("Video not found.")
         
         reward = await crud_reward.get_by_user_id_video_id(session=session, video_id=video_id, user_id=authentication.get("id"))
@@ -49,6 +49,7 @@ async def claim_reward(
         
         reward = await crud_reward.create(session=session, video_reward_claim=VideoRewardClaim(**{"video_id":video_id, "user_id":authentication.get("id")}))
         await crud_wallet.update_balance(session=session, user_id=authentication.get("id"), wallet_type=WalletKind.achievement, amount=video.reward_points)
+        await crud_wallet.update_balance(session=session, user_id=authentication.get("id"), wallet_type=WalletKind.credit, amount=video.reward_points)
 
         response.status_code = 201
         response.message = "Congratulation, successfully reward claim."
