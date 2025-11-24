@@ -27,7 +27,6 @@
                     <th class="py-3 px-4 font-bold">Category</th>
                     <th class="py-3 px-4 font-bold text-center">Image</th>
                     <th class="py-3 px-4 font-bold text-center">File PDF</th>
-                    <th class="py-3 px-4 font-bold text-center">Actions</th>
                 </tr>
             </thead>
 
@@ -55,24 +54,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v2.25a.75.75 0 0 0 1.5 0v-.884m-4.75 0a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 4.5 7.125v4.5m4.75 0a3.375 3.375 0 0 1 3.375 3.375v4.5A1.125 1.125 0 0 0 9 21h4.5a1.125 1.125 0 0 0 1.125-1.125v-4.5m-4.75 0h4.5" />
                             </svg>
                         </a>
-                    </td>
-
-                    <td class="px-4 py-3 whitespace-nowrap text-center">
-                        <div class="flex justify-center space-x-3">
-                            <a href="/dashboard/recipes/edit/{{ r.id }}" title="Edit Recipe" class="text-gray-500 hover:text-yellow-600 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z" />
-                                </svg>
-                            </a>
-                            
-                            <form method="post" action="/dashboard/recipes/delete/{{ r.id }}" onsubmit="return confirm('Are you sure you want to delete this recipe?');">
-                                <button type="submit" title="Delete Recipe" class="text-gray-500 hover:text-red-600 transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0-.97-6.042M9 5.25h1.013a2.25 2.25 0 0 1 2.185 1.588L14.288 12h-4.053a2.25 2.25 0 0 0-2.185 1.588L6.44 19.5" />
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
                     </td>
                 </tr>
             {% endfor %}
