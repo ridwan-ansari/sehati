@@ -87,7 +87,6 @@ async def chat_endpoint(
 
 @router.get("/messages/{room_key}")
 async def get_messages(
-    user_id: str,
     room_key: str,
     limit: int = 20,
     offset: int = 0,
@@ -100,7 +99,7 @@ async def get_messages(
         room = await crud_chat.get_user_room_by_key(
             session=session,
             room_key=room_key,
-            user_id=user_id
+            user_id=authentication.get("id")
         )
 
         if room:
