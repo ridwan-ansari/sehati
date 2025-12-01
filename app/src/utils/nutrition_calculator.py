@@ -19,11 +19,7 @@ class NutritionCalculator:
     def calculate_bmi(self, weight: float, height: float):
         return round(weight / ((height / 100) ** 2), 1)
 
-    def calculate_ibw(self, height: float, method: str = "devine", gender: str = "male"):
-        if method == "devine":
-            if gender == "male":
-                return round(50 + 0.9 * (height - 152.4), 1)
-            return round(45.5 + 0.9 * (height - 152.4), 1)
+    def calculate_ibw(self, height: float, gender: str = "male"):
         if gender == "male":
             return round((height - 100) - (height - 100) * 0.1, 1)
         return round((height - 100) - (height - 100) * 0.15, 1)
