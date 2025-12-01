@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.src.core.security import AuthService
@@ -19,50 +19,64 @@ async def create_sleep_record(
     authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
+        if data.wake_up_time <= data.sleep_time:
+            raise ValueError('Wake Up Time must be after Sleep Time')
 
         record = await sleep_crud.create(
             session=session,
             user_id=authentication["id"],
-            start_time=data.start_time,
+            sleep_time=data.sleep_time,
             wake_up_time=data.wake_up_time,
-            target_sleep_minutes=data.target_sleep_minutes,
+            target_sleep_hours=data.target_sleep_hours,
         )
-
+        
         response.status_code = 201
         response.message = "Sleep record created successfully."
-        response.data = SleepResponseSchema.model_validate(record)
-        return response.build()
+        response.data = SleepResponseSchema(
+            id=record.id,
+            sleep_time=record.sleep_time,
+            wake_up_time=record.wake_up_time,
+            sleep_duration_minutes=record.sleep_duration_minutes,
+            sleep_duration_hours=round(record.sleep_duration_minutes / 60, 2),
+            target_sleep_hours=record.target_sleep_hours,
+            created_at=record.created_at
+        )
+    return response.build()
 
 
 @router.get("/", status_code=200)
 async def list_sleep_records(
-    limit: int = 20,
-    offset: int = 0,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
-
         records = await sleep_crud.get_by_user(
             session=session,
             user_id=authentication["id"],
             limit=limit,
             offset=offset
         )
-
-        data = []
-        for r in records:
-            hours = round(r.sleep_duration_minutes / 60, 2)
-            target_hours = round(r.target_sleep_minutes / 60, 2)
-
-            item = SleepResponseSchema.model_validate({
-                **r.__dict__,
-                "sleep_duration_hours": hours,
-                "target_sleep_hours": target_hours
-            })
-            data.append(item)
+        
+        total = await sleep_crud.get_total_by_user(
+            session=session,
+            user_id=authentication["id"]
+        )
 
         response.status_code = 200
         response.message = "Sleep records fetched successfully."
-        response.data = data
-        return response.build()
+        response.data = [
+            SleepResponseSchema(
+                id=r.id,
+                sleep_time=r.sleep_time,
+                wake_up_time=r.wake_up_time,
+                sleep_duration_minutes=r.sleep_duration_minutes,
+                sleep_duration_hours=round(r.sleep_duration_minutes / 60, 2),
+                target_sleep_hours=r.target_sleep_hours,
+                created_at=r.created_at
+            )
+            for r in records
+        ]
+        response.total = total
+    return response.build()

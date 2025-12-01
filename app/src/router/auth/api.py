@@ -75,7 +75,7 @@ async def login(
         response.data = tokens
         response.status_code = 200
         response.message = "Successfully logged in."
-        return response.build()
+    return response.build()
 
 @router.post("/refresh")
 async def login(authentication: dict = Depends(auth_service.require_refresh_token), session: AsyncSession = Depends(get_async_session)):

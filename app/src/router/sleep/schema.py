@@ -1,20 +1,20 @@
-from pydantic import BaseModel
-from datetime import time
+from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
 
 class SleepCreateSchema(BaseModel):
-    start_time: time
-    wake_up_time: time
-    target_sleep_minutes: int
+    sleep_time: datetime = Field(..., description="Waktu mulai tidur")
+    wake_up_time: datetime = Field(..., description="Waktu bangun tidur")
+    target_sleep_hours: int = Field(..., gt=7, description="Target durasi tidur dalam jam")
+
 
 class SleepResponseSchema(BaseModel):
     id: str
-    start_time: time
-    wake_up_time: time
+    sleep_time: datetime
+    wake_up_time: datetime
     sleep_duration_minutes: int
-    target_sleep_minutes: int
     sleep_duration_hours: float
     target_sleep_hours: float
-    created_at: str
+    created_at: datetime
 
     class Config:
         from_attributes = True

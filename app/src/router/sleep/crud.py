@@ -1,32 +1,55 @@
+from sqlalchemy import select, func, and_
+from datetime import datetime, timedelta, date
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from datetime import datetime, timedelta
 
 from app.src.models.sleep import Sleep
 
 
 class CRUDSleep:
 
-    async def create(self, session: AsyncSession, user_id: str, start_time, wake_up_time, target_sleep_minutes: int):
-        """Create a sleep record with auto-duration calculation."""
-
-        # Konversi ke datetime dummy untuk hitung durasi
-        today = datetime.today().date()
-        dt_start = datetime.combine(today, start_time)
-        dt_end = datetime.combine(today, wake_up_time)
-
-        # Jika bangun lebih awal → berarti melewati tengah malam
-        if dt_end <= dt_start:
-            dt_end += timedelta(days=1)
-
-        sleep_duration_minutes = int((dt_end - dt_start).total_seconds() / 60)
+    async def create(
+        self, 
+        session: AsyncSession, 
+        user_id: str, 
+        sleep_time: datetime, 
+        wake_up_time: datetime, 
+        target_sleep_hours: int
+    ):
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+        
+        sleep_date = sleep_time.date()
+        wake_up_date = wake_up_time.date()
+        
+        if sleep_date not in [yesterday, today]:
+            raise ValueError("Sleep time must be yesterday or today")
+        
+        if wake_up_date != today:
+            raise ValueError("Wake up time must be today")
+        
+        if wake_up_time <= sleep_time:
+            raise ValueError("Wake up time must be after sleep time")
+        
+        stmt = select(func.count(Sleep.id)).where(
+            and_(
+                Sleep.user_id == user_id,
+                func.date(Sleep.created_at) == today
+            )
+        )
+        result = await session.execute(stmt)
+        count = result.scalar()
+        
+        if count > 0:
+            raise ValueError("You have already submitted a sleep record today")
+        
+        sleep_duration_minutes = int((wake_up_time - sleep_time).total_seconds() / 60)
 
         record = Sleep(
             user_id=user_id,
-            start_time=start_time,
+            sleep_time=sleep_time,
             wake_up_time=wake_up_time,
             sleep_duration_minutes=sleep_duration_minutes,
-            target_sleep_minutes=target_sleep_minutes
+            target_sleep_hours=target_sleep_hours
         )
 
         session.add(record)
@@ -34,7 +57,18 @@ class CRUDSleep:
         await session.refresh(record)
         return record
 
-    async def get_by_user(self, session: AsyncSession, user_id: str, limit: int = 20, offset: int = 0):
+    async def get_by_id(self, session: AsyncSession, sleep_id: str, user_id: str):
+        stmt = select(Sleep).where(Sleep.id == sleep_id, Sleep.user_id == user_id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_user(
+        self, 
+        session: AsyncSession, 
+        user_id: str, 
+        limit: int = 20, 
+        offset: int = 0
+    ):
         stmt = (
             select(Sleep)
             .where(Sleep.user_id == user_id)
@@ -44,5 +78,10 @@ class CRUDSleep:
         )
         result = await session.execute(stmt)
         return result.scalars().all()
+
+    async def get_total_by_user(self, session: AsyncSession, user_id: str):
+        stmt = select(func.count(Sleep.id)).where(Sleep.user_id == user_id)
+        result = await session.execute(stmt)
+        return result.scalar()
 
 sleep_crud = CRUDSleep()
