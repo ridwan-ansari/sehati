@@ -58,15 +58,19 @@ class CRUDChat:
         session: AsyncSession,
         room_key: str,
         user_id: str
-    ) -> ChatRoom:
+    ) -> ChatRoom | None:
         stmt = (
             select(ChatRoom)
             .join(ChatParticipant)
-            .where(ChatParticipant.user_id == user_id, ChatParticipant.deleted_at.__eq__(None))
-            .where(ChatRoom.room_key == room_key, ChatRoom.deleted_at.__eq__(None))
+            .where(
+                ChatParticipant.user_id == user_id,
+                ChatParticipant.deleted_at.is_(None),
+                ChatRoom.room_key == room_key,
+                ChatRoom.deleted_at.is_(None)
+            )
         )
         result = await session.execute(stmt)
-        return result.one_or_none()
+        return result.scalar_one_or_none()
     
     async def get_user_rooms(
         self,
