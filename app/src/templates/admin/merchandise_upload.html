@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}Upload Merchandise{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow">
+    <h2 class="text-xl font-bold mb-4">Upload Merchandise</h2>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+
+        <div>
+            <label class="font-semibold">Name</label>
+            <input type="text" name="name" required class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="font-semibold">Description</label>
+            <textarea name="description" class="w-full p-2 border rounded"></textarea>
+        </div>
+
+        <div>
+            <label class="font-semibold">Price Points</label>
+            <input type="number" name="price_points" required class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="font-semibold">Stock</label>
+            <input type="number" name="stock" required class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="font-semibold">Upload Image</label>
+            <input type="file" name="image" accept="image/*" required>
+        </div>
+
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg">Upload</button>
+    </form>
+</div>
+{% endblock %}

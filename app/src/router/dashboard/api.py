@@ -10,6 +10,7 @@ from app.src.router.recipe.crud import CRUDRecipe
 from app.src.core.session import get_async_session
 from app.src.utils.email_client import EmailClient
 from app.src.router.point.crud import CRUDPointWallet
+from app.src.router.merchandise.crud import crud_merch
 from app.src.models.user_nutrition import UserNutrition
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
@@ -274,3 +275,60 @@ async def leaderboard_page(
     ]
 
     return render_page("admin/leaderboard.html", request, leaderboard=data, auth=auth)
+
+@router.get("/merchandise/upload")
+async def recipe_upload_page(
+    request: Request,
+    auth=Depends(require_admin_cookie)
+):
+    return render_page("admin/merchandise_upload.html", request, auth=auth)
+
+@router.post("/merchandise/upload")
+async def merchandise_upload(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(None),
+    price_points: int = Form(...),
+    stock: int = Form(...),
+    image: UploadFile = Form(...),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+):
+    image_url = await save_upload_with_uuid(image, folder="merchandise")
+
+    await crud_merch.create(
+        session=session,
+        data={
+            "name": name,
+            "description": description,
+            "price_points": price_points,
+            "stock": stock,
+            "image_url": f"/media/merchandise/{image_url}",
+        }
+    )
+
+    return RedirectResponse("/dashboard/merchandise", status_code=302)
+
+@router.get("/merchandise")
+async def merchandise_page(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    offset = (page - 1) * limit
+
+    merch = await crud_merch.get_all(session, limit=limit, offset=offset)
+    total = await crud_merch.count(session)
+    total_pages = (total + limit - 1) // limit
+
+    return render_page(
+        "admin/merchandise.html",
+        request,
+        merch=merch,
+        page=page,
+        total_pages=total_pages,
+        limit=limit,
+        auth=auth,
+    )
