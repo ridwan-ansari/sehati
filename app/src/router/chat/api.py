@@ -103,12 +103,14 @@ async def get_messages(
         )
 
         if room:
+            print(room.id)
             messages = await crud_chat.get_messages(
                 session=session,
                 room_id=room.id,
                 limit=limit,
                 offset=offset
             )
+            print(messages)
             for message in messages:
                 item = {
                     "id": message.id,
