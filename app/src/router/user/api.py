@@ -34,7 +34,12 @@ async def get_list(
         users =  await crud_user.get_users(session=session, keyword=keyword, limit=limit, offset=offset)
         response.status_code = 200
         response.message = "Get List User Successfully."
-        response.data = [UserBaseModel.model_validate(user) for user in users]
+        response.data = [{
+            "id":user.id,
+            "fullname":user.fullname,
+            "picture":user.picture,
+            "nickname":user.nickname
+        } for user in users]
     return response.build()
 
 @router.post("/profile/picture", status_code=201)
