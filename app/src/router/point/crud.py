@@ -70,11 +70,21 @@ class CRUDPointWallet:
             wallet = await self.create_wallet(session, user_id)
 
         if wallet_type == WalletKind.achievement:
-            wallet.achievement_points += amount if tx_type == TxType.earn else -amount
+            if tx_type == TxType.earn:
+                wallet.achievement_points += amount 
+            else:
+                if wallet.achievement_points < amount:
+                    raise ValueError("Transaction failed: Insufficient points.")
+                wallet.achievement_points -= amount
             if wallet.achievement_points < 0:
                 wallet.achievement_points = 0
         else:
-            wallet.credit_points += amount if tx_type == TxType.earn else -amount
+            if tx_type == TxType.earn:
+                wallet.credit_points += amount
+            else:
+                if wallet.credit_points < amount:
+                    raise ValueError("Transaction failed: Insufficient credit points.")
+                wallet.credit_points -= amount
             if wallet.credit_points < 0:
                 wallet.credit_points = 0
 

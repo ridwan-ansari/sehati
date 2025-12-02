@@ -40,6 +40,14 @@ class CRUDUser:
         stmt = select(User).where(User.nickname == nickname, User.verified.is_(True))
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def get_admin_user(self, session: AsyncSession):
+        stmt = (
+            select(User)
+            .where(User.verified.is_(True), User.role.__eq__("admin"))
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def get_users(
         self,
@@ -55,3 +63,6 @@ class CRUDUser:
         stmt = stmt.offset(offset).limit(limit)
         result = await session.execute(stmt)
         return result.scalars().all()
+
+
+crud_user = CRUDUser()

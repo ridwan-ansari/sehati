@@ -30,8 +30,8 @@ async def get_videos(
         response.data = await crud_video.get_list(session=session, title=title, limit=limit, offset=offset)
     return response.build()
 
-@router.post("/claim-reward")
-async def claim_reward(
+@router.post("/claim-point")
+async def claim_point(
     video_id: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token)

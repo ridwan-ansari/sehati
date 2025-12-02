@@ -71,3 +71,9 @@ class EmailClient:
         context = {"fullname": fullname, "link": link, "code":code, "year": datetime.utcnow().year}
         html = self._render(template_name, context)
         self._send(recipient, "SEHATI — Password Reset Request", html, "")
+
+    def send_claim_marchandise_notification(self, recipient: str, context: dict):
+        html = self._render(template_name="emails/claim_marchandise.html")
+        self._send(recipient, "SEHATI — Merchandise Claim Request", html, "")
+
+email_client = EmailClient()

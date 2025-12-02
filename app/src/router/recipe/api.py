@@ -18,6 +18,7 @@ crud_recipe_reward = CRUDRecipeRewardClaim()
 
 @router.get("/")
 async def get_recipe(
+    name: str = None,
     limit: int = 20,
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
@@ -26,12 +27,12 @@ async def get_recipe(
     with response_handler() as response:
         response.status_code = 200
         response.message = "Recipe retrieved successfully."
-        response.data = await crud_recipe.get_all(session=session)
+        response.data = await crud_recipe.get_all(session=session, name=name, limit=limit, offset=offset)
     return response.build()
 
 
-@router.post("/claim-reward")
-async def claim_reward(
+@router.post("/claim-point")
+async def claim_point(
     recipe_id: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token)

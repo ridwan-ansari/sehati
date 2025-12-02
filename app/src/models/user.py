@@ -36,3 +36,4 @@ class User(Base, TimestampMixin):
     forum_likes = relationship("ForumLike", back_populates="user", cascade="all, delete-orphan")
     appointments = relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
     sleep_records = relationship("Sleep", back_populates="user", cascade="all, delete-orphan")
+    merchandise_claims = relationship("MerchandiseClaim", back_populates="user")
