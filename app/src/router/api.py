@@ -10,6 +10,7 @@ from app.src.router.forum.api import router as forum_router
 from app.src.router.recipe.api import router as recipe_router
 from app.src.router.exercise.api import router as exercise_router
 from app.src.router.dashboard.api import router as dashboard_router
+from app.src.router.merchandise.api import router as merchandise_router
 from app.src.router.appointment.api import router as appointment_router
 from app.src.router.user_nutrition.api import router as user_nutrition_router
 
@@ -27,6 +28,7 @@ router.include_router(food_router, prefix="/habit", tags=["Food & Nutrition"])
 router.include_router(exercise_router, prefix="/exercise", tags=["Exercise Habit"])
 router.include_router(appointment_router, prefix="/appointment", tags=["Appointment"])
 router.include_router(user_nutrition_router, prefix="/user/nutrition", tags=["User Nutrition Tracking"])
+router.include_router(merchandise_router, prefix="/merchandise", tags=["Merchandise"])
 
 router_dashboard = APIRouter()
 router_dashboard.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
