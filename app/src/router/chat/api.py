@@ -63,7 +63,7 @@ async def chat_endpoint(
                 receiver_id,
                 json.dumps({
                     "room_id": room.id,
-                    "room_key": room.key,
+                    "room_key": room.room_key,
                     "from": sender_id,
                     "message": text,
                     "created_at": message.created_at
@@ -72,7 +72,7 @@ async def chat_endpoint(
 
             await websocket.send_text(json.dumps({
                 "room_id": room.id,
-                "room_key": room.key,
+                "room_key": room.room_key,
                 "to": receiver_id,
                 "message": text,
                 "status": "sent",
