@@ -24,8 +24,6 @@ async def chat_endpoint(
     sender_id = None
 
     try:
-        # await websocket.accept()
-
         token = websocket.headers.get("Authorization")
         if token and token.startswith("Bearer "):
             token_value = token.split(" ")[1]
@@ -59,22 +57,26 @@ async def chat_endpoint(
                 continue
 
             room = await crud_chat.get_or_create_room(session, sender_id, receiver_id)
-            await crud_chat.save_message(session, room.id, sender_id, text)
+            message = await crud_chat.save_message(session, room.id, sender_id, text)
 
             await manager.send_to_user(
                 receiver_id,
                 json.dumps({
                     "room_id": room.id,
+                    "room_key": room.key,
                     "from": sender_id,
-                    "message": text
+                    "message": text,
+                    "created_at": message.created_at
                 })
             )
 
             await websocket.send_text(json.dumps({
                 "room_id": room.id,
+                "room_key": room.key,
                 "to": receiver_id,
                 "message": text,
-                "status": "sent"
+                "status": "sent",
+                "created_at": message.created_at
             }))
 
     except WebSocketDisconnect:
@@ -103,7 +105,6 @@ async def get_messages(
         )
 
         if room:
-            print(room.id)
             messages = await crud_chat.get_messages(
                 session=session,
                 room_id=room.id,
