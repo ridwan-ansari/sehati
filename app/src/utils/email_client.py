@@ -73,7 +73,7 @@ class EmailClient:
         self._send(recipient, "SEHATI — Password Reset Request", html, "")
 
     def send_claim_marchandise_notification(self, recipient: str, context: dict):
-        html = self._render(template_name="emails/claim_marchandise.html")
+        html = self._render(template_name="emails/claim_marchandise.html", context=context)
         self._send(recipient, "SEHATI — Merchandise Claim Request", html, "")
 
 email_client = EmailClient()
