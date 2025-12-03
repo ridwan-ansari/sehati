@@ -1,0 +1,118 @@
+{% extends "admin/base.html" %}
+{% block title %}Point Transactions{% endblock %}
+
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-extrabold text-gray-800 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-600" fill="none"
+             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 6v6l4 2m6-5a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Point Transactions
+    </h2>
+</div>
+
+<div class="bg-white shadow-xl rounded-xl overflow-hidden">
+
+    <div class="p-4 border-b bg-gray-50 flex justify-between">
+        <form method="get" class="flex gap-3">
+            <input 
+                type="text"
+                name="name"
+                placeholder="Search by fullname..."
+                value="{{ name or '' }}"
+                class="border rounded-lg px-3 py-2 w-64"
+            >
+            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-left divide-y divide-gray-200">
+            <thead>
+                <tr class="bg-gray-50 text-gray-600 uppercase text-sm tracking-wider">
+                    <th class="py-3 px-4 font-bold">User</th>
+                    <th class="py-3 px-4 font-bold">Wallet</th>
+                    <th class="py-3 px-4 font-bold">Type</th>
+                    <th class="py-3 px-4 font-bold">Category</th>
+                    <th class="py-3 px-4 font-bold">Points</th>
+                    <th class="py-3 px-4 font-bold">Balance</th>
+                    <th class="py-3 px-4 font-bold">Date</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100 text-gray-700">
+                {% for tx in transactions %}
+                    <tr class="hover:bg-yellow-50/50 transition duration-150">
+                        <td class="py-3 px-4 font-semibold text-gray-900">
+                            {{ tx.user.fullname }}
+                        </td>
+                        <td class="px-4">{{ tx.wallet }}</td>
+                        <td class="px-4">
+                            {% if tx.tx_type == "earn" %}
+                                <span class="text-green-600 font-bold">+ Earn</span>
+                            {% elif tx.tx_type == "spend" %}
+                                <span class="text-red-600 font-bold">- Spend</span>
+                            {% else %}
+                                <span class="text-gray-600">Adjust</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4">{{ tx.category_code }}</td>
+                        <td class="px-4 font-semibold">{{ tx.delta }}</td>
+                        <td class="px-4">{{ tx.balance_after }}</td>
+                        <td class="px-4 text-sm text-gray-400">
+                            {{ tx.created_at.strftime("%Y-%m-%d %H:%M") }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex justify-between items-center px-4 py-3 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+            Showing page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+        </div>
+
+        <div class="flex space-x-1">
+            
+            {# PREV BUTTON #}
+            {% if page > 1 %}
+                <a href="?page={{ page - 1 }}&limit={{ limit }}&name={{ name }}"
+                   class="px-3 py-1 border rounded-lg bg-white text-gray-700 hover:bg-gray-100 text-sm flex items-center gap-1">
+                   Prev
+                </a>
+            {% else %}
+                <span class="px-3 py-1 border rounded-lg bg-gray-100 text-gray-400 text-sm">Prev</span>
+            {% endif %}
+
+            {# PAGE NUMBERS #}
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg font-semibold text-sm">{{ p }}</span>
+                {% else %}
+                    <a href="?page={{ p }}&limit={{ limit }}&name={{ name }}"
+                       class="px-3 py-1 border rounded-lg text-gray-700 hover:bg-gray-100 text-sm">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {# NEXT BUTTON #}
+            {% if page < total_pages %}
+                <a href="?page={{ page + 1 }}&limit={{ limit }}&name={{ name }}"
+                   class="px-3 py-1 border rounded-lg bg-white text-gray-700 hover:bg-gray-100 text-sm flex items-center gap-1">
+                   Next
+                </a>
+            {% else %}
+                <span class="px-3 py-1 border rounded-lg bg-gray-100 text-gray-400 text-sm">Next</span>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

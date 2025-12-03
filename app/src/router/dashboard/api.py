@@ -9,13 +9,13 @@ from app.src.core.templates import get_templates
 from app.src.router.recipe.crud import CRUDRecipe
 from app.src.core.session import get_async_session
 from app.src.utils.email_client import EmailClient
-from app.src.router.point.crud import CRUDPointWallet
 from app.src.router.merchandise.crud import crud_merch
 from app.src.models.user_nutrition import UserNutrition
 from app.src.router.merchandise.crud import crud_merch_claim
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
 from app.src.utils.point_service import redeem_merchandise_points
+from app.src.router.point.crud import crud_wallet, crud_transaction
 from app.src.core.security import Hasher, TokenService, AuthService
 
 router = APIRouter()
@@ -24,7 +24,6 @@ crud_recipe = CRUDRecipe()
 templates = get_templates()
 email_client = EmailClient()
 auth_service = AuthService()
-crud_wallet = CRUDPointWallet()
 token_service = TokenService()
 
 def render_page(template, request, **context):
@@ -367,7 +366,6 @@ async def update_merchandise(
         status_code=302
     )
 
-
 @router.get("/merchandise/claims")
 async def merchandise_claims_page(
     request: Request,
@@ -446,3 +444,29 @@ async def reject_claim(claim_id: str, session: AsyncSession = Depends(get_async_
     )
 
     return RedirectResponse("/dashboard/merchandise/claims?success=Claim+has+been+rejected", status_code=302)
+
+@router.get("/transactions")
+async def point_transactions_page(
+    request: Request,
+    name: str = None,
+    page: int = 1,
+    limit: int = 20,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session)
+):
+    offset = (page - 1) * limit
+
+    transactions = await crud_transaction.get_history(session, name=name, limit=limit, offset=offset)
+    total = await crud_transaction.count(session, name=name)
+    total_pages = (total + limit - 1) // limit
+
+    return render_page(
+        "admin/point_transactions.html",
+        request,
+        transactions=transactions,
+        name=name,
+        page=page,
+        limit=limit,
+        total_pages=total_pages,
+        auth=auth,
+    )

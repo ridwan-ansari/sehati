@@ -3,6 +3,7 @@ from datetime import date
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.src.models.user import User
 from app.src.models.point import (
     PointCategory,
     PointWallet,
@@ -120,16 +121,28 @@ class CRUDPointTransaction:
         await session.refresh(tx)
         return tx
 
-    async def get_history(self, session: AsyncSession, user_id: str, limit: int = 50):
-        result = await session.execute(
+    async def get_history(
+        self,
+        session: AsyncSession,
+        name: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ):
+        stmt = (
             select(PointTransaction)
-            .where(PointTransaction.user_id == user_id)
+            .join(User, User.id == PointTransaction.user_id)
             .order_by(PointTransaction.created_at.desc())
+            .options(selectinload(PointTransaction.user))
             .limit(limit)
+            .offset(offset)
         )
+
+        if name:
+            stmt = stmt.where(User.fullname.ilike(f"%{name}%"))
+
+        result = await session.execute(stmt)
         return result.scalars().all()
-    
-    
+   
     async def exists_today(
         self,
         session: AsyncSession,
@@ -147,7 +160,18 @@ class CRUDPointTransaction:
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
-
+    async def count(self, session: AsyncSession, name: str = None):
+        stmt = (
+            select(PointTransaction)
+            .join(User, User.id == PointTransaction.user_id)
+            .order_by(PointTransaction.created_at.desc())
+            .options(selectinload(PointTransaction.user))
+        )
+        if name:
+            stmt = stmt.where(User.fullname.ilike(f"%{name}%"))
+        result = await session.execute(stmt)
+        return result.scalar()
+    
 crud_wallet = CRUDPointWallet()
 crud_category = CRUDPointCategory()
 crud_transaction = CRUDPointTransaction()
