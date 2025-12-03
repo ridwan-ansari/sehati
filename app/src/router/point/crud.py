@@ -160,17 +160,18 @@ class CRUDPointTransaction:
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def count(self, session: AsyncSession, name: str = None):
+    async def count(self, session: AsyncSession, name: str | None = None):
         stmt = (
-            select(PointTransaction)
-            .join(User, User.id == PointTransaction.user_id)
-            .order_by(PointTransaction.created_at.desc())
-            .options(selectinload(PointTransaction.user))
+            select(func.count(PointTransaction.id).label("total"))
+            .join(User)
         )
+
         if name:
             stmt = stmt.where(User.fullname.ilike(f"%{name}%"))
+
         result = await session.execute(stmt)
-        return result.scalar()
+        total = result.scalar_one()
+        return total
     
 crud_wallet = CRUDPointWallet()
 crud_category = CRUDPointCategory()
