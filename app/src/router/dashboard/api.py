@@ -391,7 +391,6 @@ async def approve_claim(claim_id: str, session: AsyncSession = Depends(get_async
 
     return RedirectResponse("/dashboard/merchandise/claims?success=Approved", status_code=302)
 
-
 @router.post("/merchandise/claims/{claim_id}/reject")
 async def reject_claim(claim_id: str, session: AsyncSession = Depends(get_async_session), auth=Depends(require_admin_cookie)):
     merchandise_claim = await crud_merch_claim.get_by_id(id=claim_id, session=session)
