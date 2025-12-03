@@ -75,11 +75,6 @@ async def redeem_merchandise_points(
     if wallet.credit_points < merchandise.price_points:
         raise ValueError("Transaction failed: Insufficient points.")
 
-    category = await crud_category.get_by_code(
-        session=session,
-        code=CategoryCode.merchandise_redeem
-    )
-
     wallet_credit = await crud_wallet.update_balance(
         session=session,
         user_id=user_id,
@@ -93,7 +88,7 @@ async def redeem_merchandise_points(
         user_id=user_id,
         wallet=WalletKind.credit,
         tx_type=TxType.spend,
-        category_code=category.code,
+        category_code=CategoryCode.merchandise_redeem.value,
         delta=merchandise.price_points,
         balance_after=wallet_credit.credit_points,
     )
