@@ -35,7 +35,7 @@ class CRUDMerchandise:
         return result.scalar()
 
     async def update_stock(self, session: AsyncSession, id: str) -> Merchandise:
-        merchandise = self.get_by_id(id=id)
+        merchandise = self.get_by_id(id=id, session=session)
         merchandise.stock -= 1
         await session.commit()
         await session.refresh(merchandise)
