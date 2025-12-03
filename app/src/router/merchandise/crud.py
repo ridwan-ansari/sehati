@@ -1,6 +1,6 @@
 from __future__ import annotations
-from sqlalchemy.orm import aliased
-from sqlalchemy import select, func, and_, case
+from sqlalchemy.orm import aliased, selectinload
+from sqlalchemy import select, func, case, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.merchandise import Merchandise, MerchandiseClaim
 
@@ -122,8 +122,56 @@ class CRUDMerchandiseClaim:
         await session.commit()
         await session.refresh(claim)
         return claim
+    
+    async def get_list(
+        self,
+        session: AsyncSession,
+        name: str | None = None,
+        limit: int = 20,
+        offset: int = 0
+    ):
+        stmt = (
+            select(MerchandiseClaim)
+            .order_by(MerchandiseClaim.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .options(
+                selectinload(MerchandiseClaim.user),
+                selectinload(MerchandiseClaim.merchandise)
+            )
+        )
 
+        if name:
+            stmt = stmt.where(MerchandiseClaim.merchandise.has(Merchandise.name.ilike(f"%{name}%")))
+
+        query = await session.execute(stmt)
+        claims = query.scalars().all()
+
+        return [
+            {
+                "fullname": c.user.fullname,
+                "nickname": c.user.nickname,
+                "merchandise_id": c.merchandise.id,
+                "merchandise_name": c.merchandise.name,
+                "merchandise_claim_status": c.status,
+                "claimed_at": c.created_at,
+            }
+            for c in claims
+        ]
+
+    async def count(self, session: AsyncSession):
+        result = await session.execute(select(func.count()).select_from(MerchandiseClaim))
+        return result.scalar() or 0
+    
+    async def update_status(self, session: AsyncSession, claim_id: str, status: str):
+        stmt = (
+            update(MerchandiseClaim)
+            .where(MerchandiseClaim.id == claim_id)
+            .values(status=status)
+        )
+        await session.execute(stmt)
+        await session.commit()
 
 
 crud_merch = CRUDMerchandise()
-merchandise_claim_crud = CRUDMerchandiseClaim()
+crud_merch_claim = CRUDMerchandiseClaim()

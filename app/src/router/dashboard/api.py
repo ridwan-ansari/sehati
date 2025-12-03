@@ -12,8 +12,10 @@ from app.src.utils.email_client import EmailClient
 from app.src.router.point.crud import CRUDPointWallet
 from app.src.router.merchandise.crud import crud_merch
 from app.src.models.user_nutrition import UserNutrition
+from app.src.router.merchandise.crud import crud_merch_claim
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
+from app.src.utils.point_service import redeem_merchandise_points
 from app.src.core.security import Hasher, TokenService, AuthService
 
 router = APIRouter()
@@ -332,3 +334,45 @@ async def merchandise_page(
         limit=limit,
         auth=auth,
     )
+
+@router.get("/merchandise/claims")
+async def merchandise_claims_page(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    offset = (page - 1) * limit
+
+    claims = await crud_merch_claim.get_list(session=session, limit=limit, offset=offset)
+    total = await crud_merch_claim.count(session=session)
+    total_pages = (total + limit - 1) // limit
+
+    return render_page(
+        "admin/merch_claims.html",
+        request,
+        claims=claims,
+        page=page,
+        total_pages=total_pages,
+        limit=limit,
+        auth=auth,
+    )
+
+@router.post("/merchandise/claims/{claim_id}/approve")
+async def approve_claim(claim_id: str, session: AsyncSession = Depends(get_async_session), auth=Depends(require_admin_cookie)):
+    merchandise_claim = await crud_merch_claim.get_by_id(id=claim_id, session=session)
+    user = await crud_user.get_user_by_id(session=session, id=merchandise_claim.user_id)
+    await crud_merch_claim.update_status(session, claim_id=claim_id, status="approved")
+    redeem_merchandise_points(session=session, user_id=user.id)
+    email_client.send_approve_claim_marchandise(recipient=user.email, context={"fullname":user.fullname, "merchandise_name":merchandise_claim.merchandise.name, "year":datetime.now().year})
+    return RedirectResponse("/dashboard/merchandise/claims", status_code=302)
+
+
+@router.post("/merchandise/claims/{claim_id}/reject")
+async def reject_claim(claim_id: str, session: AsyncSession = Depends(get_async_session), auth=Depends(require_admin_cookie)):
+    merchandise_claim = await crud_merch_claim.get_by_id(id=claim_id, session=session)
+    user = await crud_user.get_user_by_id(session=session, id=merchandise_claim.user_id)
+    await crud_merch_claim.update_status(session, claim_id=claim_id, status="rejected")
+    email_client.send_rejected_claim_marchandise(recipient=user.email, context={"fullname":user.fullname, "merchandise_name":merchandise_claim.merchandise.name, "year":datetime.now().year})
+    return RedirectResponse("/dashboard/merchandise/claims", status_code=302)

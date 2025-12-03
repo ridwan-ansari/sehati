@@ -9,7 +9,7 @@ from app.src.router.point.crud import crud_wallet
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
 from app.src.utils.email_client import email_client
-from app.src.router.merchandise.crud import crud_merch, merchandise_claim_crud
+from app.src.router.merchandise.crud import crud_merch, crud_merch_claim
 
 router = APIRouter()
 auth_service = AuthService()
@@ -44,7 +44,7 @@ async def claim_merchandise(
         wallet = await crud_wallet.get_by_user(session=session, user_id=user_id)
         if wallet.credit_points < merchandise.price_points:
             raise ValueError("Transaction failed: Insufficient points.")
-        await merchandise_claim_crud.create(session=session, user_id=user_id, merchandise_id=merchandise_id)
+        await crud_merch_claim.create(session=session, user_id=user_id, merchandise_id=merchandise_id)
         email_client.send_claim_marchandise_notification(recipient=admin.email, context={
             "user_name": user.fullname,
             "nickname": user.nickname,
