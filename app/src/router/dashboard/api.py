@@ -378,7 +378,7 @@ async def approve_claim(claim_id: str, session: AsyncSession = Depends(get_async
     user = await crud_user.get_user_by_id(session=session, id=merchandise_claim.user_id)
     await crud_merch_claim.update_status(session, claim_id=claim_id, status="approved")
     await crud_merch.update_stock(session=session, id=merchandise_claim.merchandise_id)
-    redeem_merchandise_points(session=session, user_id=user.id)
+    redeem_merchandise_points(session=session, user_id=user.id, merchandise_id=merchandise.id)
 
     email_client.send_approve_claim_marchandise(
         recipient=user.email,
