@@ -335,6 +335,35 @@ async def merchandise_page(
         auth=auth,
     )
 
+@router.post("/dashboard/merchandise/update/{merch_id}")
+async def update_merchandise(
+    merch_id: str,
+    name: str = Form(...),
+    price_points: int = Form(...),
+    stock: int = Form(...),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie)
+):
+    merchandise = await crud_merch.get_by_id(session=session, id=merch_id)
+    if not merchandise:
+        return RedirectResponse(
+            "/dashboard/merchandise?error=Merchandise not found",
+            status_code=302
+        )
+
+    merchandise.name = name
+    merchandise.price_points = price_points
+    merchandise.stock = stock
+
+    await session.commit()
+    await session.refresh(merchandise)
+
+    return RedirectResponse(
+        "/dashboard/merchandise?success=Updated successfully",
+        status_code=302
+    )
+
+
 @router.get("/merchandise/claims")
 async def merchandise_claims_page(
     request: Request,

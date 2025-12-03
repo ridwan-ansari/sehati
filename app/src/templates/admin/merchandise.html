@@ -37,20 +37,53 @@
             <tbody class="divide-y divide-gray-100 text-gray-700">
             {% for m in merch %}
                 <tr class="hover:bg-yellow-50/50 transition duration-150">
+
+                    <!-- Image -->
                     <td class="py-3 px-4 text-center">
                         {% if m.image_url %}
-                        <img src="{{ m.image_url }}" class="w-16 h-16 rounded-lg object-cover mx-auto shadow-sm">
+                            <img src="{{ m.image_url }}" class="w-16 h-16 rounded-lg object-cover mx-auto shadow-sm">
                         {% else %}
-                        <span class="text-gray-400 text-xs">No Image</span>
+                            <span class="text-gray-400 text-xs">No Image</span>
                         {% endif %}
                     </td>
 
-                    <td class="py-3 px-4 font-semibold text-gray-900">{{ m.name }}</td>
-                    <td class="px-4 text-gray-700 font-medium">{{ m.price_points }}</td>
-                    <td class="px-4 text-gray-700">{{ m.stock }}</td>
+                    <!-- Editable Form -->
+                    <form method="post" action="/dashboard/merchandise/update/{{ m.id }}" class="contents">
+
+                        <!-- Name -->
+                        <td class="py-3 px-4 font-semibold text-gray-900">
+                            <input type="text" name="name"
+                                value="{{ m.name }}"
+                                class="w-full px-2 py-1 border rounded-lg bg-white shadow-sm focus:ring focus:ring-blue-200">
+                        </td>
+
+                        <!-- Price -->
+                        <td class="px-4 text-gray-700 font-medium">
+                            <input type="number" name="price_points"
+                                value="{{ m.price_points }}"
+                                class="w-24 px-2 py-1 border rounded-lg bg-white shadow-sm focus:ring focus:ring-blue-200">
+                        </td>
+
+                        <!-- Stock -->
+                        <td class="px-4 text-gray-700">
+                            <input type="number" name="stock"
+                                value="{{ m.stock }}"
+                                class="w-20 px-2 py-1 border rounded-lg bg-white shadow-sm focus:ring focus:ring-blue-200">
+                        </td>
+
+                        <!-- Save Button -->
+                        <td class="px-4">
+                            <button type="submit"
+                                class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+                                Save
+                            </button>
+                        </td>
+
+                    </form>
                 </tr>
             {% endfor %}
             </tbody>
+
         </table>
     </div>
 
