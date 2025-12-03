@@ -335,7 +335,7 @@ async def merchandise_page(
         auth=auth,
     )
 
-@router.post("/dashboard/merchandise/update/{merch_id}")
+@router.post("/merchandise/update/{merch_id}")
 async def update_merchandise(
     merch_id: str,
     name: str = Form(...),
