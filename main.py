@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.src.router.chat.api import ws_router
 from app.src.core.templates import get_templates
@@ -11,6 +12,7 @@ from app.src.router.api import router, router_dashboard
 templates = get_templates()
 app = FastAPI(title="SEHATI")
 
+app.mount("/static", StaticFiles(directory="app/src/static"), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
