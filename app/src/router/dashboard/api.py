@@ -119,6 +119,9 @@ async def user_detail_page(
         ordering=ordering
     )
 
+    for n in nutritions:
+        n.created_at = n.created_at.astimezone(ZoneInfo("Asia/Jakarta"))
+
     all_nutritions_raw = await crud_nutrition.get_list(session, user_id)
 
     all_nutritions = [
