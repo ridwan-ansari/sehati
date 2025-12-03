@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import time as dt_time
 from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
@@ -10,7 +10,7 @@ VALID_DAYS = {
 
 class ReminderBase(BaseModel):
     title: Optional[str] = Field(None, example="Morning Medication")
-    time: time = Field(..., example="07:30:00")  # type: ignore
+    time: dt_time = Field(..., example="07:30:00")  # type: ignore
     active: bool = Field(default=True, example=True)
     days: Optional[List[str]] = Field(
         None,
@@ -37,7 +37,7 @@ class ReminderBase(BaseModel):
 
 class ReminderUpdate(BaseModel):
     title: Optional[str] = None
-    time: Optional[time] = None # type: ignore
+    time: Optional[dt_time] = None # type: ignore
     active: Optional[bool] = None
     days: Optional[List[str]] = None
     message: Optional[str] = None
