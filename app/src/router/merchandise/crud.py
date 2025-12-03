@@ -34,6 +34,13 @@ class CRUDMerchandise:
         result = await session.execute(select(func.count()).select_from(Merchandise))
         return result.scalar()
 
+    async def update_stock(self, session: AsyncSession, id: str, status: str) -> Merchandise:
+        merchandise = self.get_by_id(id=id)
+        merchandise.stock -= 1
+        await session.commit()
+        await session.refresh(merchandise)
+        return merchandise
+
     async def get_all_with_claim_status(
         self,
         session: AsyncSession,

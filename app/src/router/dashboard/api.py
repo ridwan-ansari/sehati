@@ -340,6 +340,8 @@ async def merchandise_claims_page(
     request: Request,
     page: int = 1,
     limit: int = 10,
+    error: str = None,
+    success: str = None,
     auth=Depends(require_admin_cookie),
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -357,22 +359,58 @@ async def merchandise_claims_page(
         total_pages=total_pages,
         limit=limit,
         auth=auth,
+        success=success,
+        error=error
     )
 
 @router.post("/merchandise/claims/{claim_id}/approve")
 async def approve_claim(claim_id: str, session: AsyncSession = Depends(get_async_session), auth=Depends(require_admin_cookie)):
     merchandise_claim = await crud_merch_claim.get_by_id(id=claim_id, session=session)
+    merchandise = merchandise_claim.merchandise
+
+    if merchandise.stock <= 0:
+        # redirect dengan error pesan
+        return RedirectResponse(
+            "/dashboard/merchandise/claims?error=Stock+unavailable+Please+add+stock+on+the+merchandise+list+page+or+reject+this+claim",
+            status_code=302
+        )
+    
     user = await crud_user.get_user_by_id(session=session, id=merchandise_claim.user_id)
     await crud_merch_claim.update_status(session, claim_id=claim_id, status="approved")
+    await crud_merch.update_stock(session=session, id=merchandise_claim.merchandise_id)
     redeem_merchandise_points(session=session, user_id=user.id)
-    email_client.send_approve_claim_marchandise(recipient=user.email, context={"fullname":user.fullname, "merchandise_name":merchandise_claim.merchandise.name, "year":datetime.now().year})
-    return RedirectResponse("/dashboard/merchandise/claims", status_code=302)
+
+    email_client.send_approve_claim_marchandise(
+        recipient=user.email,
+        context={
+            "fullname": user.fullname,
+            "merchandise_name": merchandise_claim.merchandise.name,
+            "year": datetime.now().year
+        }
+    )
+
+    return RedirectResponse("/dashboard/merchandise/claims?success=Approved", status_code=302)
 
 
 @router.post("/merchandise/claims/{claim_id}/reject")
 async def reject_claim(claim_id: str, session: AsyncSession = Depends(get_async_session), auth=Depends(require_admin_cookie)):
     merchandise_claim = await crud_merch_claim.get_by_id(id=claim_id, session=session)
+
+    if not merchandise_claim:
+        return RedirectResponse("/dashboard/merchandise/claims?error=Claim+not+found", status_code=302)
+
+    if merchandise_claim.status != "pending":
+        return RedirectResponse("/dashboard/merchandise/claims?error=Claim+already+processed", status_code=302)
+
     user = await crud_user.get_user_by_id(session=session, id=merchandise_claim.user_id)
     await crud_merch_claim.update_status(session, claim_id=claim_id, status="rejected")
-    email_client.send_rejected_claim_marchandise(recipient=user.email, context={"fullname":user.fullname, "merchandise_name":merchandise_claim.merchandise.name, "year":datetime.now().year})
-    return RedirectResponse("/dashboard/merchandise/claims", status_code=302)
+    email_client.send_rejected_claim_marchandise(
+        recipient=user.email,
+        context={
+            "fullname": user.fullname,
+            "merchandise_name": merchandise_claim.merchandise.name,
+            "year": datetime.now().year,
+        }
+    )
+
+    return RedirectResponse("/dashboard/merchandise/claims?success=Claim+has+been+rejected", status_code=302)
