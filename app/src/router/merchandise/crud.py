@@ -159,6 +159,7 @@ class CRUDMerchandiseClaim:
                 "merchandise_id": c.merchandise.id,
                 "merchandise_name": c.merchandise.name,
                 "merchandise_claim_status": c.status,
+                "claim_id":c.id,
                 "claimed_at": c.created_at,
             }
             for c in claims
