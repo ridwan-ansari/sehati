@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie, UploadFile
@@ -457,6 +458,8 @@ async def point_transactions_page(
     offset = (page - 1) * limit
 
     transactions = await crud_transaction.get_history(session, name=name, limit=limit, offset=offset)
+    for t in transactions:
+        t.created_at = t.created_at.astimezone(ZoneInfo("Asia/Jakarta"))
     total = await crud_transaction.count(session, name=name)
     total_pages = (total + limit - 1) // limit
 
