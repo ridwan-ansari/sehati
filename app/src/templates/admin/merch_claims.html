@@ -40,22 +40,26 @@
                         {% endif %}
                     </td>
 
-                    <td class="px-4 text-center flex gap-2 justify-center">
-                        {% if c.status == "pending" %}
-                            <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/approve">
-                                <button class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
-                                    Approve
-                                </button>
-                            </form>
+                    <td class="px-4 text-center">
+                        <div class="flex gap-2 justify-center">
+                            {% if c.status == "pending" %}
+                                <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/approve">
+                                    <button type="submit"
+                                        class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                                        Approve
+                                    </button>
+                                </form>
 
-                            <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/reject">
-                                <button class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
-                                    Reject
-                                </button>
-                            </form>
-                        {% else %}
-                            <span class="text-gray-400 text-sm">—</span>
-                        {% endif %}
+                                <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/reject">
+                                    <button type="submit"
+                                        class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+                                        Reject
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-gray-400 text-sm">—</span>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% endfor %}
