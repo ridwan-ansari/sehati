@@ -51,7 +51,7 @@
                         <td class="py-3 px-4 font-semibold text-gray-900">
                             {{ tx.user.fullname }}
                         </td>
-                        <td class="px-4">{{ tx.wallet }}</td>
+                        <td class="px-4">{{ tx.wallet.value }}</td>
                         <td class="px-4">
                             {% if tx.tx_type == "earn" %}
                                 <span class="text-green-600 font-bold">+ Earn</span>
@@ -61,7 +61,7 @@
                                 <span class="text-gray-600">Adjust</span>
                             {% endif %}
                         </td>
-                        <td class="px-4">{{ tx.category_code }}</td>
+                        <td class="px-4">{{ tx.category_code.value }}</td>
                         <td class="px-4 font-semibold">{{ tx.delta }}</td>
                         <td class="px-4">{{ tx.balance_after }}</td>
                         <td class="px-4 text-sm text-gray-400">
