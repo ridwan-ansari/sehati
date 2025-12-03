@@ -23,7 +23,7 @@
             </thead>
 
             <tbody class="divide-y divide-gray-100 text-gray-700">
-            {% for c in claims %}
+                {% for c in claims %}
                 <tr class="hover:bg-yellow-50/50 transition duration-150">
                     <td class="py-3 px-4 font-semibold">{{ c.fullname }}</td>
                     <td class="px-4">{{ c.nickname }}</td>
@@ -43,26 +43,26 @@
                     <td class="px-4 text-center">
                         <div class="flex gap-2 justify-center">
                             {% if c.merchandise_claim_status == "pending" %}
-                                <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/approve">
-                                    <button type="submit"
-                                        class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
-                                        Approve
-                                    </button>
-                                </form>
+                            <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/approve">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                                    Approve
+                                </button>
+                            </form>
 
-                                <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/reject">
-                                    <button type="submit"
-                                        class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
-                                        Reject
-                                    </button>
-                                </form>
+                            <form method="post" action="/dashboard/merchandise/claims/{{ c.claim_id }}/reject">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+                                    Reject
+                                </button>
+                            </form>
                             {% else %}
                                 <span class="text-gray-400 text-sm">—</span>
                             {% endif %}
                         </div>
                     </td>
                 </tr>
-            {% endfor %}
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -75,10 +75,10 @@
 
         <div class="flex space-x-1">
             {% if page > 1 %}
-                <a href="?page={{ page - 1 }}&limit={{ limit }}"
-                   class="px-3 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-100 text-sm">
-                   Prev
-                </a>
+            <a href="?page={{ page - 1 }}&limit={{ limit }}"
+               class="px-3 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-100 text-sm">
+               Prev
+            </a>
             {% endif %}
 
             {% for p in range(1, total_pages + 1) %}
@@ -93,31 +93,69 @@
             {% endfor %}
 
             {% if page < total_pages %}
-                <a href="?page={{ page + 1 }}&limit={{ limit }}"
-                   class="px-3 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-100 text-sm">
-                   Next
-                </a>
+            <a href="?page={{ page + 1 }}&limit={{ limit }}"
+               class="px-3 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-100 text-sm">
+               Next
+            </a>
             {% endif %}
         </div>
     </div>
-
-    {% if error %}
-        <div class="mb-4 p-4 rounded-lg bg-red-100 border border-red-300 text-red-800 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86L12 3 5.07 19z" />
-            </svg>
-            <span>{{ error }}</span>
-        </div>
-        {% endif %}
-
-        {% if success %}
-        <div class="mb-4 p-4 rounded-lg bg-green-100 border border-green-300 text-green-800 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <span>{{ success }}</span>
-        </div>
-    {% endif %}
-
 </div>
+
+{% if error %}
+<div id="errorModal"
+     class="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div class="bg-white w-80 p-5 rounded-xl shadow-xl text-red-700 border border-red-300">
+        <div class="flex items-center gap-3 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 9v2m0 4h.01M5.07 19h13.86L12 3 5.07 19z"/>
+            </svg>
+            <h3 class="font-bold text-lg">Error</h3>
+        </div>
+        <p class="text-sm mb-4">{{ error }}</p>
+        <button onclick="document.getElementById('errorModal').style.display='none'"
+                class="w-full px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
+            Close
+        </button>
+    </div>
+</div>
+{% endif %}
+
+{% if success %}
+<div id="successModal"
+     class="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div class="bg-white w-80 p-5 rounded-xl shadow-xl text-green-700 border border-green-300">
+        <div class="flex items-center gap-3 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5 13l4 4L19 7" />
+            </svg>
+            <h3 class="font-bold text-lg">Success</h3>
+        </div>
+        <p class="text-sm mb-4">{{ success }}</p>
+        <button onclick="document.getElementById('successModal').style.display='none'"
+                class="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
+            Close
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Close modal when clicking outside -->
+<script>
+document.addEventListener("click", function (e) {
+    const errorModal = document.getElementById("errorModal");
+    const successModal = document.getElementById("successModal");
+
+    if (errorModal && e.target === errorModal) {
+        errorModal.style.display = "none";
+    }
+
+    if (successModal && e.target === successModal) {
+        successModal.style.display = "none";
+    }
+});
+</script>
+
 {% endblock %}
