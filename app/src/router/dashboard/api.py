@@ -316,6 +316,8 @@ async def merchandise_page(
     request: Request,
     page: int = 1,
     limit: int = 10,
+    success: str = None,
+    error: str = None,
     auth=Depends(require_admin_cookie),
     session: AsyncSession = Depends(get_async_session),
 ):
@@ -333,6 +335,8 @@ async def merchandise_page(
         total_pages=total_pages,
         limit=limit,
         auth=auth,
+        success=success,
+        error=error,
     )
 
 @router.post("/merchandise/update/{merch_id}")
