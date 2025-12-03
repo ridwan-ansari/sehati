@@ -123,6 +123,11 @@ class CRUDMerchandiseClaim:
         await session.refresh(claim)
         return claim
     
+    async def get_by_id(self, id: str, session: AsyncSession) -> MerchandiseClaim:
+        stmt = select(MerchandiseClaim).where(MerchandiseClaim.id.__eq__(id), MerchandiseClaim.deleted_at.is_(None)).options(selectinload(MerchandiseClaim.merchandise))
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+    
     async def get_list(
         self,
         session: AsyncSession,

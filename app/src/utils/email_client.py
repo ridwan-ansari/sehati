@@ -75,5 +75,13 @@ class EmailClient:
     def send_claim_marchandise_notification(self, recipient: str, context: dict):
         html = self._render(template_name="emails/claim_marchandise.html", context=context)
         self._send(recipient, "SEHATI — Merchandise Claim Request", html, "")
+    
+    def send_approve_claim_marchandise(self, recipient: str, context: dict):
+        html = self._render(template_name="emails/approve_claim_merchandise.html", context=context)
+        self._send(recipient, "SEHATI — Merchandise Claim Approved", html, "")
+    
+    def send_rejected_claim_marchandise(self, recipient: str, context: dict):
+        html = self._render(template_name="emails/rejected_claim.html", context=context)
+        self._send(recipient, "SEHATI — Merchandise Claim Rejected", html, "")
 
 email_client = EmailClient()
