@@ -176,18 +176,15 @@ async def send_reset_link(
     session: AsyncSession = Depends(get_async_session),
 ):
     user = await crud_user.get_user_by_email(session, email)
-    if not user:
-        return render_page("admin/reset_password.html", request, error="Email not found")
-
-    payload = {"id": user.id, "email": user.email}
-    token = token_service.generate_token(payload=payload, token_type="reset_password", expires_in_minutes=30)
-    reset_link = f"https://sehatiapps.web.id/dashboard/reset/password/confirm?token={token}"
-    try:
-        email_client.send_password_reset_email(recipient=user.email, fullname=user.fullname, link=reset_link)
-    except Exception as error:
-        logger.error(error)
-        return render_page("admin/reset_password.html", request, error="Something was wrong. Please try again later.")
-    return render_page("admin/reset_password.html", request, success="Link sent to your email.")
+    if user:
+        payload = {"id": user.id, "email": user.email}
+        token = token_service.generate_token(payload=payload, token_type="reset_password", expires_in_minutes=30)
+        reset_link = f"https://sehatiapps.web.id/dashboard/reset/password/confirm?token={token}"
+        try:
+            email_client.send_password_reset_email(recipient=user.email, fullname=user.fullname, link=reset_link)
+        except Exception as error:
+            logger.error(error)
+    return render_page("admin/reset_password.html", request, success="You will receive a verification email if the email address exists in our system.")
 
 @router.get("/reset/password/confirm")
 async def confirm_reset_password(request: Request, token: str):
