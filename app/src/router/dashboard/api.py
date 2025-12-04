@@ -184,8 +184,9 @@ async def send_reset_link(
     reset_link = f"https://sehatiapps.web.id/dashboard/reset/password/confirm?token={token}"
     try:
         email_client.send_password_reset_email(recipient=user.email, fullname=user.fullname, link=reset_link)
-    except Exception:
-        return render_page("admin/reset_password.html", request, error="Something was wrong. Please try again latter.")
+    except Exception as error:
+        logger.error(error)
+        return render_page("admin/reset_password.html", request, error="Something was wrong. Please try again later.")
     return render_page("admin/reset_password.html", request, success="Link sent to your email.")
 
 @router.get("/reset/password/confirm")

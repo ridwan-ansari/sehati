@@ -1,5 +1,6 @@
 from __future__ import annotations
 import re
+from loguru import logger
 from random import randint
 from json import loads, dumps
 from datetime import datetime, date
@@ -56,7 +57,11 @@ async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get
         user.password = Hasher.hash_password(user.password)
         code = randint(100000,999999)
         await redis.set(f"user:verify:{user.email}:{code}", value=user.model_dump_json(), ex=3600)
-        email_client.send_verification_email(recipient=user.email, code=code)
+        try:
+            email_client.send_verification_email(recipient=user.email, code=code)
+        except Exception as error:
+            logger.error(error)
+            raise ValueError("Something was wrong. Please try again later.")
         response.status_code = 201
         response.message = "Account registered successfully."
         response.data = {"email": user.email}
@@ -135,7 +140,11 @@ async def reset_password(email: str, session: AsyncSession = Depends(get_async_s
         if user:
             code = randint(100000,999999)
             await redis.set(f"user:reset:password:{user.email}:{code}", value=dumps({"id":user.id}), ex=900)
-            email_client.send_password_reset_email(recipient=user.email, fullname=user.fullname, code=code, template_name="emails/reset_password_user.html")
+            try:
+                email_client.send_password_reset_email(recipient=user.email, fullname=user.fullname, code=code, template_name="emails/reset_password_user.html")
+            except Exception as error:
+                logger.error(error)
+                raise ValueError("Something was wrong. Please try again later.")
 
         response.status_code = 200
         response.message = "Please check your email. If your account exists, you will receive a verification code."

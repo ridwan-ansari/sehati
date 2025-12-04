@@ -1,4 +1,5 @@
 from __future__ import annotations
+from loguru import logger
 from datetime import datetime
 from fastapi import APIRouter, Depends, Form
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,14 +46,17 @@ async def claim_merchandise(
         if wallet.credit_points < merchandise.price_points:
             raise ValueError("Transaction failed: Insufficient points.")
         await crud_merch_claim.create(session=session, user_id=user_id, merchandise_id=merchandise_id)
-        email_client.send_claim_marchandise_notification(recipient=admin.email, context={
-            "user_name": user.fullname,
-            "nickname": user.nickname,
-            "merchandise_name": merchandise.name,
-            "user_points": wallet.credit_points,
-            "merchandise_price": merchandise.price_points,
-            "year": datetime.now().year
-        })
+        try:
+            email_client.send_claim_marchandise_notification(recipient=admin.email, context={
+                "user_name": user.fullname,
+                "nickname": user.nickname,
+                "merchandise_name": merchandise.name,
+                "user_points": wallet.credit_points,
+                "merchandise_price": merchandise.price_points,
+                "year": datetime.now().year
+            })
+        except Exception as error:
+            logger.error(error)
         response.status_code = 201
         response.message = "Your claim has been sent to the admin. Once it is approved, you will receive an email"
     return response.build()
