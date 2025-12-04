@@ -2,7 +2,7 @@ from __future__ import annotations
 import re
 from random import randint
 from json import loads, dumps
-from datetime import datetime
+from datetime import datetime, date
 from fastapi import Depends, APIRouter, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,6 +41,18 @@ async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get
             raise ValueError("The format picture is wrong, please check again.")
         if re.fullmatch(settings.PASSWORD_REGEX, user.password) is None:
             raise ValueError("Password must be at least 8 chars, contain upper, lower, digit, and symbol.")
+        
+        today = date.today()
+
+        age = today.year - user.date_of_birth.year - (
+            (today.month, today.day) < (user.date_of_birth.month, user.date_of_birth.day)
+        )
+
+        if age < 14:
+            raise ValueError("Minimum age to register is 14 years old.")
+        if age > 19:
+            raise ValueError("Maximum allowed age is exactly 19 years old.")
+
         user.password = Hasher.hash_password(user.password)
         code = randint(100000,999999)
         await redis.set(f"user:verify:{user.email}:{code}", value=user.model_dump_json(), ex=3600)
