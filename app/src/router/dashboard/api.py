@@ -549,7 +549,7 @@ async def create_game(
     await crud_games.create(
         session=session,
         data={
-            "namename": name,
+            "name": name,
             "description": description,
             "url": url,
             "price_points": price_points,
