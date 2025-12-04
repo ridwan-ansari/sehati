@@ -46,7 +46,7 @@ async def require_admin_cookie(admin_access: str = Cookie(None)):
 async def login_page(request: Request, admin_access: str = Cookie(None)):
     if admin_access:
         try:
-            payload = await auth_service.decode_token(admin_access)
+            payload = await auth_service._decode_token(admin_access)
             if payload.get("role") == "admin":
                 return RedirectResponse("/dashboard/users")
         except Exception:
@@ -404,7 +404,6 @@ async def approve_claim(claim_id: str, session: AsyncSession = Depends(get_async
     merchandise = merchandise_claim.merchandise
 
     if merchandise.stock <= 0:
-        # redirect dengan error pesan
         return RedirectResponse(
             "/dashboard/merchandise/claims?error=Stock+unavailable+Please+add+stock+on+the+merchandise+list+page+or+reject+this+claim",
             status_code=302
