@@ -17,22 +17,77 @@
   <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
   <style>
+    /* Custom Color Variables */
     :root {
-      --primary: #FFC107;
-      --accent: #FF9800;
+      --primary: #FFC107; /* Amber/Gold */
+      --accent: #FF9800; /* Orange */
       --background: #FAF9F0;
       font-family: 'Inter', sans-serif;
     }
-    body {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+    
+    /* Full-screen gradient background */
+    .auth-background {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 1rem; /* Padding for mobile devices */
+    }
+
+    /* Minimal Glassmorphism effect for the card */
+    .auth-card {
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      background-color: rgba(255, 255, 255, 0.85); /* Slightly transparent white */
+      border: 1px solid rgba(255, 255, 255, 0.4);
     }
   </style>
 </head>
-<body>
-  {% block content %}{% endblock %}
+
+<body class="h-full">
+  <div class="auth-background w-full">
+    
+    <div class="auth-card w-full max-w-md p-8 sm:p-10 rounded-2xl shadow-2xl transition-all duration-300">
+      
+      <div class="mb-8 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto text-yellow-600">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+        <h1 class="text-3xl font-extrabold text-gray-900 mt-3">
+          {% block header_title %}Admin Login{% endblock %}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+          {% block header_subtitle %}Please sign in to continue.{% endblock %}
+        </p>
+      </div>
+
+      <div class="mt-8">
+        {% block content %}
+          <div class="space-y-6">
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+              <div class="mt-1">
+                <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm">
+              </div>
+            </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+              <div class="mt-1">
+                <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm">
+              </div>
+            </div>
+
+            <div>
+              <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition duration-150">
+                Sign in
+              </button>
+            </div>
+          </div>
+        {% endblock %}
+      </div>
+      </div>
+    </div>
 </body>
 </html>
