@@ -182,7 +182,10 @@ async def send_reset_link(
     payload = {"id": user.id, "email": user.email}
     token = token_service.generate_token(payload=payload, token_type="reset_password", expires_in_minutes=30)
     reset_link = f"https://sehatiapps.web.id/dashboard/reset/password/confirm?token={token}"
-    email_client.send_password_reset_email(recipient=user.email, fullname=user.fullname, link=reset_link)
+    try:
+        email_client.send_password_reset_email(recipient=user.email, fullname=user.fullname, link=reset_link)
+    except Exception:
+        return render_page("admin/reset_password.html", request, error="Something was wrong. Please try again latter.")
     return render_page("admin/reset_password.html", request, success="Link sent to your email.")
 
 @router.get("/reset/password/confirm")
