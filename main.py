@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, Request, HTTPException
 
 from app.src.router.chat.api import ws_router
 from app.src.core.templates import get_templates
@@ -33,3 +33,12 @@ async def root(request: Request):
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 302 and exc.headers and "Location" in exc.headers:
+        return RedirectResponse(
+            url=exc.headers["Location"],
+            status_code=302
+        )
+    return {"detail": exc.detail}
