@@ -1,4 +1,5 @@
 from __future__ import annotations
+from loguru import logger
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from fastapi.responses import RedirectResponse
@@ -428,14 +429,17 @@ async def approve_claim(claim_id: str, session: AsyncSession = Depends(get_async
     await crud_merch.update_stock(session=session, id=merchandise_claim.merchandise_id)
     await redeem_merchandise_points(session=session, user_id=user.id, merchandise_id=merchandise.id)
 
-    email_client.send_approve_claim_marchandise(
-        recipient=user.email,
-        context={
-            "fullname": user.fullname,
-            "merchandise_name": merchandise_claim.merchandise.name,
-            "year": datetime.now().year
-        }
-    )
+    try:
+        email_client.send_approve_claim_marchandise(
+            recipient=user.email,
+            context={
+                "fullname": user.fullname,
+                "merchandise_name": merchandise_claim.merchandise.name,
+                "year": datetime.now().year
+            }
+        )
+    except Exception as error:
+        logger.error(error)
 
     return RedirectResponse("/dashboard/merchandise/claims?success=Approved", status_code=302)
 
@@ -451,14 +455,18 @@ async def reject_claim(claim_id: str, session: AsyncSession = Depends(get_async_
 
     user = await crud_user.get_user_by_id(session=session, id=merchandise_claim.user_id)
     await crud_merch_claim.update_status(session, claim_id=claim_id, status="rejected")
-    email_client.send_rejected_claim_marchandise(
-        recipient=user.email,
-        context={
-            "fullname": user.fullname,
-            "merchandise_name": merchandise_claim.merchandise.name,
-            "year": datetime.now().year,
-        }
-    )
+
+    try:
+        email_client.send_rejected_claim_marchandise(
+            recipient=user.email,
+            context={
+                "fullname": user.fullname,
+                "merchandise_name": merchandise_claim.merchandise.name,
+                "year": datetime.now().year,
+            }
+        )
+    except Exception as error:
+        logger.error(error)
 
     return RedirectResponse("/dashboard/merchandise/claims?success=Claim+has+been+rejected", status_code=302)
 
