@@ -66,7 +66,7 @@ async def chat_endpoint(
                     "room_key": room.room_key,
                     "from": sender_id,
                     "message": text,
-                    "created_at": message.created_at
+                    "created_at": str(message.created_at)
                 })
             )
 
@@ -76,7 +76,7 @@ async def chat_endpoint(
                 "to": receiver_id,
                 "message": text,
                 "status": "sent",
-                "created_at": message.created_at
+                "created_at": str(message.created_at)
             }))
 
     except WebSocketDisconnect:
