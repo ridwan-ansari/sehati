@@ -123,8 +123,6 @@ class CRUDMerchandiseClaim:
             status="pending"
         )
         
-        merchandise.stock -= quantity
-        
         session.add(claim)
         await session.commit()
         await session.refresh(claim)
