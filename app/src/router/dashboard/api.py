@@ -571,5 +571,5 @@ async def view_game(
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
 
-    return render_page("admin/game_view.html", request, game=game, auth=auth)
+    return render_page("admin/game.html", request, game=game, auth=auth)
 

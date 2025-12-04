@@ -1,81 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>{{ game.name }} — SEHATI Games</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>{{ game.name }} — SEHATI Games</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    :root {
-      --primary: #FFC107;
-      --dark: #1E293B;
-      --bg: #FAF9F0;
-    }
+    <style>
+        :root {
+            --primary: #FFC107;
+            --dark: #1E293B;
+        }
 
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-    }
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
 
-    /* HEADER */
-    .header {
-      background: var(--dark);
-      padding: 12px;
-      text-align: center;
-      border-bottom: 3px solid var(--primary);
-      color: var(--primary);
-      font-size: 18px;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-    }
+        .header {
+            background: var(--dark);
+            padding: 12px;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
 
-    /* FOOTER */
-    .footer {
-      background: var(--dark);
-      padding: 12px;
-      text-align: center;
-      border-top: 2px solid #333;
-      font-size: 12px;
-      color: #ccc;
-    }
+        .footer {
+            background: var(--dark);
+            padding: 12px;
+            text-align: center;
+            border-top: 2px solid #333;
+            font-size: 12px;
+            color: #ccc;
+        }
 
-    iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: black;
-    }
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: black;
+            overflow: hidden; /* Tambahkan ini agar scrolling=no bekerja optimal */
+        }
 
-    .sehati-logo {
-      width: 22px;
-      height: 22px;
-    }
-  </style>
+        .sehati-logo {
+            width: 22px;
+            height: 22px;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- HEADER -->
-  <div class="header">
-    <img class="sehati-logo" src="/static/logo_sehati.png" alt="SEHATI">
-    SEHATI — {{ game.name }}
-  </div>
+    <div class="header">
+        <img class="sehati-logo" src="/static/logo_sehati.png" alt="SEHATI Logo">
+        SEHATI — {{ game.name }}
+    </div>
 
-  <!-- GAME IFRAME -->
-  <iframe src="{{ game.url }}" allowfullscreen></iframe>
+    <iframe 
+        src="{{ game.url }}" 
+        frameborder="0" 
+        scrolling="no" 
+        loading="lazy"
+        allowfullscreen
+    ></iframe>
 
-  <!-- FOOTER -->
-  <div class="footer">
-    © {{ year or 2025 }} SEHATI Health Platform — Powered by SEHATI
-  </div>
+    <div class="footer">
+        © {{ year or 2025 }} SEHATI Health Platform — Powered by SEHATI
+    </div>
 
 </body>
 </html>
