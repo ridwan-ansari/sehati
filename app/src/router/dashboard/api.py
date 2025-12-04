@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie, Up
 
 from app.src.core.config import settings
 from app.src.router.user.crud import CRUDUser
+from app.src.router.games.crud import crud_games
 from app.src.core.templates import get_templates
 from app.src.router.recipe.crud import CRUDRecipe
 from app.src.core.session import get_async_session
@@ -502,3 +503,73 @@ async def point_transactions_page(
         total_pages=total_pages,
         auth=auth,
     )
+
+@router.get("/games")
+async def games_page(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    offset = (page - 1) * limit
+
+    games = await crud_games.get_all(session, limit=limit, offset=offset)
+    total = await crud_games.count(session)
+    total_pages = (total + limit - 1) // limit
+
+    return render_page(
+        "admin/games.html",
+        request,
+        games=games,
+        page=page,
+        total_pages=total_pages,
+        limit=limit,
+        auth=auth,
+    )
+
+@router.get("/games/create")
+async def game_create_page(request: Request, auth=Depends(require_admin_cookie)):
+    return render_page("admin/game_create.html", request, auth=auth)
+
+
+@router.post("/games/create")
+async def create_game(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(None),
+    url: str = Form(...),
+    price_points: int = Form(...),
+    image: UploadFile = Form(...),
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    image_url = await save_upload_with_uuid(image, folder="games")
+
+    await crud_games.create(
+        session=session,
+        data={
+            "namename": name,
+            "description": description,
+            "url": url,
+            "price_points": price_points,
+            "image_url": f"/media/games/{image_url}",
+        }
+    )
+
+    return RedirectResponse("/dashboard/games", status_code=302)
+
+@router.get("/games/{game_id}/view")
+async def view_game(
+    request: Request,
+    game_id: str,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session)
+):
+    game = await crud_games.get_by_id(session=session, id=game_id)
+
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    return render_page("admin/game_view.html", request, game=game, auth=auth)
+
