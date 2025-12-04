@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 from random import randint
 from json import loads, dumps
 from datetime import datetime
@@ -6,6 +7,7 @@ from fastapi import Depends, APIRouter, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.src.models.user import User
+from app.src.core.config import settings
 from app.src.utils.redis_client import redis
 from app.src.models.point import CategoryCode
 from app.src.router.user.crud import CRUDUser 
@@ -37,6 +39,8 @@ async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get
             raise ValueError("Nickname is already registered. Please use another nickname.")
         if user.picture and "/media/avatars/" not in user.picture:
             raise ValueError("The format picture is wrong, please check again.")
+        if re.fullmatch(settings.PASSWORD_REGEX, user.password) is None:
+            raise ValueError("Password must be at least 8 chars, contain upper, lower, digit, and symbol.")
         user.password = Hasher.hash_password(user.password)
         code = randint(100000,999999)
         await redis.set(f"user:verify:{user.email}:{code}", value=user.model_dump_json(), ex=3600)
@@ -142,6 +146,8 @@ async def reset_password_confirm(
             raise ValueError("Invalid verification code or the code has expired.")
         user = loads(user)
         user = await crud_user.get_user_by_id(session=session, id=user.get("id"))
+        if re.fullmatch(settings.PASSWORD_REGEX, user.password) is None:
+            raise ValueError("Password must be at least 8 chars, contain upper, lower, digit, and symbol.")
         user.password = Hasher.hash_password(new_password)
         session.add(user)
         await session.commit()

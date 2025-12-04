@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 from loguru import logger
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -6,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie, UploadFile
 
+from app.src.core.config import settings
 from app.src.router.user.crud import CRUDUser
 from app.src.core.templates import get_templates
 from app.src.router.recipe.crud import CRUDRecipe
@@ -211,6 +213,8 @@ async def confirm_reset_password_post(
         return render_page("admin/reset_password.html", request, error="User not found.")
 
     try:
+        if re.fullmatch(settings.PASSWORD_REGEX, new_password) is None:
+            raise ValueError("Password must be at least 8 chars, contain upper, lower, digit, and symbol.")
         user.password = Hasher.hash_password(new_password)
         await session.commit()
     except Exception:
