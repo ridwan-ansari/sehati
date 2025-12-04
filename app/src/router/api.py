@@ -3,6 +3,7 @@ from app.src.router.chat.api import router as chat_router
 from app.src.router.auth.api import router as auth_router
 from app.src.router.user.api import router as user_router
 from app.src.router.food.api import router as food_router
+from app.src.router.games.api import router as game_router
 from app.src.router.sleep.api import router as sleep_router
 from app.src.router.video.api import router as video_router
 from app.src.router.point.api import router as point_router
@@ -17,6 +18,7 @@ from app.src.router.user_nutrition.api import router as user_nutrition_router
 
 router = APIRouter(prefix="/api")
 
+router.include_router(game_router, prefix="/games", tags=["Games"]) 
 router.include_router(forum_router, prefix="/forum", tags=["Forum"]) 
 router.include_router(sleep_router, prefix="/sleep", tags=["Sleep"]) 
 router.include_router(chat_router, prefix="/chat", tags=["Chat System"])
