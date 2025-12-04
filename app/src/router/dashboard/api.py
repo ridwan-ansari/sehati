@@ -33,14 +33,14 @@ def render_page(template, request, **context):
 
 async def require_admin_cookie(admin_access: str = Cookie(None)):
     if not admin_access:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+        return RedirectResponse("/dashboard/login?error=Invalid+credentials", status_code=302)
     try:
         payload = await auth_service._decode_token(admin_access)
         if payload.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="Unauthorized")
+            return RedirectResponse("/dashboard/login?error=Access+denied", status_code=302)
         return payload
     except:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+        return RedirectResponse("/dashboard/login?error=Access+denied", status_code=302)
 
 @router.get("/login")
 async def login_page(request: Request, admin_access: str = Cookie(None)):
