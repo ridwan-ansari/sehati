@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% block title %}Games{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-extrabold text-gray-800 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke-width="2"
+             stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 6v6l4 2" />
+        </svg>
+        Games List
+    </h2>
+    <a href="/dashboard/games/create"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-blue-700 transition flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+             stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Add Game
+    </a>
+</div>
+
+<div class="bg-white shadow-xl rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-left divide-y divide-gray-200">
+            <thead>
+                <tr class="bg-gray-50 text-gray-600 uppercase text-sm tracking-wider">
+                    <th class="py-3 px-4 font-bold">Name</th>
+                    <th class="py-3 px-4 font-bold">Thumbnail</th>
+                    <th class="py-3 px-4 font-bold">Price</th>
+                    <th class="py-3 px-4 font-bold text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-gray-700">
+            {% for g in games %}
+                <tr class="hover:bg-yellow-50/50 transition duration-150">
+                    <td class="py-3 px-4 font-semibold text-gray-900">{{ g.namename }}</td>
+                    <td class="px-4">
+                        {% if g.image_url %}
+                            <img src="{{ g.image_url }}" class="h-12 rounded shadow">
+                        {% else %}
+                            <span class="text-gray-400 text-xs">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4">{{ g.price_points }}</td>
+
+                    <td class="px-4 text-center">
+                        <a href="/dashboard/games/{{ g.id }}/view"
+                           class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                           View
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "admin/pagination.html" %}
+</div>
+{% endblock %}
