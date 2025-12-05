@@ -111,7 +111,6 @@ async def get_messages(
                 limit=limit,
                 offset=offset
             )
-            print(messages)
             for message in messages:
                 item = {
                     "id": message.id,

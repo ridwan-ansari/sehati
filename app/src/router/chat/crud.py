@@ -1,7 +1,8 @@
 from __future__ import annotations
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.src.models.user import User
 from app.src.models.chat import ChatRoom, ChatParticipant, ChatMessage
 
 class CRUDChat:
@@ -78,37 +79,76 @@ class CRUDChat:
         user_id: int,
         limit: int = 20,
         offset: int = 0
-    ):
-        stmt = (
-            select(ChatRoom)
-            .options(
-                selectinload(ChatRoom.participants).selectinload(ChatParticipant.user)
+    ):        
+        other_participant = (
+            select(
+                ChatParticipant.room_id,
+                ChatParticipant.user_id
             )
-            .join(ChatParticipant)
+            .where(
+                ChatParticipant.user_id != user_id,
+                ChatParticipant.deleted_at.is_(None)
+            )
+            .cte('other_participant')
+        )
+        
+        latest_message = (
+            select(
+                ChatMessage.room_id,
+                ChatMessage.message,
+                ChatMessage.created_at,
+                func.row_number().over(
+                    partition_by=ChatMessage.room_id,
+                    order_by=ChatMessage.created_at.desc()
+                ).label('rn')
+            )
+            .where(ChatMessage.deleted_at.is_(None))
+            .cte('latest_message')
+        )
+        
+        stmt = (
+            select(
+                ChatRoom.id,
+                ChatRoom.room_key,
+                User.id.label('receiver_id'),
+                User.fullname.label('receiver_name'),
+                User.picture.label('receiver_picture'),
+                latest_message.c.message.label('latest_message'),
+                latest_message.c.created_at.label('latest_message_created_at')
+            )
+            .join(ChatParticipant, ChatParticipant.room_id == ChatRoom.id)
+            .join(other_participant, other_participant.c.room_id == ChatRoom.id)
+            .join(User, User.id == other_participant.c.user_id)
+            .outerjoin(
+                latest_message,
+                and_(
+                    latest_message.c.room_id == ChatRoom.id,
+                    latest_message.c.rn == 1
+                )
+            )
             .where(
                 ChatParticipant.user_id == user_id,
                 ChatParticipant.deleted_at.is_(None)
             )
-            .order_by(ChatRoom.updated_at.desc())
+            .order_by(
+                latest_message.c.created_at.desc().nullslast(),
+                ChatRoom.updated_at.desc()
+            )
             .limit(limit)
             .offset(offset)
         )
+        
         result = await session.execute(stmt)
-        rooms = result.scalars().unique().all()
-
-        room_list = []
-        for room in rooms:
-            receiver = next(
-                (p.user for p in room.participants if p.user_id != user_id and p.deleted_at is None),
-                None
-            )
-            if receiver:
-                room_list.append({
-                    "room_id": room.id,
-                    "room_key": room.room_key,
-                    "receiver_id": receiver.id,
-                    "receiver_name": receiver.fullname,
-                    "receiver_picture": receiver.picture
-                })
-
-        return room_list
+        
+        return [
+            {
+                "room_id": row.id,
+                "room_key": row.room_key,
+                "receiver_id": row.receiver_id,
+                "receiver_name": row.receiver_name,
+                "receiver_picture": row.receiver_picture,
+                "latest_message": row.latest_message,
+                "latest_message_created_at": row.latest_message_created_at
+            }
+            for row in result.all()
+        ]
