@@ -95,6 +95,7 @@ class CRUDChat:
         
         latest_message = (
             select(
+                ChatMessage.sender_id,
                 ChatMessage.room_id,
                 ChatMessage.message,
                 ChatMessage.created_at,
@@ -114,6 +115,7 @@ class CRUDChat:
                 User.id.label('receiver_id'),
                 User.fullname.label('receiver_name'),
                 User.picture.label('receiver_picture'),
+                latest_message.c.sender_id.label('latest_message_from'),
                 latest_message.c.message.label('latest_message'),
                 latest_message.c.created_at.label('latest_message_created_at')
             )
@@ -148,6 +150,7 @@ class CRUDChat:
                 "receiver_id": row.receiver_id,
                 "receiver_name": row.receiver_name,
                 "receiver_picture": row.receiver_picture,
+                "latest_message_from": row.latest_message_from,
                 "latest_message": row.latest_message,
                 "latest_message_created_at": row.latest_message_created_at + timedelta(hours=7)
             }
