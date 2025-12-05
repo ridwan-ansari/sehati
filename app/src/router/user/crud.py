@@ -56,10 +56,13 @@ class CRUDUser:
         keyword: Optional[str] = None,
         limit: Optional[int] = 20,
         offset: Optional[int] = 0,
+        user_id: str = None,
     ) -> List[User]:
         stmt = select(User).where(*filters, User.role.__eq__("user")).order_by(User.created_at.desc())
         if keyword:
             stmt = stmt.where(User.fullname.ilike(f"%{keyword}%"))
+        if user_id:
+            stmt = stmt.where(User.id != user_id)
         stmt = stmt.offset(offset).limit(limit)
         result = await session.execute(stmt)
         return result.scalars().all()

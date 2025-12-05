@@ -30,7 +30,8 @@ async def get_list(
                 "description": game.description,
                 "image_url": game.image_url,
                 "price_points": game.price_points,
-                "is_claim": is_claim
+                "is_claim": is_claim,
+                "url": game.url if is_claim else None
             }
             for game, is_claim in data
         ]

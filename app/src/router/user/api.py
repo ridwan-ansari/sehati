@@ -31,7 +31,7 @@ async def get_list(
     authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
-        users =  await crud_user.get_users(session=session, keyword=keyword, limit=limit, offset=offset)
+        users =  await crud_user.get_users(session=session, keyword=keyword, limit=limit, offset=offset, user_id=authentication.get("id"))
         response.status_code = 200
         response.message = "Get List User Successfully."
         response.data = [{
