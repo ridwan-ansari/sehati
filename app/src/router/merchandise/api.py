@@ -27,7 +27,7 @@ async def get_merchandise(
     with response_handler() as response:
         response.status_code = 200
         response.message = "Merchandise retrieved successfully."
-        response.data = await crud_merch.get_all(session=session, name=name, limit=limit, offset=offset)
+        response.data = await crud_merch.get_all_with_claim_status(session=session, name=name, limit=limit, offset=offset, user_id=authentication.get("id"))
     return response.build()
 
 

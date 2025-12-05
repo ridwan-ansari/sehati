@@ -45,6 +45,7 @@ class CRUDMerchandise:
         self,
         session: AsyncSession,
         user_id: str,
+        name: str = None,
         limit: int = 20,
         offset: int = 0
     ):
@@ -74,6 +75,9 @@ class CRUDMerchandise:
             .offset(offset)
             .limit(limit)
         )
+
+        if name:
+            stmt = stmt.where(Merchandise.name.ilike(f"%{name}%"))
 
         result = await session.execute(stmt)
         return result.all()
