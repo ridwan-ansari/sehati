@@ -1,7 +1,8 @@
 from __future__ import annotations
 import json
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 
 from app.src.core.security import AuthService
 from app.src.router.chat.crud import CRUDChat
@@ -66,7 +67,7 @@ async def chat_endpoint(
                     "room_key": room.room_key,
                     "from": sender_id,
                     "message": text,
-                    "created_at": str(message.created_at)
+                    "created_at": str(message.created_at + timedelta(hours=7))
                 })
             )
 
@@ -76,7 +77,7 @@ async def chat_endpoint(
                 "to": receiver_id,
                 "message": text,
                 "status": "sent",
-                "created_at": str(message.created_at)
+                "created_at": str(message.created_at + timedelta(hours=7))
             }))
 
     except WebSocketDisconnect:
@@ -115,7 +116,7 @@ async def get_messages(
                 item = {
                     "id": message.id,
                     "message": message.message,
-                    "created_at": message.created_at,
+                    "created_at": message.created_at + timedelta(hours=7),
                     "type": "sender" if message.sender_id == authentication["id"] else "receiver"
                 }
                 data.append(item)

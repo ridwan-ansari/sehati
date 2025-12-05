@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import timedelta
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -148,7 +149,7 @@ class CRUDChat:
                 "receiver_name": row.receiver_name,
                 "receiver_picture": row.receiver_picture,
                 "latest_message": row.latest_message,
-                "latest_message_created_at": row.latest_message_created_at
+                "latest_message_created_at": row.latest_message_created_at + timedelta(hours=7)
             }
             for row in result.all()
         ]
