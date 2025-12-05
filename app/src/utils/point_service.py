@@ -1,4 +1,5 @@
 from app.src.router.merchandise.crud import crud_merch
+from app.src.router.games.crud import crud_games, crud_game_claim
 from app.src.models.point import CategoryCode, WalletKind, TxType
 from app.src.router.point.crud import crud_category, crud_wallet, crud_transaction
 
@@ -99,22 +100,22 @@ async def redeem_merchandise_points(
         "spent_points": merchandise.price_points
     }
 
-async def redeem_merchandise_points(
+async def claim_games(
     session,
     user_id: str,
-    merchandise_id: str
+    game_id: str
 ):
-    merchandise = await crud_merch.get_by_id(id=merchandise_id, session=session)
+    game = await crud_games.get_by_id(session=session, id=game_id)
     wallet = await crud_wallet.get_by_user(session=session, user_id=user_id)
 
-    if wallet.credit_points < merchandise.price_points:
+    if wallet.credit_points < game.price_points:
         raise ValueError("Transaction failed: Insufficient points.")
 
     wallet_credit = await crud_wallet.update_balance(
         session=session,
         user_id=user_id,
         wallet_type=WalletKind.credit,
-        amount=merchandise.price_points,
+        amount=game.price_points,
         tx_type=TxType.spend,
     )
     
@@ -123,13 +124,15 @@ async def redeem_merchandise_points(
         user_id=user_id,
         wallet=WalletKind.credit,
         tx_type=TxType.spend,
-        category_code=CategoryCode.merchandise_redeem.value,
-        delta=merchandise.price_points,
+        category_code=CategoryCode.playing_game.value,
+        delta=game.price_points,
         balance_after=wallet_credit.credit_points,
     )
 
+    await crud_game_claim.create(session=session, data={"user_id":user_id, "game_id":game_id})
+
     return {
-        "merchandise": merchandise,
+        "game": game,
         "wallet_after": wallet_credit,
-        "spent_points": merchandise.price_points
+        "spent_points": game.price_points
     }

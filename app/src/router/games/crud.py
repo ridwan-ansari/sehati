@@ -131,5 +131,7 @@ class CRUDGameClaim:
         )
         result = await session.execute(stmt)
         return result.scalars().first()
-    
+
+
 crud_games = CRUDGames()
+crud_game_claim = CRUDGameClaim()
