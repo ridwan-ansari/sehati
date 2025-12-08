@@ -147,8 +147,11 @@ class CRUDMerchandiseClaim:
         )
         existing_claim = existing_claim.scalar_one_or_none()
 
-        if existing_claim:
-            raise ValueError("User has already claimed this merchandise")
+        if existing_claim.status == "approved":
+            raise ValueError("You has already claimed this merchandise")
+
+        if existing_claim.status == "pending":
+            raise ValueError("User has already claimed this merchandise with pending status.")
 
         total_points = merchandise.price_points * quantity
         
