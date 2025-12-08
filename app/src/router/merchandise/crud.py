@@ -48,18 +48,30 @@ class CRUDMerchandise:
         name: str = None,
         limit: int = 20,
         offset: int = 0
-    ):
-
+    ) -> list[dict]:
+    
         UserClaim = aliased(MerchandiseClaim)
 
         stmt = (
             select(
-                Merchandise,
+                Merchandise.id,
+                Merchandise.name,
+                Merchandise.description,
+                Merchandise.image_url,
+                Merchandise.price_points,
+                Merchandise.stock,
+                Merchandise.active,
+                Merchandise.created_at,
+                Merchandise.updated_at,
+                UserClaim.id.label("claim_id"),
                 UserClaim.status.label("claim_status"),
+                UserClaim.quantity.label("claim_quantity"),
+                UserClaim.total_points.label("claim_total_points"),
+                UserClaim.created_at.label("claim_created_at"),
                 case(
                     (UserClaim.id.is_not(None), True),
                     else_=False
-                ).label("is_claim")
+                ).label("is_claimed")
             )
             .outerjoin(
                 UserClaim,
@@ -80,8 +92,29 @@ class CRUDMerchandise:
             stmt = stmt.where(Merchandise.name.ilike(f"%{name}%"))
 
         result = await session.execute(stmt)
-        return result.all()
-
+        
+        return [
+            {
+                "id": row.id,
+                "name": row.name,
+                "description": row.description,
+                "image_url": row.image_url,
+                "price_points": row.price_points,
+                "stock": row.stock,
+                "active": row.active,
+                "created_at": row.created_at,
+                "updated_at": row.updated_at,
+                "is_claimed": row.is_claimed,
+                "claim": {
+                    "id": row.claim_id,
+                    "status": row.claim_status,
+                    "quantity": row.claim_quantity,
+                    "total_points": row.claim_total_points,
+                    "created_at": row.claim_created_at
+                } if row.is_claimed else None
+            }
+            for row in result.mappings()
+        ]
 
 class CRUDMerchandiseClaim:
 
