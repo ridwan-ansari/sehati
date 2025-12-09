@@ -18,8 +18,13 @@ class UserBaseModel(BaseModel):
 
     @field_validator('fullname')
     @classmethod
-    def validate_username(cls, v: str) -> str:
+    def validate_fullname(cls, v: str) -> str:
         return v.upper()
+    
+    @field_validator('nickname')
+    @classmethod
+    def validate_nickname(cls, v: str) -> str:
+        return v.lower()
 
     class Config:
         from_attributes = True
