@@ -13,7 +13,7 @@ class CRUDRecipe:
     async def get_all(self, session: AsyncSession, name: str = None, limit: int = None, offset: int = None):
         stmt = select(Recipe).limit(limit=limit).offset(offset=offset)
         if name:
-            stmt = stmt.where(Recipe.name.ilike(f"%{name}%"), Recipe.description.ilike(f"%{name}%"))
+            stmt = stmt.where(Recipe.title.ilike(f"%{name}%"), Recipe.description.ilike(f"%{name}%"))
         result = await session.execute(stmt)
         return result.scalars().all()
     
