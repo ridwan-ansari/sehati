@@ -3,7 +3,7 @@ from datetime import date
 from typing import List, Optional
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func
+from sqlalchemy import select, update, delete, func, desc
 
 from app.src.models.food import (
     Food,
@@ -15,40 +15,75 @@ from app.src.models.food import (
 
 
 class CRUDFood:
-    async def create(self, session: AsyncSession, **data) -> Food:
+    async def create(self, session: AsyncSession, data: dict) -> Food:
         food = Food(**data)
         session.add(food)
         await session.commit()
         await session.refresh(food)
         return food
 
-    async def get_all(self, session: AsyncSession, name: str = None, limit: int = 20, offset: int = 0, ids: List[str] = 0) -> List[Food]:
+    async def get_all(
+        self,
+        session: AsyncSession,
+        name: str = None,
+        limit: int = 20,
+        offset: int = 0,
+        ids: List[str] = None
+    ) -> List[Food]:
+
         stmt = (
             select(Food)
             .where(Food.deleted_at.is_(None))
-            .limit(limit=limit)
-            .offset(offset=offset)
+            .order_by(
+                desc(
+                    func.greatest(
+                        Food.updated_at,
+                        Food.created_at
+                    )
+                )
+            )
+            .limit(limit)
+            .offset(offset)
         )
-        
+
         if name:
             stmt = stmt.where(Food.name.ilike(f"%{name}%"))
+
         if ids:
             stmt = stmt.where(Food.id.in_(ids))
+
         result = await session.execute(stmt)
         return result.scalars().all()
-
+    
     async def get_by_id(self, session: AsyncSession, food_id: str) -> Optional[Food]:
         result = await session.execute(select(Food).where(Food.id == food_id))
         return result.scalar_one_or_none()
+    
+    async def get_by_name(self, session: AsyncSession, name: str) -> Optional[Food]:
+        result = await session.execute(select(Food).where(Food.name == name))
+        return result.scalar_one_or_none()
 
-    async def update(self, session: AsyncSession, food_id: str, **data) -> Optional[Food]:
-        await session.execute(update(Food).where(Food.id == food_id).values(**data))
+    async def update(self, session: AsyncSession, food_id: str, data: dict) -> Optional[Food]:
+        food = await session.get(Food, food_id)
+        if not food:
+            return None
+
+        for key, value in data.items():
+            setattr(food, key, value)
+
         await session.commit()
-        return await self.get_by_id(session, food_id)
+        await session.refresh(food)
+        print(food.updated_at)
+        return food
 
     async def delete(self, session: AsyncSession, food_id: str):
         await session.execute(delete(Food).where(Food.id == food_id))
         await session.commit()
+
+    async def count(self, session: AsyncSession) -> int:
+        stmt = select(func.count()).select_from(Food)
+        result = await session.execute(stmt)
+        return result.scalar_one()
 
 
 class CRUDFoodHabitQuestion:
@@ -130,7 +165,6 @@ class CRUDFoodHabitAnswer:
         return result.scalar_one_or_none()
     
 
-
 class CRUDFoodDiaryAnalysis:
     async def create(self, session: AsyncSession, data: dict) -> FoodDiaryAnalysis:
         record = FoodDiaryAnalysis(**data)
@@ -210,3 +244,5 @@ class CRUDFoodDiaryItem:
         session.add_all(diary_items)
         await session.commit()
         return diary_items
+
+crud_food = CRUDFood()

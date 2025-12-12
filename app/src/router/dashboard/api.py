@@ -1,14 +1,15 @@
 from __future__ import annotations
 import re
 from loguru import logger
-from datetime import datetime
 from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie, UploadFile
 
 from app.src.core.config import settings
 from app.src.router.user.crud import CRUDUser
+from app.src.router.food.crud import crud_food
 from app.src.router.games.crud import crud_games
 from app.src.core.templates import get_templates
 from app.src.router.recipe.crud import CRUDRecipe
@@ -532,7 +533,6 @@ async def games_page(
 async def game_create_page(request: Request, auth=Depends(require_admin_cookie)):
     return render_page("admin/game_create.html", request, auth=auth)
 
-
 @router.post("/games/create")
 async def create_game(
     request: Request,
@@ -573,3 +573,93 @@ async def view_game(
 
     return render_page("admin/game.html", request, game=game, auth=auth)
 
+@router.get("/foods")
+async def foods_page(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    success: str = None,
+    error: str = None,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    offset = (page - 1) * limit
+
+    foods = await crud_food.get_all(session, limit=limit, offset=offset)
+    total = await crud_food.count(session)
+    total_pages = (total + limit - 1) // limit
+
+    return templates.TemplateResponse("admin/foods.html", {
+        "request": request,
+        "foods": foods,
+        "page": page,
+        "total_pages": total_pages,
+        "limit": limit,
+        "auth": auth,
+        "success": success,
+        "error": error,
+    })
+
+@router.get("/foods/create")
+async def food_create_page(
+    request: Request,
+    auth=Depends(require_admin_cookie)
+):
+    return render_page("admin/food_create.html", request, auth=auth)
+
+@router.post("/foods/create")
+async def create_food(
+    request: Request,
+    name: str = Form(...),
+    calories: int = Form(...),
+    unit: str = Form("kcal"),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+):
+    # Cek jika food sudah ada
+    existing = await crud_food.get_by_name(session=session, name=name)
+    if existing:
+        return RedirectResponse(
+            "/dashboard/foods/create?error=Food+already+exists",
+            status_code=302
+        )
+
+    await crud_food.create(
+        session=session,
+        data={
+            "name": name,
+            "calories": calories,
+            "unit": unit or "kcal",
+        }
+    )
+
+    return RedirectResponse("/dashboard/foods?success=Created+successfully", status_code=302)
+
+@router.post("/foods/update/{food_id}")
+async def update_food(
+    food_id: str,
+    name: str = Form(...),
+    calories: int = Form(...),
+    unit: str = Form("kcal"),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie)
+):
+    food = await crud_food.get_by_id(session=session, food_id=food_id)
+    if not food:
+        return RedirectResponse("/dashboard/foods?error=Food+not+found", status_code=302)
+    await crud_food.update(session=session, food_id=food_id, data={"name":name, "calories":calories, "unit":unit})
+    return RedirectResponse("/dashboard/foods?success=Updated+successfully", status_code=302)
+
+@router.post("/foods/delete/{food_id}")
+async def delete_food(
+    food_id: str,
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+):
+    food = await crud_food.get_by_id(session=session, food_id=food_id)
+    if not food:
+        return RedirectResponse("/dashboard/foods?error=Food+not+found", status_code=302)
+
+    await crud_food.delete(session=session, food_id=food_id)
+
+    return RedirectResponse("/dashboard/foods?success=Deleted", status_code=302)

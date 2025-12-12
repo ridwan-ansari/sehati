@@ -1,0 +1,178 @@
+{% extends "admin/base.html" %}
+{% block title %}Foods{% endblock %}
+
+{% block content %}
+
+<div class="fixed top-4 right-4 z-50 space-y-2">
+
+    {% if success %}
+    <div id="success-toast" class="bg-green-500 text-white p-4 rounded-lg shadow-lg flex items-center gap-3 w-80">
+        <strong>Success!</strong>
+        <span class="ml-auto cursor-pointer" onclick="this.parentElement.remove()">×</span>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div id="error-toast" class="bg-red-600 text-white p-4 rounded-lg shadow-lg flex items-center gap-3 w-80">
+        <strong>Error!</strong>
+        <span class="ml-auto cursor-pointer" onclick="this.parentElement.remove()">×</span>
+    </div>
+    {% endif %}
+</div>
+
+
+<div class="flex justify-between items-center mb-6 border-b pb-4">
+    <h2 class="text-3xl font-extrabold text-gray-800">Food Management</h2>
+
+    <a href="/dashboard/foods/create"
+       class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 flex items-center gap-2">
+        + Add Food
+    </a>
+</div>
+
+
+<div class="bg-white shadow-xl rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+
+        <table class="min-w-full text-left divide-y divide-gray-200">
+            <thead>
+                <tr class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <th class="py-3 px-4 font-bold">Name</th>
+                    <th class="py-3 px-4 font-bold w-32">Calories</th>
+                    <th class="py-3 px-4 font-bold w-32">Unit</th>
+                    <th class="py-3 px-4 font-bold text-center w-36">Action</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100">
+            {% for f in foods %}
+                <tr class="hover:bg-yellow-50/50">
+
+                    <form method="post" action="/dashboard/foods/update/{{ f.id }}" class="contents">
+
+                        <td class="py-3 px-4 font-semibold">
+                            <input type="text" name="name"
+                                       value="{{ f.name }}"
+                                       class="w-full px-1 py-1 bg-transparent border-b border-transparent focus:border-blue-500 text-sm">
+                        </td>
+
+                        <td class="px-4 text-gray-700 font-mono">
+                            <input type="number" name="calories"
+                                       value="{{ f.calories }}"
+                                       class="w-full px-1 py-1 text-center bg-transparent border-b border-transparent focus:border-blue-500 text-sm">
+                        </td>
+
+                        <td class="px-4 text-gray-700 font-mono">
+                            <input type="text" name="unit"
+                                       value="{{ f.unit }}"
+                                       class="w-full px-1 py-1 text-center bg-transparent border-b border-transparent focus:border-blue-500 text-sm">
+                        </td>
+
+                        <td class="px-4 text-center flex justify-center gap-2">
+
+                            <button type="submit"
+                                class="px-3 py-1 bg-green-500 text-white text-sm rounded-lg shadow hover:bg-green-600">
+                                Save
+                            </button>
+
+                    </form>
+
+                            <form method="post" action="/dashboard/foods/delete/{{ f.id }}"
+                                     onsubmit="return confirm('Delete this food?')" class="contents">
+                                <button type="submit"
+                                    class="px-3 py-1 bg-red-600 text-white text-sm rounded-lg shadow hover:bg-red-700">
+                                    Delete
+                                </button>
+                            </form>
+
+                        </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+
+    <div class="flex justify-between items-center px-4 py-3 border-t">
+        <div class="text-sm">
+            Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+        </div>
+
+        <div class="flex gap-1">
+
+            {% set max_visible_pages = 5 %} {# Total number of surrounding pages to show (excluding first/last and ellipsis) #}
+            {% set boundary_pages = 2 %} {# Number of pages to show around the current page #}
+            {% set start_page = [page - boundary_pages, 2] | max %}
+            {% set end_page = [page + boundary_pages, total_pages - 1] | min %}
+            
+            {# Adjust start/end if near boundaries to keep the block size constant #}
+            {% if page <= boundary_pages %}
+                {% set end_page = [max_visible_pages, total_pages - 1] | min %}
+            {% elif page >= total_pages - boundary_pages + 1 %}
+                {% set start_page = [total_pages - max_visible_pages + 1, 2] | max %}
+            {% endif %}
+
+            {% set pages_to_show = range(1, total_pages + 1) %}
+            
+            {# Previous Button #}
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}&limit={{ limit }}"
+               class="px-3 py-1 border rounded-lg bg-white hover:bg-gray-100 text-sm">Prev</a>
+            {% endif %}
+
+            {# Page 1 #}
+            {% if total_pages > 0 %}
+                {% if 1 == page %}
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">1</span>
+                {% else %}
+                    <a href="?page=1&limit={{ limit }}"
+                       class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">1</a>
+                {% endif %}
+            {% endif %}
+
+
+            {# Leading Ellipsis (...) #}
+            {% if start_page > 2 %}
+                <span class="px-3 py-1 text-gray-500 text-sm">...</span>
+            {% endif %}
+
+            {# Middle Pages #}
+            {% for p in pages_to_show %}
+                {% if p > 1 and p < total_pages %}
+                    {% if p >= start_page and p <= end_page %}
+                        {% if p == page %}
+                            <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">{{ p }}</span>
+                        {% else %}
+                            <a href="?page={{ p }}&limit={{ limit }}"
+                               class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">{{ p }}</a>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            {# Trailing Ellipsis (...) #}
+            {% if end_page < total_pages - 1 %}
+                <span class="px-3 py-1 text-gray-500 text-sm">...</span>
+            {% endif %}
+
+            {# Last Page #}
+            {% if total_pages > 1 %}
+                {% if total_pages == page %}
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">{{ total_pages }}</span>
+                {% else %}
+                    <a href="?page={{ total_pages }}&limit={{ limit }}"
+                       class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">{{ total_pages }}</a>
+                {% endif %}
+            {% endif %}
+
+            {# Next Button #}
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}&limit={{ limit }}"
+               class="px-3 py-1 border rounded-lg bg-white hover:bg-gray-100 text-sm">Next</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
