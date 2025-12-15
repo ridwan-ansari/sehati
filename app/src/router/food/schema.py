@@ -18,6 +18,7 @@ class FoodDiaryItem(BaseModel):
     food_id: str
     meal_type: str
     quantity: int = 1
+    weight_grams: int = 1
 
 
 class FoodDiarySchema(BaseModel):

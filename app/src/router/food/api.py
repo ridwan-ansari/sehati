@@ -89,6 +89,7 @@ async def submit_food_diary(
     authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
+        total_calories = 0
         user_id = authentication["id"]
         if await crud_diary_analysis.exists_today(session=session, user_id=user_id):
             raise ValueError("Your submission has been received today. Please submit again tomorrow.")
@@ -104,9 +105,9 @@ async def submit_food_diary(
             activity=data.activity,
         )
 
-        food_ids = [item.food_id for item in data.data]
-        foods = await crud_food.get_all(session=session, ids=food_ids)
-        total_calories = sum(f.calories for f in foods)
+        for item in data.data:
+            food = await crud_food.get_by_id(session=session, food_id=item.food_id)
+            total_calories += item.weight_grams/100 * food.calories
 
         diary_analysis = await crud_diary_analysis.create(
             session=session,
