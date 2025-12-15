@@ -107,7 +107,7 @@ async def submit_food_diary(
 
         for item in data.data:
             food = await crud_food.get_by_id(session=session, food_id=item.food_id)
-            total_calories += item.weight_grams/100 * food.calories
+            total_calories += item.weight_grams/100 * food.calories * item.quantity
 
         diary_analysis = await crud_diary_analysis.create(
             session=session,
