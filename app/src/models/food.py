@@ -68,7 +68,7 @@ class FoodDiaryItem(Base, TimestampMixin):
     meal_type: Mapped[str] = mapped_column(Enum("breakfast", "lunch", "dinner", "morning_snack","afternoon_snack", name="meal_type_enum"))
     food_id: Mapped[str | None] = mapped_column(ForeignKey("foods.id", ondelete="SET NULL"))
     quantity: Mapped[int] = mapped_column(default=1)
-    weight_grams: Mapped[int] = mapped_column(nullable=False,comment="Total weight of food consumed in grams")
+    weight_grams: Mapped[int] = mapped_column(nullable=True,comment="Total weight of food consumed in grams")
 
     analysis = relationship("FoodDiaryAnalysis", back_populates="items")
     food = relationship("Food", lazy="joined")
