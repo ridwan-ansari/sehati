@@ -57,10 +57,17 @@ class AuthService:
                 jwt=token,
                 key=self.secret_key,
                 algorithms=[self.algorithm],
-                options={"verify_signature": True}
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True
+                }
             )
-        except Exception:
-            raise UnauthorizedException("Invalid or expired token")
+        except jwt.ExpiredSignatureError:
+            raise UnauthorizedException("Token has expired")
+        except jwt.InvalidTokenError:
+            raise UnauthorizedException("Invalid token")
+        except Exception as e:
+            raise UnauthorizedException(f"Token validation failed: {str(e)}")
 
     async def require_access_token(
         self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())

@@ -80,7 +80,7 @@ async def login(
 
         payload = {"id": user.id, "role": user.role}
         tokens = {
-            "access_token": token_service.generate_token(payload=payload, token_type="access", expires_in_hours=12),
+            "access_token": token_service.generate_token(payload=payload, token_type="access", expires_in_hours=6),
             "refresh_token": token_service.generate_token(payload=payload, token_type="refresh", expires_in_hours=24)
         }
 
