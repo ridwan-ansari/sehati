@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from app.src.utils.response import ResponseContext
+from app.src.utils.execeptions import UnauthorizedException, ForbiddenException
 
 
 @contextmanager
@@ -24,6 +25,10 @@ def response_handler():
         message = str(error) if str(error) else "Resource not found. Ensure you have the correct permissions and that your request parameters are accurate."
         response_context.update(False, status.HTTP_404_NOT_FOUND, message)
     except HTTPException as exc:
+        response_context.update(False, exc.status_code, exc.detail)
+    except UnauthorizedException as exc:
+        response_context.update(False, exc.status_code, exc.detail)
+    except ForbiddenException as exc:
         response_context.update(False, exc.status_code, exc.detail)
     except Exception as error:
         traceback.print_exc()

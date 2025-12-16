@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import RedirectResponse, JSONResponse
 
 from app.src.router.chat.api import ws_router
 from app.src.core.templates import get_templates
 from app.src.router.api import router, router_dashboard
+from app.src.utils.execeptions import UnauthorizedException, ForbiddenException
 
 templates = get_templates()
 app = FastAPI(title="SEHATI")
@@ -42,3 +43,27 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             status_code=302
         )
     return {"detail": exc.detail}
+
+@app.exception_handler(UnauthorizedException)
+async def unauthorized_exception_handler(request: Request, exc: UnauthorizedException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "status_code": exc.status_code,
+            "message": exc.detail,
+            "data": None
+        }
+    )
+
+@app.exception_handler(ForbiddenException)
+async def forbidden_exception_handler(request: Request, exc: ForbiddenException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "status_code": exc.status_code,
+            "message": exc.detail,
+            "data": None
+        }
+    )
