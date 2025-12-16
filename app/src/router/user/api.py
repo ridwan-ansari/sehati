@@ -1,24 +1,27 @@
 from __future__ import annotations
 import os
 import uuid
-from typing import List, Optional
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, APIRouter, UploadFile
 
-from app.src.models.user import User
 from app.src.core.config import settings
 from app.src.core.security import AuthService
 from app.src.router.user.crud import CRUDUser
+from app.src.router.user.schema import UserProfile
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
 from app.src.router.point.crud import CRUDPointWallet
-from app.src.router.user.schema import UserBaseModel, UserProfile
+from app.src.router.food.crud import crud_answer, crud_analysis
+from app.src.router.exercise.crud import crud_exercise_habit_answer
+from app.src.router.user_nutrition.crud import CRUDUserNutrition
 from app.src.utils.avatars import ensure_dir, read_limited, verify_image
 
 router = APIRouter()
 crud_user = CRUDUser()
 auth_service = AuthService()
 crud_wallet = CRUDPointWallet()
+crud_nutrition = CRUDUserNutrition()
 AVATAR_DIR = os.path.join(settings.MEDIA_ROOT, "avatars")
 
 
@@ -115,4 +118,40 @@ async def profile(
         response.status_code = 200
         response.message = "Get User Successfully."
         response.data = UserProfile.model_validate(user)
+    return response.build()
+
+@router.get("/notification/reminder")
+async def get_notification_reminder(
+    authentication: dict = Depends(auth_service.require_access_token),
+    session: AsyncSession = Depends(get_async_session)
+):
+    with response_handler() as response:
+        user_id = authentication.get("id")
+
+        incomplete_tasks = []
+        
+        if not await crud_exercise_habit_answer.exists_today(session=session, user_id=user_id):
+            incomplete_tasks.append("Exercise Habit")
+        if not await crud_answer.exists_today(session=session, user_id=user_id):
+            incomplete_tasks.append("Food Habit")
+        if not await crud_analysis.exists_today(session=session, user_id=user_id):
+            incomplete_tasks.append("Food Diary")
+        if not await crud_nutrition.exists_today(session=session, user_id=user_id):
+            incomplete_tasks.append("Self Monitoring")
+        
+        if incomplete_tasks:
+            if len(incomplete_tasks) == 1:
+                message = f"You haven't completed your {incomplete_tasks[0]} today."
+            elif len(incomplete_tasks) == 2:
+                message = f"You haven't completed your {incomplete_tasks[0]} and {incomplete_tasks[1]} today."
+            else:
+                tasks_str = ", ".join(incomplete_tasks[:-1]) + f", and {incomplete_tasks[-1]}"
+                message = f"You haven't completed your {tasks_str} today."
+        else:
+            message = "Great job! You've completed all your tasks for today."
+        
+        response.data = message
+        response.message = "Notification reminder retrieved successfully."
+        response.status_code = 200
+    
     return response.build()

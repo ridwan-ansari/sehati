@@ -246,3 +246,5 @@ class CRUDFoodDiaryItem:
         return diary_items
 
 crud_food = CRUDFood()
+crud_answer = CRUDFoodHabitAnswer()
+crud_analysis = CRUDFoodDiaryAnalysis()
