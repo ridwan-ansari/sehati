@@ -80,8 +80,10 @@ class CRUDFood:
         await session.execute(delete(Food).where(Food.id == food_id))
         await session.commit()
 
-    async def count(self, session: AsyncSession) -> int:
-        stmt = select(func.count()).select_from(Food)
+    async def count(self, session: AsyncSession, name: str = None) -> int:
+        stmt = select(func.count(Food.id))
+        if name:
+            stmt = stmt.where(Food.name.ilike(f"%{name}%"))
         result = await session.execute(stmt)
         return result.scalar_one()
 

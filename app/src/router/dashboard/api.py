@@ -596,6 +596,7 @@ async def view_game(
 @router.get("/foods")
 async def foods_page(
     request: Request,
+    name: str = None,
     page: int = 1,
     limit: int = 10,
     success: str = None,
@@ -605,13 +606,14 @@ async def foods_page(
 ):
     offset = (page - 1) * limit
 
-    foods = await crud_food.get_all(session, limit=limit, offset=offset)
-    total = await crud_food.count(session)
+    foods = await crud_food.get_all(session, name=name, limit=limit, offset=offset)
+    total = await crud_food.count(session, name=name)
     total_pages = (total + limit - 1) // limit
 
     return templates.TemplateResponse("admin/foods.html", {
         "request": request,
         "foods": foods,
+        "name": name,
         "page": page,
         "total_pages": total_pages,
         "limit": limit,

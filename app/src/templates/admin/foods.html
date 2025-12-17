@@ -32,6 +32,29 @@
 
 
 <div class="bg-white shadow-xl rounded-xl overflow-hidden">
+    
+    {# SEARCH FILTER #}
+    <div class="p-4 border-b bg-gray-50">
+        <form method="get" class="flex gap-3">
+            <input 
+                type="text"
+                name="name"
+                placeholder="Search by food name..."
+                value="{{ name or '' }}"
+                class="border rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Search
+            </button>
+            {% if name %}
+            <a href="?page=1&limit={{ limit }}" 
+               class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
     <div class="overflow-x-auto">
 
         <table class="min-w-full text-left divide-y divide-gray-200">
@@ -101,12 +124,11 @@
 
         <div class="flex gap-1">
 
-            {% set max_visible_pages = 5 %} {# Total number of surrounding pages to show (excluding first/last and ellipsis) #}
-            {% set boundary_pages = 2 %} {# Number of pages to show around the current page #}
+            {% set max_visible_pages = 5 %}
+            {% set boundary_pages = 2 %}
             {% set start_page = [page - boundary_pages, 2] | max %}
             {% set end_page = [page + boundary_pages, total_pages - 1] | min %}
             
-            {# Adjust start/end if near boundaries to keep the block size constant #}
             {% if page <= boundary_pages %}
                 {% set end_page = [max_visible_pages, total_pages - 1] | min %}
             {% elif page >= total_pages - boundary_pages + 1 %}
@@ -117,7 +139,7 @@
             
             {# Previous Button #}
             {% if page > 1 %}
-            <a href="?page={{ page - 1 }}&limit={{ limit }}"
+            <a href="?page={{ page - 1 }}&limit={{ limit }}&name={{ name or '' }}"
                class="px-3 py-1 border rounded-lg bg-white hover:bg-gray-100 text-sm">Prev</a>
             {% endif %}
 
@@ -126,7 +148,7 @@
                 {% if 1 == page %}
                     <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">1</span>
                 {% else %}
-                    <a href="?page=1&limit={{ limit }}"
+                    <a href="?page=1&limit={{ limit }}&name={{ name or '' }}"
                        class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">1</a>
                 {% endif %}
             {% endif %}
@@ -144,7 +166,7 @@
                         {% if p == page %}
                             <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">{{ p }}</span>
                         {% else %}
-                            <a href="?page={{ p }}&limit={{ limit }}"
+                            <a href="?page={{ p }}&limit={{ limit }}&name={{ name or '' }}"
                                class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">{{ p }}</a>
                         {% endif %}
                     {% endif %}
@@ -161,14 +183,14 @@
                 {% if total_pages == page %}
                     <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">{{ total_pages }}</span>
                 {% else %}
-                    <a href="?page={{ total_pages }}&limit={{ limit }}"
+                    <a href="?page={{ total_pages }}&limit={{ limit }}&name={{ name or '' }}"
                        class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">{{ total_pages }}</a>
                 {% endif %}
             {% endif %}
 
             {# Next Button #}
             {% if page < total_pages %}
-            <a href="?page={{ page + 1 }}&limit={{ limit }}"
+            <a href="?page={{ page + 1 }}&limit={{ limit }}&name={{ name or '' }}"
                class="px-3 py-1 border rounded-lg bg-white hover:bg-gray-100 text-sm">Next</a>
             {% endif %}
         </div>
