@@ -494,6 +494,25 @@ async def point_transactions_page(
     total = await crud_transaction.count(session, name=name)
     total_pages = (total + limit - 1) // limit
 
+    page_numbers = []
+    if total_pages <= 7:
+        page_numbers = list(range(1, total_pages + 1))
+    else:
+        page_numbers.append(1)
+        
+        if page <= 3:
+            page_numbers.extend([2, 3, 4])
+            page_numbers.append("...")
+            page_numbers.append(total_pages)
+        elif page >= total_pages - 2:
+            page_numbers.append("...")
+            page_numbers.extend([total_pages - 3, total_pages - 2, total_pages - 1, total_pages])
+        else:
+            page_numbers.append("...")
+            page_numbers.extend([page - 1, page, page + 1])
+            page_numbers.append("...")
+            page_numbers.append(total_pages)
+
     return render_page(
         "admin/point_transactions.html",
         request,
@@ -502,6 +521,7 @@ async def point_transactions_page(
         page=page,
         limit=limit,
         total_pages=total_pages,
+        page_numbers=page_numbers,
         auth=auth,
     )
 
