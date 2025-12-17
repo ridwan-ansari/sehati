@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.core.security import AuthService
+from app.src.models.point import CategoryCode 
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
+from app.src.utils.point_service import reward_user_points
 from app.src.router.appointment.schema import AppointmentCreateSchema
 from app.src.router.appointment.crud import CRUDProfessional, CRUDAppointment
 
@@ -29,6 +31,18 @@ async def create_appointment(
     authentication: dict = Depends(auth_service.require_access_token)
 ):
     with response_handler() as response:
+        user_id = authentication.get("id")
+        prof = await crud_prof.get_by_id(session=session, id=data.professional_id)
+
+        if not prof:
+            raise ValueError("Doctor not found.")
+        if prof.specialization == "Nutritionist/Dietitian" and not await crud_app.exists_this_week(session=session, user_id=user_id):
+            await reward_user_points(session=session, user_id=user_id, category=CategoryCode.konseling_gizi)
+        elif prof.specialization == "Psychologist" and not await crud_app.exists_this_month(session=session, user_id=user_id):
+            await reward_user_points(session=session, user_id=user_id, category=CategoryCode.konseling_psikolog)
+        else:
+            raise ValueError(f"Please check specialization of {prof.fullname}")
+        
         ap = await crud_app.create_appointment(
             session=session,
             data={
