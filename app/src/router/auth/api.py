@@ -109,6 +109,16 @@ async def login(authentication: dict = Depends(auth_service.require_refresh_toke
         tokens = {
             "access_token": token_service.generate_token(payload=payload, token_type="access", expires_in_hours=12)
         }
+
+        has_login_today = await crud_transaction.exists_today(
+            session=session,
+            user_id=user.id,
+            category_code=CategoryCode.login
+        )
+
+        if not has_login_today:
+            await reward_user_points(session=session, user_id=user.id, category=CategoryCode.login)
+            
         response.data = tokens
         response.status_code = 200
         response.message = "Successfully logged in."
