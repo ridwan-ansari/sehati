@@ -1,9 +1,11 @@
 from typing import List
 from fastapi import APIRouter, Depends
+from app.src.models.point import CategoryCode
 from app.src.core.security import AuthService
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
+from app.src.utils.point_service import reward_user_points
 from app.src.router.reminder.crud import crud_reminder
 from app.src.router.reminder.schema import (
     ReminderBase,
@@ -35,6 +37,7 @@ async def create_reminder(
     authentication: dict = Depends(auth_service.require_access_token),
 ):
     with response_handler() as response:
+        await reward_user_points(session=session, user_id=authentication.get("id"), category=CategoryCode.set_reminder)
         response.status_code = 201
         response.message = "Reminder successfully created."
         response.data = await crud_reminder.create(session, data, authentication.get("id"))
