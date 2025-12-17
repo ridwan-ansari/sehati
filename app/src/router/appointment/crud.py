@@ -96,8 +96,8 @@ class CRUDAppointment:
             .where(Appointment.user_id == user_id)
             .where(
                 and_(
-                    Appointment.created_at >= start_of_month,
-                    Appointment.created_at <= end_of_month
+                    Appointment.appointment_date >= start_of_month,
+                    Appointment.appointment_date <= end_of_month
                 )
             )
             .limit(1)
