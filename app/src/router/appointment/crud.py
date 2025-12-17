@@ -52,7 +52,8 @@ class CRUDAppointment:
     async def exists_this_week(
         self,
         session: AsyncSession,
-        user_id: str
+        user_id: str,
+        professional_id: str
     ):
         """Check if user has any appointment this week (Monday to Sunday)"""
         today = date.today()
@@ -66,6 +67,7 @@ class CRUDAppointment:
             .where(Appointment.user_id == user_id)
             .where(
                 and_(
+                    Appointment.professional_id == professional_id,
                     Appointment.appointment_date >= start_of_week,
                     Appointment.appointment_date <= end_of_week
                 )
@@ -79,7 +81,8 @@ class CRUDAppointment:
     async def exists_this_month(
         self,
         session: AsyncSession,
-        user_id: str
+        user_id: str,
+        professional_id: str
     ):
         """Check if user has any appointment this month"""
         today = date.today()
@@ -96,6 +99,7 @@ class CRUDAppointment:
             .where(Appointment.user_id == user_id)
             .where(
                 and_(
+                    Appointment.professional_id == professional_id,
                     Appointment.appointment_date >= start_of_month,
                     Appointment.appointment_date <= end_of_month
                 )

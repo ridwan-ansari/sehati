@@ -37,9 +37,9 @@ async def create_appointment(
         if not prof:
             raise ValueError("Doctor not found.")
         
-        if prof.specialization == "Nutritionist/Dietitian" and not await crud_app.exists_this_week(session=session, user_id=user_id):
+        if prof.specialization == "Nutritionist/Dietitian" and not await crud_app.exists_this_week(session=session, user_id=user_id, professional_id=prof.id):
             await reward_user_points(session=session, user_id=user_id, category=CategoryCode.konseling_gizi)
-        elif prof.specialization == "Psychologist" and not await crud_app.exists_this_month(session=session, user_id=user_id):
+        elif prof.specialization == "Psychologist" and not await crud_app.exists_this_month(session=session, user_id=user_id, professional_id=prof.id):
             await reward_user_points(session=session, user_id=user_id, category=CategoryCode.konseling_psikolog)
         
         ap = await crud_app.create_appointment(
