@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request, HTTPException
@@ -30,6 +31,14 @@ app.include_router(ws_router, prefix="/ws", tags=["Chat WebSocket"])
 async def root(request: Request):
     """Redirect ke dashboard login"""
     return RedirectResponse(url="/dashboard/login")
+
+@app.get("/privacy-policy")
+async def privacy_policy(request: Request):
+    return templates.TemplateResponse("/privacy_policy/index.html", {"request":request, "year":datetime.now().year}, status_code=200)
+
+@app.get("/term_of_service")
+async def term_of_service(request: Request):
+    return templates.TemplateResponse("/term_of_service/index.html", {"request":request, "year":datetime.now().year}, status_code=200)
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
