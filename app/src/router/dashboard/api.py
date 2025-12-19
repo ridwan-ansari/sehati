@@ -97,9 +97,15 @@ async def admin_logout():
     return res
 
 @router.get("/users")
-async def users_page(request: Request, auth=Depends(require_admin_cookie), session: AsyncSession = Depends(get_async_session)):
+async def users_page(
+    request: Request, 
+    auth= Depends(require_admin_cookie), 
+    session: AsyncSession = Depends(get_async_session),
+    success: str = None,
+    error: str = None
+    ):
     users = await crud_user.get_users(session=session)
-    return render_page("admin/users.html", request, users=users, auth=auth)
+    return render_page("admin/users.html", request, users=users, auth=auth, success=success, error=error)
 
 @router.get("/users/{user_id}")
 async def user_detail_page(
@@ -685,3 +691,42 @@ async def delete_food(
     await crud_food.delete(session=session, food_id=food_id)
 
     return RedirectResponse("/dashboard/foods?success=Deleted", status_code=302)
+
+@router.get("/export/health-data")
+async def export_health_data_excel(
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+):
+    """
+    Export semua data kesehatan ke Excel untuk penelitian
+    Hanya bisa diakses oleh admin
+    """
+    try:
+        from app.src.utils.export import HealthDataExcelExporter
+        from datetime import datetime
+        from fastapi.responses import StreamingResponse
+        
+        # Buat exporter instance
+        exporter = HealthDataExcelExporter(session)
+        
+        # Generate Excel file
+        excel_file = await exporter.generate_excel()
+        
+        # Buat filename dengan timestamp
+        filename = f"health_research_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        # Return file sebagai download
+        return StreamingResponse(
+            excel_file,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except Exception as e:
+        print(f"Error exporting Excel: {str(e)}")
+        return RedirectResponse(
+            "/dashboard/users?error=Failed+to+export+data", 
+            status_code=302
+        )

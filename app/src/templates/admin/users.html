@@ -10,7 +10,39 @@
         </svg>
         User Management
     </h2>
+    
+    <!-- Export Button -->
+    <a href="/dashboard/export/health-data" 
+       class="inline-flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 transform hover:scale-105">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+        Export Data Penelitian
+    </a>
 </div>
+
+<!-- Success/Error Messages -->
+{% if error %}
+<div class="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm">
+    <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+        <span class="font-medium">{{ error }}</span>
+    </div>
+</div>
+{% endif %}
+
+{% if success %}
+<div class="mb-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md shadow-sm">
+    <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span class="font-medium">{{ success }}</span>
+    </div>
+</div>
+{% endif %}
 
 <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100">
     <div class="overflow-x-auto">
@@ -55,4 +87,35 @@
         </table>
     </div>
 </div>
+
+<!-- Loading Indicator untuk Export (Optional) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportButton = document.querySelector('a[href="/dashboard/export/health-data"]');
+    
+    if (exportButton) {
+        exportButton.addEventListener('click', function(e) {
+            // Tampilkan loading indicator
+            const originalContent = this.innerHTML;
+            this.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating Excel...
+            `;
+            this.classList.add('opacity-75', 'cursor-not-allowed');
+            this.style.pointerEvents = 'none';
+            
+            // Reset setelah 5 detik (backup jika download selesai)
+            setTimeout(() => {
+                this.innerHTML = originalContent;
+                this.classList.remove('opacity-75', 'cursor-not-allowed');
+                this.style.pointerEvents = 'auto';
+            }, 5000);
+        });
+    }
+});
+</script>
+
 {% endblock %}
