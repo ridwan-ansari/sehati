@@ -1,18 +1,16 @@
 import pandas as pd
 from io import BytesIO
-from typing import Optional
-from datetime import datetime, timezone, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from openpyxl.chart import BarChart, PieChart, Reference
+from datetime import datetime, timezone, timedelta
 from openpyxl.styles import Font, Alignment, PatternFill
 
 from app.src.models.user import User
 from app.src.models.user_nutrition import UserNutrition
-from app.src.models.food import FoodHabitAnswer, FoodDiaryAnalysis, FoodDiaryItem
 from app.src.models.exercise_habit import ExerciseHabitAnswer
 from app.src.models.sleep import Sleep
+from app.src.models.food import FoodHabitAnswer, FoodDiaryAnalysis, FoodDiaryItem
 
 
 class HealthDataExcelExporter:
@@ -63,14 +61,23 @@ class HealthDataExcelExporter:
         for a in result.scalars().all():
             if not (a.user and a.question): continue
             
-            val = a.selected_option or a.answer_text or ('Ya' if getattr(a, 'answer', False) else 'Tidak')
-            raw_date = a.created_at if hasattr(a, 'created_at') else getattr(a, 'recorded_at', None)
+            val = None
+            if hasattr(a, 'selected_option') and a.selected_option:
+                val = a.selected_option
+            elif hasattr(a, 'answer_text') and a.answer_text:
+                val = a.answer_text
+            elif hasattr(a, 'answer'):
+                val = 'Ya' if a.answer else 'Tidak'
+                if hasattr(a, 'frequency') and a.frequency:
+                    val = f"{val} ({a.frequency})"
+            
+            raw_date = getattr(a, 'created_at', None) or getattr(a, 'recorded_at', None)
             
             raw.append({
                 'Nickname': a.user.nickname,
                 'Date': self._localize(raw_date).date() if raw_date else None,
                 'Question': a.question.question,
-                'Answer': val
+                'Answer': val or '-'
             })
         
         df = pd.DataFrame(raw)
@@ -96,8 +103,7 @@ class HealthDataExcelExporter:
                 'Diff': (a.total_calories or 0) - (a.energy_requirement or 0)
             })
             
-            items = a.items or []
-            for i in items:
+            for i in (a.items or []):
                 cal_per_100 = getattr(i.food, 'calories', 0) or 0
                 weight = i.weight_grams or 0
                 detail.append({
@@ -127,18 +133,18 @@ class HealthDataExcelExporter:
 
     async def generate_excel(self) -> BytesIO:
         output = BytesIO()
-        async_tasks = {
-            "1_Demographics": self.get_users_data(),
-            "2_Body_Composition": self.get_nutrition_data(),
-            "3_Food_Habits": self.get_habit_pivot(FoodHabitAnswer),
-            "4_Exercise_Habits": self.get_habit_pivot(ExerciseHabitAnswer)
-        }
-
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            for sheet_name, task in async_tasks.items():
+            sheets = [
+                ("1_Demographics", self.get_users_data()),
+                ("2_Body_Composition", self.get_nutrition_data()),
+                ("3_Food_Habits", self.get_habit_pivot(FoodHabitAnswer)),
+                ("4_Exercise_Habits", self.get_habit_pivot(ExerciseHabitAnswer))
+            ]
+            
+            for name, task in sheets:
                 df = await task
                 if not df.empty:
-                    df.to_excel(writer, sheet_name, index=False)
+                    df.to_excel(writer, name, index=False)
             
             f_daily, f_detail = await self.get_food_diary_data()
             if not f_daily.empty: f_daily.to_excel(writer, "5_Daily_Summary", index=False)
