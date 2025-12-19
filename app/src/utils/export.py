@@ -1,10 +1,17 @@
+"""
+Health Data Excel Export Module (Async Version) - Enhanced for Research
+Ekspor data kesehatan ke Excel untuk penelitian kedokteran dengan visualisasi
+"""
+
 import pandas as pd
 from io import BytesIO
 from typing import Optional
 from datetime import datetime
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
+from openpyxl.chart import BarChart, PieChart, Reference
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 from app.src.models.user import User
 from app.src.models.user_nutrition import UserNutrition
@@ -20,7 +27,7 @@ from app.src.models.sleep import Sleep
 
 
 class HealthDataExcelExporter:
-    """Class untuk mengekspor data kesehatan ke Excel (Async)"""
+    """Class untuk mengekspor data kesehatan ke Excel (Async) dengan visualisasi"""
     
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -40,23 +47,18 @@ class HealthDataExcelExporter:
             return None
         
         from datetime import timezone, timedelta
-        
-        # WIB timezone (UTC+7)
         wib = timezone(timedelta(hours=7))
         
-        # Jika datetime sudah punya timezone, convert ke WIB
         if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
             dt_wib = dt.astimezone(wib)
-            # Remove timezone info untuk Excel
             return dt_wib.replace(tzinfo=None)
         
-        # Jika tidak ada timezone, assume UTC dan convert ke WIB
         dt_utc = dt.replace(tzinfo=timezone.utc)
         dt_wib = dt_utc.astimezone(wib)
         return dt_wib.replace(tzinfo=None)
     
     async def get_users_data(self) -> pd.DataFrame:
-        """Ambil data demografis users"""
+        """Ambil data demografis users dengan nickname"""
         stmt = select(User).where(User.active == True)
         result = await self.db.execute(stmt)
         users = result.scalars().all()
@@ -64,26 +66,25 @@ class HealthDataExcelExporter:
         data = []
         for user in users:
             data.append({
-                'user_id': user.id,
+                'nickname': user.nickname,
                 'gender': user.gender,
                 'age': self.calculate_age(user.date_of_birth),
                 'date_of_birth': user.date_of_birth,
                 'verified': user.verified,
-                'created_at': self.convert_to_wib(user.created_at),
+                'registered_at': self.convert_to_wib(user.created_at),
                 'role': user.role
             })
         
         return pd.DataFrame(data)
     
     async def get_nutrition_data(self) -> pd.DataFrame:
-        """Ambil data nutrisi dan antropometri"""
+        """Ambil data nutrisi dan antropometri dengan nickname"""
         stmt = select(UserNutrition).join(User).where(User.active == True)
         result = await self.db.execute(stmt)
         nutritions = result.scalars().all()
         
         data = []
         for nutrition in nutritions:
-            # Ambil user data
             user_stmt = select(User).where(User.id == nutrition.user_id)
             user_result = await self.db.execute(user_stmt)
             user = user_result.scalar_one_or_none()
@@ -91,7 +92,7 @@ class HealthDataExcelExporter:
             if user:
                 age = self.calculate_age(user.date_of_birth)
                 data.append({
-                    'user_id': nutrition.user_id,
+                    'nickname': user.nickname,
                     'gender': user.gender,
                     'age': age,
                     'height_cm': nutrition.height_cm,
@@ -104,8 +105,8 @@ class HealthDataExcelExporter:
         
         return pd.DataFrame(data)
     
-    async def get_food_habit_data(self) -> pd.DataFrame:
-        """Ambil data kebiasaan makan"""
+    async def get_food_habit_summary(self) -> pd.DataFrame:
+        """Ambil ringkasan kebiasaan makan per user (pivot format)"""
         stmt = (
             select(FoodHabitAnswer)
             .join(User)
@@ -118,28 +119,37 @@ class HealthDataExcelExporter:
         
         data = []
         for answer in answers:
-            # Ambil user data
             user_stmt = select(User).where(User.id == answer.user_id)
             user_result = await self.db.execute(user_stmt)
             user = user_result.scalar_one_or_none()
             
             if user:
-                age = self.calculate_age(user.date_of_birth)
                 data.append({
-                    'user_id': answer.user_id,
-                    'gender': user.gender,
-                    'age': age,
+                    'nickname': user.nickname,
                     'category': answer.question.category,
                     'question': answer.question.question,
                     'answer': 'Ya' if answer.answer else 'Tidak',
                     'frequency': answer.frequency,
-                    'recorded_at': self.convert_to_wib(answer.created_at)
+                    'date': self.convert_to_wib(answer.created_at).date() if answer.created_at else None
                 })
         
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+        
+        if df.empty:
+            return df
+        
+        # Create pivot table: rows=nickname, columns=question, values=answer
+        pivot = df.pivot_table(
+            index=['nickname', 'date'],
+            columns='question',
+            values='answer',
+            aggfunc='first'
+        ).reset_index()
+        
+        return pivot
     
-    async def get_food_diary_data(self) -> pd.DataFrame:
-        """Ambil data diary makanan"""
+    async def get_food_diary_daily(self) -> pd.DataFrame:
+        """Ambil data diary makanan dikelompokkan per hari per user"""
         stmt = (
             select(FoodDiaryAnalysis)
             .join(User)
@@ -149,45 +159,52 @@ class HealthDataExcelExporter:
         result = await self.db.execute(stmt)
         analyses = result.unique().scalars().all()
         
-        data = []
+        # Data summary per hari
+        daily_data = []
+        # Data detail per makanan
+        detail_data = []
+        
         for analysis in analyses:
-            # Ambil user data
             user_stmt = select(User).where(User.id == analysis.user_id)
             user_result = await self.db.execute(user_stmt)
             user = user_result.scalar_one_or_none()
             
             if user:
-                age = self.calculate_age(user.date_of_birth)
+                date = self.convert_to_wib(analysis.created_at).date() if analysis.created_at else None
                 
-                # Data per item makanan
+                # Summary per hari
+                daily_data.append({
+                    'nickname': user.nickname,
+                    'date': date,
+                    'energy_requirement': analysis.energy_requirement,
+                    'desired_energy': analysis.desired_energy_requirement,
+                    'total_calories_consumed': analysis.total_calories,
+                    'calorie_difference': analysis.total_calories - analysis.energy_requirement,
+                    'activity_level': analysis.activity,
+                    'meal_count': len(analysis.items)
+                })
+                
+                # Detail per item makanan
                 for item in analysis.items:
-                    calories_consumed = 0
+                    calories = 0
                     if item.food and item.weight_grams:
-                        calories_consumed = (item.food.calories * item.weight_grams) / 100
+                        calories = (item.food.calories * item.weight_grams) / 100
                     
-                    data.append({
-                        'user_id': analysis.user_id,
-                        'gender': user.gender,
-                        'age': age,
-                        'diary_id': analysis.id,
+                    detail_data.append({
+                        'nickname': user.nickname,
+                        'date': date,
                         'meal_type': item.meal_type,
                         'food_name': item.food.name if item.food else 'Unknown',
                         'food_category': item.food.category if item.food else None,
                         'quantity': item.quantity,
                         'weight_grams': item.weight_grams,
-                        'calories_per_100g': item.food.calories if item.food else 0,
-                        'calories_consumed': calories_consumed,
-                        'energy_requirement': analysis.energy_requirement,
-                        'desired_energy_requirement': analysis.desired_energy_requirement,
-                        'total_daily_calories': analysis.total_calories,
-                        'activity_level': analysis.activity,
-                        'recorded_at': self.convert_to_wib(analysis.created_at)
+                        'calories': calories
                     })
         
-        return pd.DataFrame(data)
+        return pd.DataFrame(daily_data), pd.DataFrame(detail_data)
     
-    async def get_exercise_habit_data(self) -> pd.DataFrame:
-        """Ambil data kebiasaan olahraga"""
+    async def get_exercise_habit_summary(self) -> pd.DataFrame:
+        """Ambil ringkasan kebiasaan olahraga per user (pivot format)"""
         stmt = (
             select(ExerciseHabitAnswer)
             .join(User)
@@ -200,147 +217,158 @@ class HealthDataExcelExporter:
         
         data = []
         for answer in answers:
-            # Ambil user data
             user_stmt = select(User).where(User.id == answer.user_id)
             user_result = await self.db.execute(user_stmt)
             user = user_result.scalar_one_or_none()
             
             if user:
-                age = self.calculate_age(user.date_of_birth)
                 data.append({
-                    'user_id': answer.user_id,
-                    'gender': user.gender,
-                    'age': age,
+                    'nickname': user.nickname,
                     'category': answer.question.category,
                     'question': answer.question.question,
-                    'question_type': answer.question.question_type,
-                    'selected_option': answer.selected_option,
-                    'answer_text': answer.answer_text,
-                    'recorded_at': answer.recorded_at
+                    'answer': answer.selected_option or answer.answer_text or '-',
+                    'date': answer.recorded_at
                 })
         
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+        
+        if df.empty:
+            return df
+        
+        # Create pivot table
+        pivot = df.pivot_table(
+            index=['nickname', 'date'],
+            columns='question',
+            values='answer',
+            aggfunc='first'
+        ).reset_index()
+        
+        return pivot
     
-    async def get_sleep_data(self) -> pd.DataFrame:
-        """Ambil data pola tidur"""
-        stmt = (
-            select(Sleep)
-            .join(User)
-            .where(User.active == True)
-        )
+    async def get_sleep_daily(self) -> pd.DataFrame:
+        """Ambil data tidur per hari per user"""
+        stmt = select(Sleep).join(User).where(User.active == True)
         result = await self.db.execute(stmt)
         sleep_records = result.scalars().all()
         
         data = []
         for sleep in sleep_records:
-            # Ambil user data
             user_stmt = select(User).where(User.id == sleep.user_id)
             user_result = await self.db.execute(user_stmt)
             user = user_result.scalar_one_or_none()
             
             if user:
-                age = self.calculate_age(user.date_of_birth)
-                
-                # Hitung durasi aktual jika ada waktu tidur dan bangun
-                actual_duration = None
+                actual_hours = None
                 duration_diff = None
+                quality = None
+                
                 if sleep.sleep_time and sleep.wake_up_time:
-                    actual_duration = sleep.actual_duration_minutes
+                    actual_minutes = sleep.actual_duration_minutes
+                    actual_hours = round(actual_minutes / 60, 2)
+                    
                     if sleep.target_sleep_hours:
                         target_minutes = sleep.target_sleep_hours * 60
-                        duration_diff = actual_duration - target_minutes
+                        duration_diff = actual_minutes - target_minutes
+                        quality = 'Cukup' if duration_diff >= -30 else 'Kurang'
                 
                 data.append({
-                    'user_id': sleep.user_id,
-                    'gender': user.gender,
-                    'age': age,
+                    'nickname': user.nickname,
+                    'date': self.convert_to_wib(sleep.sleep_time).date() if sleep.sleep_time else None,
                     'sleep_time': self.convert_to_wib(sleep.sleep_time),
                     'wake_up_time': self.convert_to_wib(sleep.wake_up_time),
-                    'actual_duration_minutes': actual_duration,
-                    'actual_duration_hours': round(actual_duration / 60, 2) if actual_duration else None,
-                    'target_sleep_hours': sleep.target_sleep_hours,
-                    'duration_difference_minutes': duration_diff,
-                    'sleep_quality': 'Cukup' if duration_diff and duration_diff >= -30 else 'Kurang' if duration_diff else None,
-                    'recorded_at': self.convert_to_wib(sleep.created_at)
+                    'actual_hours': actual_hours,
+                    'target_hours': sleep.target_sleep_hours,
+                    'difference_minutes': duration_diff,
+                    'sleep_quality': quality
                 })
         
         return pd.DataFrame(data)
     
-    async def get_bmi_reference_data(self) -> pd.DataFrame:
-        """Ambil data referensi BMI (WHO/CDC standard)"""
-        stmt = select(BMIReference)
+    async def get_nutrition_status_stats(self) -> pd.DataFrame:
+        """Statistik status gizi untuk visualisasi"""
+        stmt = select(UserNutrition).join(User).where(User.active == True)
         result = await self.db.execute(stmt)
-        references = result.scalars().all()
+        nutritions = result.scalars().all()
         
-        data = []
-        for ref in references:
-            data.append({
-                'gender': ref.gender,
-                'age_years': ref.age_years,
-                'age_months': ref.age_months,
-                'sd_minus_3': float(ref.sd_minus_3),
-                'sd_minus_2': float(ref.sd_minus_2),
-                'sd_minus_1': float(ref.sd_minus_1),
-                'median': float(ref.median),
-                'sd_plus_1': float(ref.sd_plus_1),
-                'sd_plus_2': float(ref.sd_plus_2),
-                'sd_plus_3': float(ref.sd_plus_3)
-            })
+        status_counts = {}
+        for nutrition in nutritions:
+            status = nutrition.status or 'Unknown'
+            status_counts[status] = status_counts.get(status, 0) + 1
         
+        data = [{'nutritional_status': k, 'count': v} for k, v in status_counts.items()]
         return pd.DataFrame(data)
+    
+    def add_chart_to_sheet(self, worksheet, df, chart_type='bar', title='', position='H2'):
+        """Tambahkan chart ke worksheet"""
+        if df.empty or len(df.columns) < 2:
+            return
+        
+        if chart_type == 'pie':
+            chart = PieChart()
+        else:
+            chart = BarChart()
+        
+        chart.title = title
+        chart.height = 10
+        chart.width = 20
+        
+        # Add data to chart
+        data = Reference(worksheet, min_col=2, min_row=1, max_row=len(df) + 1, max_col=2)
+        cats = Reference(worksheet, min_col=1, min_row=2, max_row=len(df) + 1)
+        
+        chart.add_data(data, titles_from_data=True)
+        chart.set_categories(cats)
+        
+        worksheet.add_chart(chart, position)
     
     async def generate_excel(self, output_path: Optional[str] = None) -> BytesIO:
         """
-        Generate file Excel dengan semua data
-        
-        Args:
-            output_path: Path untuk menyimpan file (optional)
-            
-        Returns:
-            BytesIO object yang berisi file Excel
+        Generate file Excel dengan semua data, visualisasi, dan grouping yang rapi
         """
-        # Buat BytesIO object
         output = BytesIO()
         
-        # Buat Excel writer
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             
-            # Sheet 1: Data Demografis Users
+            # ===== SHEET 1: DEMOGRAFI =====
             df_users = await self.get_users_data()
             if not df_users.empty:
-                df_users.to_excel(writer, sheet_name='Demografi', index=False)
+                df_users.to_excel(writer, sheet_name='1_Demografi', index=False)
             
-            # Sheet 2: Data Nutrisi & Antropometri
+            # ===== SHEET 2: NUTRISI & ANTROPOMETRI =====
             df_nutrition = await self.get_nutrition_data()
             if not df_nutrition.empty:
-                df_nutrition.to_excel(writer, sheet_name='Nutrisi & Antropometri', index=False)
+                df_nutrition.to_excel(writer, sheet_name='2_Nutrisi_Antropometri', index=False)
             
-            # Sheet 3: Kebiasaan Makan
-            df_food_habit = await self.get_food_habit_data()
+            # ===== SHEET 3: STATISTIK STATUS GIZI + CHART =====
+            df_nutrition_stats = await self.get_nutrition_status_stats()
+            if not df_nutrition_stats.empty:
+                df_nutrition_stats.to_excel(writer, sheet_name='3_Stats_Status_Gizi', index=False)
+                ws = writer.sheets['3_Stats_Status_Gizi']
+                self.add_chart_to_sheet(ws, df_nutrition_stats, 'pie', 'Distribusi Status Gizi', 'E2')
+            
+            # ===== SHEET 4: KEBIASAAN MAKAN (PIVOT) =====
+            df_food_habit = await self.get_food_habit_summary()
             if not df_food_habit.empty:
-                df_food_habit.to_excel(writer, sheet_name='Kebiasaan Makan', index=False)
+                df_food_habit.to_excel(writer, sheet_name='4_Kebiasaan_Makan', index=False)
             
-            # Sheet 4: Diary Makanan
-            df_food_diary = await self.get_food_diary_data()
-            if not df_food_diary.empty:
-                df_food_diary.to_excel(writer, sheet_name='Diary Makanan', index=False)
+            # ===== SHEET 5 & 6: DIARY MAKANAN =====
+            df_food_daily, df_food_detail = await self.get_food_diary_daily()
+            if not df_food_daily.empty:
+                df_food_daily.to_excel(writer, sheet_name='5_Diary_Harian', index=False)
+            if not df_food_detail.empty:
+                df_food_detail.to_excel(writer, sheet_name='6_Diary_Detail', index=False)
             
-            # Sheet 5: Kebiasaan Olahraga
-            df_exercise = await self.get_exercise_habit_data()
+            # ===== SHEET 7: KEBIASAAN OLAHRAGA (PIVOT) =====
+            df_exercise = await self.get_exercise_habit_summary()
             if not df_exercise.empty:
-                df_exercise.to_excel(writer, sheet_name='Kebiasaan Olahraga', index=False)
+                df_exercise.to_excel(writer, sheet_name='7_Kebiasaan_Olahraga', index=False)
             
-            # Sheet 6: Pola Tidur
-            df_sleep = await self.get_sleep_data()
+            # ===== SHEET 8: POLA TIDUR PER HARI =====
+            df_sleep = await self.get_sleep_daily()
             if not df_sleep.empty:
-                df_sleep.to_excel(writer, sheet_name='Pola Tidur', index=False)
+                df_sleep.to_excel(writer, sheet_name='8_Pola_Tidur', index=False)
             
-            # Sheet 7: Referensi BMI
-            df_bmi_ref = await self.get_bmi_reference_data()
-            if not df_bmi_ref.empty:
-                df_bmi_ref.to_excel(writer, sheet_name='Referensi BMI', index=False)
-            
-            # Auto-adjust column width untuk semua sheet
+            # Auto-adjust column width
             for sheet_name in writer.sheets:
                 worksheet = writer.sheets[sheet_name]
                 for column in worksheet.columns:
@@ -355,11 +383,9 @@ class HealthDataExcelExporter:
                     adjusted_width = min(max_length + 2, 50)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
         
-        # Save to file jika path diberikan
         if output_path:
             with open(output_path, 'wb') as f:
                 f.write(output.getvalue())
         
-        # Reset pointer
         output.seek(0)
         return output
