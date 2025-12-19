@@ -114,7 +114,7 @@ class HealthDataExcelExporter:
             .options(joinedload(FoodHabitAnswer.question))
         )
         result = await self.db.execute(stmt)
-        answers = result.scalars().all()
+        answers = result.unique().scalars().all()
         
         data = []
         for answer in answers:
@@ -147,7 +147,7 @@ class HealthDataExcelExporter:
             .options(joinedload(FoodDiaryAnalysis.items).joinedload(FoodDiaryItem.food))
         )
         result = await self.db.execute(stmt)
-        analyses = result.scalars().all()
+        analyses = result.unique().scalars().all()
         
         data = []
         for analysis in analyses:
@@ -196,7 +196,7 @@ class HealthDataExcelExporter:
             .options(joinedload(ExerciseHabitAnswer.question))
         )
         result = await self.db.execute(stmt)
-        answers = result.scalars().all()
+        answers = result.unique().scalars().all()
         
         data = []
         for answer in answers:
