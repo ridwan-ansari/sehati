@@ -2,8 +2,8 @@ from __future__ import annotations
 import re
 from loguru import logger
 from zoneinfo import ZoneInfo
-from datetime import datetime, timezone
-from fastapi.responses import RedirectResponse
+from datetime import datetime
+from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie, UploadFile
 
@@ -17,6 +17,7 @@ from app.src.core.session import get_async_session
 from app.src.utils.email_client import EmailClient
 from app.src.router.merchandise.crud import crud_merch
 from app.src.models.user_nutrition import UserNutrition
+from app.src.utils.export import HealthDataExcelExporter
 from app.src.router.merchandise.crud import crud_merch_claim
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
@@ -697,25 +698,10 @@ async def export_health_data_excel(
     session: AsyncSession = Depends(get_async_session),
     auth=Depends(require_admin_cookie),
 ):
-    """
-    Export semua data kesehatan ke Excel untuk penelitian
-    Hanya bisa diakses oleh admin
-    """
     try:
-        from app.src.utils.export import HealthDataExcelExporter
-        from datetime import datetime
-        from fastapi.responses import StreamingResponse
-        
-        # Buat exporter instance
         exporter = HealthDataExcelExporter(session)
-        
-        # Generate Excel file
         excel_file = await exporter.generate_excel()
-        
-        # Buat filename dengan timestamp
         filename = f"health_research_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        
-        # Return file sebagai download
         return StreamingResponse(
             excel_file,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

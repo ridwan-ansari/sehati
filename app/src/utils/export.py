@@ -34,6 +34,27 @@ class HealthDataExcelExporter:
             (today.month, today.day) < (date_of_birth.month, date_of_birth.day)
         )
     
+    def convert_to_wib(self, dt):
+        """Convert datetime ke WIB (UTC+7) dan remove timezone untuk Excel compatibility"""
+        if dt is None:
+            return None
+        
+        from datetime import timezone, timedelta
+        
+        # WIB timezone (UTC+7)
+        wib = timezone(timedelta(hours=7))
+        
+        # Jika datetime sudah punya timezone, convert ke WIB
+        if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
+            dt_wib = dt.astimezone(wib)
+            # Remove timezone info untuk Excel
+            return dt_wib.replace(tzinfo=None)
+        
+        # Jika tidak ada timezone, assume UTC dan convert ke WIB
+        dt_utc = dt.replace(tzinfo=timezone.utc)
+        dt_wib = dt_utc.astimezone(wib)
+        return dt_wib.replace(tzinfo=None)
+    
     async def get_users_data(self) -> pd.DataFrame:
         """Ambil data demografis users"""
         stmt = select(User).where(User.active == True)
@@ -48,7 +69,7 @@ class HealthDataExcelExporter:
                 'age': self.calculate_age(user.date_of_birth),
                 'date_of_birth': user.date_of_birth,
                 'verified': user.verified,
-                'created_at': user.created_at,
+                'created_at': self.convert_to_wib(user.created_at),
                 'role': user.role
             })
         
@@ -78,7 +99,7 @@ class HealthDataExcelExporter:
                     'bmi': nutrition.bmi,
                     'ideal_weight_kg': nutrition.ideal_weight_kg,
                     'nutritional_status': nutrition.status,
-                    'recorded_at': nutrition.created_at
+                    'recorded_at': self.convert_to_wib(nutrition.created_at)
                 })
         
         return pd.DataFrame(data)
@@ -112,7 +133,7 @@ class HealthDataExcelExporter:
                     'question': answer.question.question,
                     'answer': 'Ya' if answer.answer else 'Tidak',
                     'frequency': answer.frequency,
-                    'recorded_at': answer.created_at
+                    'recorded_at': self.convert_to_wib(answer.created_at)
                 })
         
         return pd.DataFrame(data)
@@ -160,7 +181,7 @@ class HealthDataExcelExporter:
                         'desired_energy_requirement': analysis.desired_energy_requirement,
                         'total_daily_calories': analysis.total_calories,
                         'activity_level': analysis.activity,
-                        'recorded_at': analysis.created_at
+                        'recorded_at': self.convert_to_wib(analysis.created_at)
                     })
         
         return pd.DataFrame(data)
@@ -233,14 +254,14 @@ class HealthDataExcelExporter:
                     'user_id': sleep.user_id,
                     'gender': user.gender,
                     'age': age,
-                    'sleep_time': sleep.sleep_time,
-                    'wake_up_time': sleep.wake_up_time,
+                    'sleep_time': self.convert_to_wib(sleep.sleep_time),
+                    'wake_up_time': self.convert_to_wib(sleep.wake_up_time),
                     'actual_duration_minutes': actual_duration,
                     'actual_duration_hours': round(actual_duration / 60, 2) if actual_duration else None,
                     'target_sleep_hours': sleep.target_sleep_hours,
                     'duration_difference_minutes': duration_diff,
                     'sleep_quality': 'Cukup' if duration_diff and duration_diff >= -30 else 'Kurang' if duration_diff else None,
-                    'recorded_at': sleep.created_at
+                    'recorded_at': self.convert_to_wib(sleep.created_at)
                 })
         
         return pd.DataFrame(data)
@@ -257,13 +278,13 @@ class HealthDataExcelExporter:
                 'gender': ref.gender,
                 'age_years': ref.age_years,
                 'age_months': ref.age_months,
-                'sd_minus_3': ref.sd_minus_3,
-                'sd_minus_2': ref.sd_minus_2,
-                'sd_minus_1': ref.sd_minus_1,
-                'median': ref.median,
-                'sd_plus_1': ref.sd_plus_1,
-                'sd_plus_2': ref.sd_plus_2,
-                'sd_plus_3': ref.sd_plus_3
+                'sd_minus_3': float(ref.sd_minus_3),
+                'sd_minus_2': float(ref.sd_minus_2),
+                'sd_minus_1': float(ref.sd_minus_1),
+                'median': float(ref.median),
+                'sd_plus_1': float(ref.sd_plus_1),
+                'sd_plus_2': float(ref.sd_plus_2),
+                'sd_plus_3': float(ref.sd_plus_3)
             })
         
         return pd.DataFrame(data)
