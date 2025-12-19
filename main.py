@@ -36,7 +36,7 @@ async def root(request: Request):
 async def privacy_policy(request: Request):
     return templates.TemplateResponse("/privacy_policy/index.html", {"request":request, "year":datetime.now().year}, status_code=200)
 
-@app.get("/term_of_service")
+@app.get("/term-of-service")
 async def term_of_service(request: Request):
     return templates.TemplateResponse("/term_of_service/index.html", {"request":request, "year":datetime.now().year}, status_code=200)
 
