@@ -22,6 +22,10 @@ class HealthDataExcelExporter:
         """Konversi UTC ke WIB"""
         if not dt: 
             return None
+        # Jika sudah date object, return as is
+        if isinstance(dt, datetime.date) and not isinstance(dt, datetime):
+            return dt
+        # Konversi datetime ke WIB
         dt_utc = dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
         return dt_utc.astimezone(self.wib).replace(tzinfo=None)
 
