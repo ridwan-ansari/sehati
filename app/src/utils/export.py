@@ -325,40 +325,55 @@ class HealthDataExcelExporter:
         output = BytesIO()
         
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            sheets_created = []
+            
             # Sheet 1: Demographics
             df_users = await self.get_users_data()
             if not df_users.empty:
                 df_users.to_excel(writer, sheet_name='1_Demographics', index=False)
+                sheets_created.append('1_Demographics')
             
             # Sheet 2: Body Composition & Nutrition
             df_nutrition = await self.get_nutrition_data()
             if not df_nutrition.empty:
                 df_nutrition.to_excel(writer, sheet_name='2_Body_Composition', index=False)
+                sheets_created.append('2_Body_Composition')
             
             # Sheet 3: Sleep Records
             df_sleep = await self.get_sleep_records()
             if not df_sleep.empty:
                 df_sleep.to_excel(writer, sheet_name='3_Sleep_Records', index=False)
+                sheets_created.append('3_Sleep_Records')
             
             # Sheet 4: Food Habits
             df_food_habits = await self.get_food_habit_pivot()
             if not df_food_habits.empty:
                 df_food_habits.to_excel(writer, sheet_name='4_Food_Habits', index=False)
+                sheets_created.append('4_Food_Habits')
             
             # Sheet 5: Exercise Habits
             df_exercise_habits = await self.get_exercise_habit_pivot()
             if not df_exercise_habits.empty:
                 df_exercise_habits.to_excel(writer, sheet_name='5_Exercise_Habits', index=False)
+                sheets_created.append('5_Exercise_Habits')
             
             # Sheet 6 & 7: Food Diary
             df_diary_daily, df_diary_detail = await self.get_food_diary_data()
             if not df_diary_daily.empty:
                 df_diary_daily.to_excel(writer, sheet_name='6_Food_Diary_Summary', index=False)
+                sheets_created.append('6_Food_Diary_Summary')
             if not df_diary_detail.empty:
                 df_diary_detail.to_excel(writer, sheet_name='7_Food_Diary_Detail', index=False)
+                sheets_created.append('7_Food_Diary_Detail')
+            
+            # Jika tidak ada sheet yang dibuat, buat sheet placeholder
+            if not sheets_created:
+                df_empty = pd.DataFrame({'Message': ['No data available']})
+                df_empty.to_excel(writer, sheet_name='No_Data', index=False)
+                sheets_created.append('No_Data')
             
             # Apply styling to all sheets
-            for sheet_name in writer.sheets:
+            for sheet_name in sheets_created:
                 self._apply_styling(writer, sheet_name)
         
         output.seek(0)
