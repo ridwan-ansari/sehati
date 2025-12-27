@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en" style="background:#FAF9F0;margin:0;padding:0;">
+  <head>
+    <meta charset="utf-8">
+    <title>SEHATI Appointment Notification</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+  </head>
+
+  <body style="margin:0;padding:24px;background:#FAF9F0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;color:#111;">
+    <table width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #eee">
+      
+      <tr>
+        <td style="background:#FFC107;padding:20px 24px;">
+          <h1 style="margin:0;font-size:20px;color:#111;">SEHATI — New Appointment Request</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:24px;">
+          <p style="margin:0 0 12px;">Hi Doctor,</p>
+
+          <p style="margin:0 0 16px;">You have received a new appointment request from a patient:</p>
+
+          <table style="width:100%;margin-bottom:20px;font-size:14px;color:#333;">
+            <tr>
+              <td style="padding:6px 0;"><strong>Patient Name:</strong></td>
+              <td style="padding:6px 0;">{{ fullname }}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;"><strong>Email:</strong></td>
+              <td style="padding:6px 0;">{{ email }}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;"><strong>Appointment Date:</strong></td>
+              <td style="padding:6px 0;">{{ appointment_date }}</td>
+            </tr>
+          </table>
+
+          <p style="margin:0 0 12px;color:#444;">
+            Please review and confirm this appointment through the SEHATI Doctor Dashboard.
+          </p>
+
+          <p style="margin:0 0 12px;color:#444;">
+            Visit the dashboard and go to <strong>Appointments → Pending</strong> to manage this request.
+          </p>
+
+          <p style="margin:0;color:#666;font-size:12px;">
+            If you need to reschedule or have any questions, please contact the patient directly or use the dashboard messaging system.
+          </p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:16px 24px;background:#FAF9F0;color:#666;font-size:12px;text-align:center;">
+          © {{ year }} SEHATI Health Platform
+        </td>
+      </tr>
+
+    </table>
+  </body>
+</html>

@@ -1,9 +1,12 @@
+from loguru import logger
 from fastapi import APIRouter, Depends
 from app.src.core.security import AuthService
 from app.src.models.point import CategoryCode 
+from app.src.router.user.crud import crud_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
+from app.src.utils.email_client import email_client
 from app.src.utils.point_service import reward_user_points
 from app.src.router.appointment.schema import AppointmentCreateSchema
 from app.src.router.appointment.crud import CRUDProfessional, CRUDAppointment
@@ -32,6 +35,7 @@ async def create_appointment(
 ):
     with response_handler() as response:
         user_id = authentication.get("id")
+        user = await crud_user.get_user_by_id(session=session, id=user_id)
         prof = await crud_prof.get_by_id(session=session, id=data.professional_id)
 
         if not prof:
@@ -52,6 +56,11 @@ async def create_appointment(
                 "notes": data.notes
             }
         )
+
+        try:
+            email_client.send_appointment(recipient=prof.email, context={"fullname":user.fullname, "email":user.email, "appointment_date":f"{data.appointment_date} - {data.appointment_time}"})
+        except Exception as error:
+            logger.error(error)
         response.data = {"id": ap.id}
         response.message = "Appointment created"
     return response.build()
