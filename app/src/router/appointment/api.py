@@ -58,7 +58,13 @@ async def create_appointment(
         )
 
         try:
-            email_client.send_appointment(recipient=prof.email, context={"fullname":user.fullname, "email":user.email, "appointment_date":f"{data.appointment_date} - {data.appointment_time}"})
+            email_client.send_appointment(recipient=prof.email, context={
+                "doctor_name":prof.fullname, 
+                "fullname":user.fullname, 
+                "email":user.email, 
+                "appointment_date":f"{data.appointment_date} - {data.appointment_time}"
+                }
+            )
         except Exception as error:
             logger.error(error)
         response.data = {"id": ap.id}
