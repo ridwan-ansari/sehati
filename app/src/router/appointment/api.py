@@ -135,7 +135,7 @@ async def appoint_confirmed(
                     "phone_number":prof.phone_number
                 }
         )
-        return templates.TemplateResponse("errors/appoint_confirmed.html", {"request": request}, status_code=200)
+        return templates.TemplateResponse("confirmed/appoint_confirmed.html", {"request": request}, status_code=200)
     except Exception as error:
         logger.error(error)
         return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
