@@ -1,9 +1,12 @@
 from typing import Optional
-from sqlalchemy import select, and_
 from datetime import date, timedelta
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload, joinedload
+
+from app.src.models.user import User
 from app.src.models.professionals import Professional, Appointment
+
 
 class CRUDProfessional:
     async def list_professionals(self, session: AsyncSession):
@@ -123,3 +126,69 @@ class CRUDAppointment:
         await session.refresh(appointment)
         return appointment
     
+    async def get_all(
+        self,
+        session: AsyncSession,
+        username: str = None,
+        status: str = None,
+        limit: int = 10,
+        offset: int = 0
+    ):
+        query = (
+            select(Appointment)
+            .options(
+                joinedload(Appointment.user),
+                joinedload(Appointment.professional)
+            )
+            .order_by(Appointment.appointment_date.desc(), Appointment.appointment_time.desc())
+        )
+        
+        if username:
+            query = query.join(Appointment.user).filter(
+                User.fullname.ilike(f"%{username}%")
+            )
+        
+        if status:
+            query = query.filter(Appointment.status == status)
+        
+        query = query.limit(limit).offset(offset)
+        result = await session.execute(query)
+        return result.scalars().all()
+    
+    async def count(
+        self,
+        session: AsyncSession,
+        username: str = None,
+        status: str = None
+    ):
+        query = select(func.count(Appointment.id))
+        
+        if username:
+            query = query.join(Appointment.user).filter(
+                User.fullname.ilike(f"%{username}%")
+            )
+        
+        if status:
+            query = query.filter(Appointment.status == status)
+        
+        result = await session.execute(query)
+        return result.scalar()
+    
+    async def update_status(
+        self,
+        session: AsyncSession,
+        id: str,
+        status: str
+    ):
+        query = select(Appointment).filter(Appointment.id == id)
+        result = await session.execute(query)
+        appointment = result.scalar_one_or_none()
+        
+        if appointment:
+            appointment.status = status
+            await session.commit()
+            await session.refresh(appointment)
+        
+        return appointment
+
+crud_appointment = CRUDAppointment()

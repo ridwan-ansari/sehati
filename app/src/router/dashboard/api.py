@@ -18,6 +18,7 @@ from app.src.utils.email_client import EmailClient
 from app.src.router.merchandise.crud import crud_merch
 from app.src.models.user_nutrition import UserNutrition
 from app.src.utils.export import HealthDataExcelExporter
+from app.src.router.appointment.crud import crud_appointment
 from app.src.router.merchandise.crud import crud_merch_claim
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
@@ -715,4 +716,67 @@ async def export_health_data_excel(
         return RedirectResponse(
             "/dashboard/users?error=Failed+to+export+data", 
             status_code=302
+        )
+
+@router.get("/appointments")
+async def appointments_page(
+    request: Request,
+    username: str = None,
+    status: str = None,
+    page: int = 1,
+    limit: int = 10,
+    success: str = None,
+    error: str = None,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    offset = (page - 1) * limit
+
+    appointments = await crud_appointment.get_all(
+        session=session,
+        username=username,
+        status=status,
+        limit=limit,
+        offset=offset
+    )
+    
+    total = await crud_appointment.count(session=session, username=username, status=status)
+    total_pages = (total + limit - 1) // limit
+
+    return templates.TemplateResponse("admin/appointments.html", {
+        "request": request,
+        "appointments": appointments,
+        "username": username,
+        "status": status,
+        "page": page,
+        "total_pages": total_pages,
+        "limit": limit,
+        "auth": auth,
+        "success": success,
+        "error": error,
+    })
+
+
+@router.post("/appointments/update/{appointment_id}/{new_status}")
+async def update_appointment_status(
+    appointment_id: str,
+    new_status: str,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    try:
+        await crud_appointment.update_status(
+            session=session,
+            id=appointment_id,
+            status=new_status
+        )
+        return RedirectResponse(
+            url="/dashboard/appointments?success=Status updated successfully",
+            status_code=303
+        )
+    except Exception as e:
+        logger.error(f"Error updating appointment: {str(e)}")
+        return RedirectResponse(
+            url="/dashboard/appointments?error=Failed to update status",
+            status_code=303
         )

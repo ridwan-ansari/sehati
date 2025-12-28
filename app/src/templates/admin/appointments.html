@@ -1,0 +1,216 @@
+{% extends "admin/base.html" %}
+{% block title %}Appointments{% endblock %}
+
+{% block content %}
+
+<div class="fixed top-4 right-4 z-50 space-y-2">
+    {% if success %}
+    <div id="success-toast" class="bg-green-500 text-white p-4 rounded-lg shadow-lg flex items-center gap-3 w-80">
+        <strong>Success!</strong>
+        <span class="ml-auto cursor-pointer" onclick="this.parentElement.remove()">×</span>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div id="error-toast" class="bg-red-600 text-white p-4 rounded-lg shadow-lg flex items-center gap-3 w-80">
+        <strong>Error!</strong>
+        <span class="ml-auto cursor-pointer" onclick="this.parentElement.remove()">×</span>
+    </div>
+    {% endif %}
+</div>
+
+<div class="flex justify-between items-center mb-6 border-b pb-4">
+    <h2 class="text-3xl font-extrabold text-gray-800">Appointment Management</h2>
+</div>
+
+<div class="bg-white shadow-xl rounded-xl overflow-hidden">
+    
+    <div class="p-4 border-b bg-gray-50">
+        <form method="get" class="flex gap-3">
+            <input 
+                type="text"
+                name="username"
+                placeholder="Search by username..."
+                value="{{ username or '' }}"
+                class="border rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+            <select name="status" class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Status</option>
+                <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Search
+            </button>
+            {% if username or status %}
+            <a href="?page=1&limit={{ limit }}" 
+               class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-left divide-y divide-gray-200">
+            <thead>
+                <tr class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <th class="py-3 px-4 font-bold">User</th>
+                    <th class="py-3 px-4 font-bold">Doctor</th>
+                    <th class="py-3 px-4 font-bold">Specialization</th>
+                    <th class="py-3 px-4 font-bold">Date & Time</th>
+                    <th class="py-3 px-4 font-bold">Consultation Method</th>
+                    <th class="py-3 px-4 font-bold text-center w-32">Status</th>
+                    <th class="py-3 px-4 font-bold text-center w-36">Action</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100">
+            {% for a in appointments %}
+                <tr class="hover:bg-yellow-50/50">
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-gray-800">{{ a.user.fullname }}</div>
+                        <div class="text-xs text-gray-500">{{ a.user.email }}</div>
+                    </td>
+
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-gray-800">{{ a.professional.fullname }}</div>
+                    </td>
+
+                    <td class="py-3 px-4 text-gray-700">
+                        {{ a.professional.specialization }}
+                    </td>
+
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-gray-800">{{ a.appointment_date.strftime('%d %b %Y') }}</div>
+                        <div class="text-sm text-gray-600">{{ a.appointment_time.strftime('%H:%M') }}</div>
+                    </td>
+
+                    <td class="py-3 px-4 text-gray-700 text-sm">
+                        {{ a.notes or '-' }}
+                    </td>
+
+                    <td class="py-3 px-4 text-center">
+                        {% if a.status == 'pending' %}
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Pending</span>
+                        {% elif a.status == 'confirmed' %}
+                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Confirmed</span>
+                        {% elif a.status == 'approved' %}
+                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Approved</span>
+                        {% elif a.status == 'rejected' %}
+                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Rejected</span>
+                        {% elif a.status == 'completed' %}
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Completed</span>
+                        {% elif a.status == 'cancelled' %}
+                            <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelled</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            {% if a.status == 'pending' %}
+                                <form method="post" action="/dashboard/appointments/update/{{ a.id }}/confirmed" class="contents">
+                                    <button type="submit"
+                                        class="px-3 py-1 bg-green-500 text-white text-xs rounded-lg shadow hover:bg-green-600">
+                                        Confirm
+                                    </button>
+                                </form>
+                                <form method="post" action="/dashboard/appointments/update/{{ a.id }}/rejected" class="contents">
+                                    <button type="submit"
+                                        class="px-3 py-1 bg-red-600 text-white text-xs rounded-lg shadow hover:bg-red-700">
+                                        Reject
+                                    </button>
+                                </form>
+                            {% elif a.status == 'confirmed' %}
+                                <form method="post" action="/dashboard/appointments/update/{{ a.id }}/completed" class="contents">
+                                    <button type="submit"
+                                        class="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg shadow hover:bg-blue-600">
+                                        Complete
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-xs text-gray-400">No action</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex justify-between items-center px-4 py-3 border-t">
+        <div class="text-sm">
+            Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+        </div>
+
+        <div class="flex gap-1">
+            {% set max_visible_pages = 5 %}
+            {% set boundary_pages = 2 %}
+            {% set start_page = [page - boundary_pages, 2] | max %}
+            {% set end_page = [page + boundary_pages, total_pages - 1] | min %}
+            
+            {% if page <= boundary_pages %}
+                {% set end_page = [max_visible_pages, total_pages - 1] | min %}
+            {% elif page >= total_pages - boundary_pages + 1 %}
+                {% set start_page = [total_pages - max_visible_pages + 1, 2] | max %}
+            {% endif %}
+
+            {% set pages_to_show = range(1, total_pages + 1) %}
+            
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}&limit={{ limit }}&username={{ username or '' }}&status={{ status or '' }}"
+               class="px-3 py-1 border rounded-lg bg-white hover:bg-gray-100 text-sm">Prev</a>
+            {% endif %}
+
+            {% if total_pages > 0 %}
+                {% if 1 == page %}
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">1</span>
+                {% else %}
+                    <a href="?page=1&limit={{ limit }}&username={{ username or '' }}&status={{ status or '' }}"
+                       class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">1</a>
+                {% endif %}
+            {% endif %}
+
+            {% if start_page > 2 %}
+                <span class="px-3 py-1 text-gray-500 text-sm">...</span>
+            {% endif %}
+
+            {% for p in pages_to_show %}
+                {% if p > 1 and p < total_pages %}
+                    {% if p >= start_page and p <= end_page %}
+                        {% if p == page %}
+                            <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">{{ p }}</span>
+                        {% else %}
+                            <a href="?page={{ p }}&limit={{ limit }}&username={{ username or '' }}&status={{ status or '' }}"
+                               class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">{{ p }}</a>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            {% if end_page < total_pages - 1 %}
+                <span class="px-3 py-1 text-gray-500 text-sm">...</span>
+            {% endif %}
+
+            {% if total_pages > 1 %}
+                {% if total_pages == page %}
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">{{ total_pages }}</span>
+                {% else %}
+                    <a href="?page={{ total_pages }}&limit={{ limit }}&username={{ username or '' }}&status={{ status or '' }}"
+                       class="px-3 py-1 border rounded-lg text-sm hover:bg-gray-100">{{ total_pages }}</a>
+                {% endif %}
+            {% endif %}
+
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}&limit={{ limit }}&username={{ username or '' }}&status={{ status or '' }}"
+               class="px-3 py-1 border rounded-lg bg-white hover:bg-gray-100 text-sm">Next</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
