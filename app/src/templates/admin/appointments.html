@@ -37,10 +37,8 @@
             <select name="status" class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">All Status</option>
                 <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
-                <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
                 <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
-                <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
-                <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelled</option>
             </select>
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 Search
@@ -64,7 +62,6 @@
                     <th class="py-3 px-4 font-bold">Date & Time</th>
                     <th class="py-3 px-4 font-bold">Consultation Method</th>
                     <th class="py-3 px-4 font-bold text-center w-32">Status</th>
-                    <th class="py-3 px-4 font-bold text-center w-36">Action</th>
                 </tr>
             </thead>
 
@@ -107,34 +104,6 @@
                         {% elif a.status == 'cancelled' %}
                             <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelled</span>
                         {% endif %}
-                    </td>
-
-                    <td class="py-3 px-4 text-center">
-                        <div class="flex justify-center gap-2">
-                            {% if a.status == 'pending' %}
-                                <form method="post" action="/dashboard/appointments/update/{{ a.id }}/confirmed" class="contents">
-                                    <button type="submit"
-                                        class="px-3 py-1 bg-green-500 text-white text-xs rounded-lg shadow hover:bg-green-600">
-                                        Confirm
-                                    </button>
-                                </form>
-                                <form method="post" action="/dashboard/appointments/update/{{ a.id }}/rejected" class="contents">
-                                    <button type="submit"
-                                        class="px-3 py-1 bg-red-600 text-white text-xs rounded-lg shadow hover:bg-red-700">
-                                        Reject
-                                    </button>
-                                </form>
-                            {% elif a.status == 'confirmed' %}
-                                <form method="post" action="/dashboard/appointments/update/{{ a.id }}/completed" class="contents">
-                                    <button type="submit"
-                                        class="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg shadow hover:bg-blue-600">
-                                        Complete
-                                    </button>
-                                </form>
-                            {% else %}
-                                <span class="text-xs text-gray-400">No action</span>
-                            {% endif %}
-                        </div>
                     </td>
                 </tr>
             {% endfor %}
