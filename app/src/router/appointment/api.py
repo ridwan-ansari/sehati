@@ -108,34 +108,34 @@ async def appoint_confirmed(
     status: str,
     request: Request,
     session: AsyncSession = Depends(get_async_session)):
-    try:
-        appointment = await auth_service._decode_token(code)
-        if appointment.get("type") != "appointment":
-            raise ValueError("appointment type is not match.")
-        if status not in ["approved", "rejected"]:
-            raise ValueError("Status not found.")
-        
-        appointment_id = appointment.get("id")
-        appointment_ = await crud_app.get_by_id(session=session, id=appointment_id)
-        prof = await crud_prof.get_by_id(session=session, id=appointment_.professional_id)
+    # try:
+    appointment = await auth_service._decode_token(code)
+    if appointment.get("type") != "appointment":
+        raise ValueError("appointment type is not match.")
+    if status not in ["approved", "rejected"]:
+        raise ValueError("Status not found.")
+    
+    appointment_id = appointment.get("id")
+    appointment_ = await crud_app.get_by_id(session=session, id=appointment_id)
+    prof = await crud_prof.get_by_id(session=session, id=appointment_.professional_id)
 
-        if appointment_.status in ["approved", "rejected"]:
-            raise ValueError(f"Appointment sudah pernah di konfirmasi menjadi {appointment_.status} sebelumnya.")
-        
-        user = await crud_user.get_user_by_id(session=session, id=appointment_.user_id)
-        await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
-        await email_client.send_mail(
-            subject=f"SEHATI — Appointment {status.upper()}",
-            template_name="confirmed/appointment_status.html",
-            recipient=user.email,
-            context={
-                    "status":status,
-                    "appointment_date":f"{appointment_.appointment_date} - {appointment_.appointment_time}",
-                    "doctor_name":prof.fullname,
-                    "phone_number":prof.phone_number
-                }
-        )
-        return templates.TemplateResponse("confirmed/appoint_confirmed.html", {"request": request}, status_code=200)
-    except Exception as error:
-        logger.error(error)
-        return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
+    if appointment_.status in ["approved", "rejected"]:
+        raise ValueError(f"Appointment sudah pernah di konfirmasi menjadi {appointment_.status} sebelumnya.")
+    
+    user = await crud_user.get_user_by_id(session=session, id=appointment_.user_id)
+    await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
+    await email_client.send_mail(
+        subject=f"SEHATI — Appointment {status.upper()}",
+        template_name="confirmed/appointment_status.html",
+        recipient=user.email,
+        context={
+                "status":status,
+                "appointment_date":f"{appointment_.appointment_date} - {appointment_.appointment_time}",
+                "doctor_name":prof.fullname,
+                "phone_number":prof.phone_number
+            }
+    )
+    return templates.TemplateResponse("confirmed/appoint_confirmed.html", {"request": request}, status_code=200)
+    # except Exception as error:
+    #     logger.error(error)
+    #     return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
