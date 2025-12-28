@@ -69,7 +69,7 @@ async def create_appointment(
                 "email":user.email, 
                 "phone_number": user.phone_number,
                 "appointment_date":f"{data.appointment_date} - {data.appointment_time}",
-                "confirm_url":f"https://sehatiapps.web.id/api/appointment/confirmed/{code}",
+                "confirm_url":f"https://sehatiapps.web.id/api/appointment/approved/{code}",
                 "reject_url":f"https://sehatiapps.web.id/api/appointment/rejected/{code}"
                 }
             )
