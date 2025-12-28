@@ -123,7 +123,7 @@ async def appoint_confirmed(
         await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
         await email_client.send_mail(
             subject=f"SEHATI — Appointment {status.upper()}",
-            template_name="emails/appointment_status_approved.html",
+            template_name="emails/appointment_status.html",
             recipient=user.email,
             context={
                     "status":status,
