@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' https://cdn.tailwindcss.com;
+                 style-src 'self' 'unsafe-inline' https:;
+                 img-src 'self' data:;
+                 frame-ancestors 'none';">
+  <title>Appointment Sudah Diproses</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <style>
+    :root {
+      --primary: #FFC107;
+      --accent: #FF9800;
+      --background: #FAF9F0;
+      font-family: 'Inter', sans-serif;
+    }
+    body {
+      background: var(--background);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fade-in 0.6s ease-in-out; }
+  </style>
+</head>
+<body>
+  <div class="text-center animate-fade-in max-w-lg px-6">
+    <div class="w-20 h-20 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
+      <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    
+    <h1 class="text-3xl font-bold text-gray-800 mb-4">Appointment Sudah Diproses</h1>
+    <p class="text-gray-700 mb-2">
+      Appointment ini sudah pernah dikonfirmasi dengan status <strong class="text-[var(--accent)]">{{ status }}</strong>.
+    </p>
+    <p class="text-gray-600 text-sm mb-8">
+      Link konfirmasi hanya dapat digunakan satu kali.
+    </p>
+    <a href="/"
+       class="inline-block bg-[var(--accent)] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[var(--primary)] hover:text-gray-900 transition shadow-md">
+       Kembali ke Beranda
+    </a>
+  </div>
+</body>
+</html>

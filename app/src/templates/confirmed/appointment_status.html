@@ -75,7 +75,7 @@
     
     <h1 class="text-3xl font-bold text-gray-800 mb-4">Appointment Disetujui</h1>
     <p class="text-gray-700 mb-6">
-      Appointment Anda pada {{ appointment_date }} telah disetujui oleh {{ docter_name }}. Silakan hubungi melalui WhatsApp untuk informasi lebih lanjut.
+      Appointment Anda pada {{ appointment_date }} {{ appointment_time }} telah disetujui oleh {{ docter_name }}. Silakan hubungi melalui WhatsApp untuk informasi lebih lanjut.
     </p>
     <div class="flex flex-col sm:flex-row gap-3 justify-center">
       <a href="https://wa.me/{{ phone_number }}"
@@ -95,7 +95,7 @@
     
     <h1 class="text-3xl font-bold text-gray-800 mb-4">Appointment Ditolak</h1>
     <p class="text-gray-700 mb-6">
-      Maaf, appointment Anda pada {{ appointment_date }} tidak dapat disetujui. Silakan hubungi {{ docter_name }} melalui WhatsApp untuk informasi lebih lanjut atau buat jadwal baru.
+      Maaf, appointment Anda pada {{ appointment_date }} {{ appointment_time }} tidak dapat disetujui. Silakan hubungi {{ docter_name }} melalui WhatsApp untuk informasi lebih lanjut atau buat jadwal baru.
     </p>
     <div class="flex flex-col sm:flex-row gap-3 justify-center">
       <a href="https://wa.me/{{ phone_number }}"

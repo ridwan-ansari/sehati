@@ -1,8 +1,10 @@
 from loguru import logger
-from app.src.models.point import CategoryCode 
-from app.src.router.user.crud import crud_user
-from fastapi import APIRouter, Depends, Request
+from typing import Literal
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, Request, HTTPException
+
+from app.src.router.user.crud import crud_user
+from app.src.models.point import CategoryCode 
 from app.src.core.templates import get_templates
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
@@ -18,6 +20,9 @@ crud_app = CRUDAppointment()
 auth_service = AuthService()
 token_service = TokenService()
 crud_prof = CRUDProfessional()
+
+APPOINTMENT_TYPE = "appointment"
+VALID_STATUSES = ["confirmed", "rejected"]
 
 @router.get("/professionals")
 async def list_professionals(
@@ -103,39 +108,67 @@ async def appointment_detail(
     return response.build()
 
 @router.get("/{status}/{code}")
-async def appoint_confirmed(
+async def update_appointment_status(
     code: str,
-    status: str,
+    status: Literal["confirmed", "rejected"],
     request: Request,
-    session: AsyncSession = Depends(get_async_session)):
-    # try:
-    appointment = await auth_service._decode_token(code)
-    if appointment.get("type") != "appointment":
-        raise ValueError("appointment type is not match.")
-    if status not in ["approved", "rejected"]:
-        raise ValueError("Status not found.")
-    
-    appointment_id = appointment.get("id")
-    appointment_ = await crud_app.get_by_id(session=session, id=appointment_id)
-    prof = await crud_prof.get_by_id(session=session, id=appointment_.professional_id)
-
-    if appointment_.status in ["approved", "rejected"]:
-        raise ValueError(f"Appointment sudah pernah di konfirmasi menjadi {appointment_.status} sebelumnya.")
-    
-    user = await crud_user.get_user_by_id(session=session, id=appointment_.user_id)
-    await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
-    await email_client.send_mail(
-        subject=f"SEHATI — Appointment {status.upper()}",
-        template_name="confirmed/appointment_status.html",
-        recipient=user.email,
-        context={
-                "status":status,
-                "appointment_date":f"{appointment_.appointment_date} - {appointment_.appointment_time}",
-                "doctor_name":prof.fullname,
-                "phone_number":prof.phone_number
+    session: AsyncSession = Depends(get_async_session)
+):
+    try:
+        token_data = await auth_service._decode_token(code)
+        
+        if token_data.get("type") != APPOINTMENT_TYPE:
+            raise HTTPException(status_code=400, detail="Invalid token type")
+        
+        appointment_id = token_data.get("id")
+        if not appointment_id:
+            raise HTTPException(status_code=400, detail="Appointment ID not found")
+        
+        appointment = await crud_app.get_by_id(session=session, id=appointment_id)
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        
+        if appointment.status in VALID_STATUSES:
+            return templates.TemplateResponse(
+                "errors/already_processed.html",
+                {"request": request, "status": appointment.status},
+                status_code=400
+            )
+        
+        professional = await crud_prof.get_by_id(session=session, id=appointment.professional_id)
+        user = await crud_user.get_user_by_id(session=session, id=appointment.user_id)
+        
+        if not professional or not user:
+            raise HTTPException(status_code=404, detail="Professional or user not found")
+        
+        await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
+        
+        await email_client.send_mail(
+            subject=f"SEHATI — Appointment {status.title()}",
+            template_name="confirmed/appointment_status.html",
+            recipient=user.email,
+            context={
+                "status": status,
+                "appointment_date": appointment.appointment_date.strftime("%d %B %Y"),
+                "appointment_time": appointment.appointment_time,
+                "doctor_name": professional.fullname,
+                "phone_number": professional.phone_number,
             }
-    )
-    return templates.TemplateResponse("confirmed/appoint_confirmed.html", {"request": request}, status_code=200)
-    # except Exception as error:
-    #     logger.error(error)
-    #     return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
+        )
+        
+        return templates.TemplateResponse(
+            "confirmed/appoint_confirmed.html",
+            {"request": request, "status": status},
+            status_code=200
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return templates.TemplateResponse(
+            "errors/404.html",
+            {"request": request},
+            status_code=500
+        )
