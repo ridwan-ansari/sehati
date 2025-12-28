@@ -114,61 +114,64 @@ async def update_appointment_status(
     request: Request,
     session: AsyncSession = Depends(get_async_session)
 ):
-    # try:
-    token_data = await auth_service._decode_token(code)
-    
-    if token_data.get("type") != APPOINTMENT_TYPE:
-        raise HTTPException(status_code=400, detail="Invalid token type")
-    
-    appointment_id = token_data.get("id")
-    if not appointment_id:
-        raise HTTPException(status_code=400, detail="Appointment ID not found")
-    
-    appointment = await crud_app.get_by_id(session=session, id=appointment_id)
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Appointment not found")
-    
-    if appointment.status in VALID_STATUSES:
+    try:
+        token_data = await auth_service._decode_token(code)
+        
+        if token_data.get("type") != APPOINTMENT_TYPE:
+            raise HTTPException(status_code=400, detail="Invalid token type")
+        
+        appointment_id = token_data.get("id")
+        if not appointment_id:
+            raise HTTPException(status_code=400, detail="Appointment ID not found")
+        
+        appointment = await crud_app.get_by_id(session=session, id=appointment_id)
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        
+        if appointment.status in VALID_STATUSES:
+            return templates.TemplateResponse(
+                "errors/already_processed.html",
+                {"request": request, "status": appointment.status},
+                status_code=400
+            )
+        
+        professional = await crud_prof.get_by_id(session=session, id=appointment.professional_id)
+        user = await crud_user.get_user_by_id(session=session, id=appointment.user_id)
+        
+        if not professional or not user:
+            raise HTTPException(status_code=404, detail="Professional or user not found")
+        
+        await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
+        
+        try:
+            email_client.send_mail(
+                subject=f"SEHATI — Appointment {status.title()}",
+                template_name="confirmed/appointment_status.html",
+                recipient=user.email,
+                context={
+                    "status": status,
+                    "appointment_date": appointment.appointment_date.strftime("%d %B %Y"),
+                    "appointment_time": appointment.appointment_time,
+                    "doctor_name": professional.fullname,
+                    "phone_number": professional.phone_number,
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error Email : {str(e)}")
+        
         return templates.TemplateResponse(
-            "errors/already_processed.html",
-            {"request": request, "status": appointment.status},
-            status_code=400
+            "confirmed/appoint_confirmed.html",
+            {"request": request, "status": status},
+            status_code=200
         )
-    
-    professional = await crud_prof.get_by_id(session=session, id=appointment.professional_id)
-    user = await crud_user.get_user_by_id(session=session, id=appointment.user_id)
-    
-    if not professional or not user:
-        raise HTTPException(status_code=404, detail="Professional or user not found")
-    
-    await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
-    
-    await email_client.send_mail(
-        subject=f"SEHATI — Appointment {status.title()}",
-        template_name="confirmed/appointment_status.html",
-        recipient=user.email,
-        context={
-            "status": status,
-            "appointment_date": appointment.appointment_date.strftime("%d %B %Y"),
-            "appointment_time": appointment.appointment_time,
-            "doctor_name": professional.fullname,
-            "phone_number": professional.phone_number,
-        }
-    )
-    
-    return templates.TemplateResponse(
-        "confirmed/appoint_confirmed.html",
-        {"request": request, "status": status},
-        status_code=200
-    )
         
-    # except HTTPException:
-    #     raise
+    except HTTPException:
+        raise
         
-    # except Exception as e:
-    #     logger.error(f"Error: {str(e)}")
-    #     return templates.TemplateResponse(
-    #         "errors/404.html",
-    #         {"request": request},
-    #         status_code=500
-    #     )
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return templates.TemplateResponse(
+            "errors/404.html",
+            {"request": request},
+            status_code=500
+        )
