@@ -173,6 +173,24 @@ class CRUDPointTransaction:
         total = result.scalar_one()
         return total
     
+    async def get_all_for_export(
+        self,
+        session: AsyncSession,
+        name: str | None = None,
+    ):
+        stmt = (
+            select(PointTransaction)
+            .join(User, User.id == PointTransaction.user_id)
+            .order_by(PointTransaction.created_at.desc())
+            .options(selectinload(PointTransaction.user))
+        )
+
+        if name:
+            stmt = stmt.where(User.fullname.ilike(f"%{name}%"))
+
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
 crud_wallet = CRUDPointWallet()
 crud_category = CRUDPointCategory()
 crud_transaction = CRUDPointTransaction()

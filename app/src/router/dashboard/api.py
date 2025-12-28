@@ -1,5 +1,8 @@
 from __future__ import annotations
 import re
+from io import BytesIO
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from loguru import logger
 from zoneinfo import ZoneInfo
 from datetime import datetime
@@ -531,6 +534,99 @@ async def point_transactions_page(
         total_pages=total_pages,
         page_numbers=page_numbers,
         auth=auth,
+    )
+
+@router.get("/transactions/export")
+async def export_point_transactions(
+    request: Request,
+    name: str = None,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session)
+):
+    transactions = await crud_transaction.get_all_for_export(session, name=name)
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Point Transactions"
+    
+    headers = [
+        "User Name",
+        "Wallet",
+        "Type",
+        "Category",
+        "Points",
+        "Balance",
+        "Date"
+    ]
+    
+    header_fill = PatternFill(start_color="FFC107", end_color="FFC107", fill_type="solid")
+    header_font = Font(bold=True, color="000000")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = border
+    
+    for row_num, tx in enumerate(transactions, 2):
+        created_at = tx.created_at.astimezone(ZoneInfo("Asia/Jakarta"))
+        
+        data = [
+            tx.user.fullname,
+            tx.wallet.value,
+            tx.tx_type.value,
+            tx.category_code.value,
+            tx.delta,
+            tx.balance_after or 0,
+            created_at.strftime("%Y-%m-%d %H:%M:%S")
+        ]
+        
+        for col_num, value in enumerate(data, 1):
+            cell = ws.cell(row=row_num, column=col_num)
+            cell.value = value
+            cell.border = border
+            
+            if col_num == 5:
+                if tx.tx_type.value == "earn":
+                    cell.font = Font(color="008000", bold=True)
+                elif tx.tx_type.value == "spend":
+                    cell.font = Font(color="FF0000", bold=True)
+            
+            if col_num in [7, 8]:
+                cell.alignment = Alignment(horizontal='right')
+    
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column].width = adjusted_width
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"point_transactions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    if name:
+        filename = f"point_transactions_{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 @router.get("/games")
