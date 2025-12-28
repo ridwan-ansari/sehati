@@ -1,7 +1,7 @@
 from loguru import logger
-from fastapi import APIRouter, Depends
 from app.src.models.point import CategoryCode 
 from app.src.router.user.crud import crud_user
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.core.templates import get_templates
 from app.src.core.session import get_async_session
@@ -102,8 +102,12 @@ async def appointment_detail(
         response.message = "Appointment detail"
     return response.build()
 
-@router.get("/update/{status}/{code}")
-async def appoint_confirmed(code: str, status: str, session: AsyncSession = Depends(get_async_session),):
+@router.get("/{status}/{code}")
+async def appoint_confirmed(
+    code: str,
+    status: str,
+    request: Request,
+    session: AsyncSession = Depends(get_async_session)):
     try:
         appointment = await auth_service._decode_token(code)
         if appointment.get("type") != "appointment":
@@ -128,6 +132,7 @@ async def appoint_confirmed(code: str, status: str, session: AsyncSession = Depe
                     "phone_number":prof.phone_number
                 }
         )
+        return templates.TemplateResponse("errors/appoint_confirmed.html", {"request": request}, status_code=200)
     except Exception as error:
         logger.error(error)
-        templates.TemplateResponse()
+        return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
