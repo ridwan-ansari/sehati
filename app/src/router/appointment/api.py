@@ -60,7 +60,7 @@ async def create_appointment(
             }
         )
 
-        code = await token_service.generate_token(payload={"id":ap.id}, token_type="appointment")
+        code = token_service.generate_token(payload={"id":ap.id}, token_type="appointment")
 
         try:
             email_client.send_appointment(recipient=prof.email, context={
