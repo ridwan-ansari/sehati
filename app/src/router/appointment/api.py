@@ -119,11 +119,14 @@ async def appoint_confirmed(
         appointment_ = await crud_app.get_by_id(session=session, id=appointment_id)
         prof = await crud_prof.get_by_id(session=session, id=appointment_.professional_id)
 
+        if appointment_.status in ["approved", "rejected"]:
+            raise ValueError(f"Appointment sudah pernah di konfirmasi menjadi {appointment_.status} sebelumnya.")
+        
         user = await crud_user.get_user_by_id(session=session, id=appointment_.user_id)
         await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
         await email_client.send_mail(
             subject=f"SEHATI — Appointment {status.upper()}",
-            template_name="emails/appointment_status.html",
+            template_name="confirmed/appointment_status.html",
             recipient=user.email,
             context={
                     "status":status,
