@@ -22,7 +22,7 @@ token_service = TokenService()
 crud_prof = CRUDProfessional()
 
 APPOINTMENT_TYPE = "appointment"
-VALID_STATUSES = ["confirmed", "rejected"]
+VALID_STATUSES = ["approved", "rejected"]
 
 @router.get("/professionals")
 async def list_professionals(
@@ -110,7 +110,7 @@ async def appointment_detail(
 @router.get("/{status}/{code}")
 async def update_appointment_status(
     code: str,
-    status: Literal["confirmed", "rejected"],
+    status: Literal["approved", "rejected"],
     request: Request,
     session: AsyncSession = Depends(get_async_session)
 ):
