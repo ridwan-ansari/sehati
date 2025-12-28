@@ -33,7 +33,7 @@ class Appointment(Base, TimestampMixin):
     appointment_date: Mapped[date] = mapped_column(nullable=False)
     appointment_time: Mapped[time] = mapped_column(nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum("pending", "confirmed", "completed", "cancelled", "rejected", name="appointment_status_enum"),
+        Enum("pending", "confirmed", "completed", "cancelled", "rejected", "approved", name="appointment_status_enum"),
         default="pending",
         nullable=False
     )
