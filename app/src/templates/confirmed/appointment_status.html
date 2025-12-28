@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' https://cdn.tailwindcss.com;
+                 style-src 'self' 'unsafe-inline' https:;
+                 img-src 'self' data:;
+                 frame-ancestors 'none';">
+  <title>Status Appointment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <style>
+    :root {
+      --primary: #FFC107;
+      --accent: #FF9800;
+      --background: #FAF9F0;
+      font-family: 'Inter', sans-serif;
+    }
+    body {
+      background: var(--background);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fade-in 0.6s ease-in-out; }
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: block;
+      stroke-width: 3;
+      stroke-miterlimit: 10;
+      margin: 0 auto 24px;
+      animation: scale 0.3s ease-in-out 0.9s both;
+    }
+    .icon__circle {
+      stroke-dasharray: 166;
+      stroke-dashoffset: 166;
+      stroke-width: 3;
+      fill: none;
+      animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .icon__mark {
+      transform-origin: 50% 50%;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke {
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes scale {
+      0%, 100% { transform: none; }
+      50% { transform: scale3d(1.1, 1.1, 1); }
+    }
+    .confirmed .icon { stroke: #4CAF50; }
+    .rejected .icon { stroke: #F44336; }
+  </style>
+</head>
+<body>
+  <!-- CONFIRMED VERSION -->
+  <div class="text-center animate-fade-in max-w-lg px-6 confirmed" style="display: none;">
+    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+      <circle class="icon__circle" cx="26" cy="26" r="25" fill="none"/>
+      <path class="icon__mark" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+    </svg>
+    
+    <h1 class="text-3xl font-bold text-gray-800 mb-4">Appointment Disetujui</h1>
+    <p class="text-gray-700 mb-6">
+      Appointment Anda pada {{ appointment_date }} telah disetujui oleh {{ docter_name }}. Silakan hubungi melalui WhatsApp untuk informasi lebih lanjut.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="https://wa.me/{{ phone_number }}"
+         target="_blank"
+         class="inline-block bg-[#25D366] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[#20BA5A] transition shadow-md">
+         💬 Hubungi via WhatsApp
+      </a>
+    </div>
+  </div>
+
+  <!-- REJECTED VERSION -->
+  <div class="text-center animate-fade-in max-w-lg px-6 rejected">
+    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+      <circle class="icon__circle" cx="26" cy="26" r="25" fill="none"/>
+      <path class="icon__mark" fill="none" d="M16 16 36 36 M36 16 16 36"/>
+    </svg>
+    
+    <h1 class="text-3xl font-bold text-gray-800 mb-4">Appointment Ditolak</h1>
+    <p class="text-gray-700 mb-6">
+      Maaf, appointment Anda pada {{ appointment_date }} tidak dapat disetujui. Silakan hubungi {{ docter_name }} melalui WhatsApp untuk informasi lebih lanjut atau buat jadwal baru.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="https://wa.me/{{ phone_number }}"
+         target="_blank"
+         class="inline-block bg-[#25D366] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[#20BA5A] transition shadow-md">
+         💬 Hubungi via WhatsApp
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const status = '{{ status }}'; // 'confirmed' atau 'rejected'
+    
+    if (status === 'approved') {
+      document.querySelector('.confirmed').style.display = 'block';
+      document.querySelector('.rejected').style.display = 'none';
+    } else {
+      document.querySelector('.rejected').style.display = 'block';
+      document.querySelector('.confirmed').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

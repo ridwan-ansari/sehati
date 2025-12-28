@@ -87,5 +87,9 @@ class EmailClient:
     def send_appointment(self, recipient: str, context: dict):
         html = self._render(template_name="emails/appointment_notification.html", context=context)
         self._send(recipient, "SEHATI — New Appointment Request", html, "")
+    
+    def send_mail(self, subject: str, template_name: str, recipient: str, context: dict):
+        html = self._render(template_name=template_name, context=context)
+        self._send(recipient, subject, html, "")
 
 email_client = EmailClient()

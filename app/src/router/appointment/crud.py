@@ -109,3 +109,17 @@ class CRUDAppointment:
         
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_by_id(self, session: AsyncSession, id: str) -> Optional[Appointment]:
+        result = await session.execute(select(Appointment).where(Appointment.id == id))
+        return result.scalar_one_or_none()
+    
+    async def update_status_to_confirm(self, session: AsyncSession, id: str, status: str) -> Optional[Appointment]:
+        appointment = await self.get_by_id(session, id)
+        if not appointment:
+            return None
+        appointment.status = status
+        await session.commit()
+        await session.refresh(appointment)
+        return appointment
+    

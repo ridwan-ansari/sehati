@@ -1,19 +1,22 @@
 from loguru import logger
 from fastapi import APIRouter, Depends
-from app.src.core.security import AuthService
 from app.src.models.point import CategoryCode 
 from app.src.router.user.crud import crud_user
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.src.core.templates import get_templates
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
 from app.src.utils.email_client import email_client
 from app.src.utils.point_service import reward_user_points
+from app.src.core.security import AuthService, TokenService
 from app.src.router.appointment.schema import AppointmentCreateSchema
 from app.src.router.appointment.crud import CRUDProfessional, CRUDAppointment
 
 router = APIRouter()
+templates = get_templates()
 crud_app = CRUDAppointment()
 auth_service = AuthService()
+token_service = TokenService()
 crud_prof = CRUDProfessional()
 
 @router.get("/professionals")
@@ -57,12 +60,17 @@ async def create_appointment(
             }
         )
 
+        code = await token_service.generate_token(payload={"id":ap.id}, token_type="appointment")
+
         try:
             email_client.send_appointment(recipient=prof.email, context={
                 "doctor_name":prof.fullname, 
                 "fullname":user.fullname, 
                 "email":user.email, 
-                "appointment_date":f"{data.appointment_date} - {data.appointment_time}"
+                "phone_number": user.phone_number,
+                "appointment_date":f"{data.appointment_date} - {data.appointment_time}",
+                "confirm_url":f"https://sehatiapps.web.id/api/appointment/confirmed/{code}",
+                "reject_url":f"https://sehatiapps.web.id/api/appointment/rejected/{code}"
                 }
             )
         except Exception as error:
@@ -93,3 +101,33 @@ async def appointment_detail(
         response.data = detail
         response.message = "Appointment detail"
     return response.build()
+
+@router.get("/update/{status}/{code}")
+async def appoint_confirmed(code: str, status: str, session: AsyncSession = Depends(get_async_session),):
+    try:
+        appointment = await auth_service._decode_token(code)
+        if appointment.get("type") != "appointment":
+            raise ValueError("appointment type is not match.")
+        if status not in ["approved", "rejected"]:
+            raise ValueError("Status not found.")
+        
+        appointment_id = appointment.get("id")
+        appointment_ = await crud_app.get_by_id(session=session, id=appointment_id)
+        prof = await crud_prof.get_by_id(session=session, id=appointment_.professional_id)
+
+        user = await crud_user.get_user_by_id(session=session, id=appointment_.user_id)
+        await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
+        await email_client.send_mail(
+            subject=f"SEHATI — Appointment {status.upper()}",
+            template_name="emails/appointment_status_approved.html",
+            recipient=user.email,
+            context={
+                    "status":status,
+                    "appointment_date":f"{appointment_.appointment_date} - {appointment_.appointment_time}",
+                    "doctor_name":prof.fullname,
+                    "phone_number":prof.phone_number
+                }
+        )
+    except Exception as error:
+        logger.error(error)
+        templates.TemplateResponse()

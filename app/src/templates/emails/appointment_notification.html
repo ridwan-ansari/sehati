@@ -23,7 +23,7 @@
 
           <table style="width:100%;margin-bottom:20px;font-size:14px;color:#333;">
             <tr>
-              <td style="padding:6px 0;"><strong>Patient Name:</strong></td>
+              <td style="padding:6px 0;"><strong>Name:</strong></td>
               <td style="padding:6px 0;">{{ fullname }}</td>
             </tr>
             <tr>
@@ -36,16 +36,27 @@
             </tr>
           </table>
 
-          <p style="margin:0 0 12px;color:#444;">
-            Please review and confirm this appointment through the SEHATI Doctor Dashboard.
+          <p style="margin:0 0 20px;color:#444;">
+            Please review and take action on this appointment request:
           </p>
 
-          <p style="margin:0 0 12px;color:#444;">
-            Visit the dashboard and go to <strong>Appointments → Pending</strong> to manage this request.
-          </p>
+          <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:20px;">
+            <tr>
+              <td style="padding-right:8px;width:50%;">
+                <a href="{{ confirm_url }}" style="display:block;background:#4CAF50;color:#fff;text-align:center;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+                  ✓ Confirm Appointment
+                </a>
+              </td>
+              <td style="padding-left:8px;width:50%;">
+                <a href="{{ reject_url }}" style="display:block;background:#F44336;color:#fff;text-align:center;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+                  ✕ Reject Appointment
+                </a>
+              </td>
+            </tr>
+          </table>
 
           <p style="margin:0;color:#666;font-size:12px;">
-            If you need to reschedule or have any questions, please contact the patient directly or use the dashboard messaging system.
+            You can also manage this appointment through the SEHATI Doctor Dashboard at <strong>Appointments → Pending</strong>.
           </p>
         </td>
       </tr>
