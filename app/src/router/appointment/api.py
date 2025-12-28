@@ -134,30 +134,30 @@ async def update_appointment_status(
                 {"request": request, "status": appointment.status},
                 status_code=400
             )
-        
-        professional = await crud_prof.get_by_id(session=session, id=appointment.professional_id)
-        user = await crud_user.get_user_by_id(session=session, id=appointment.user_id)
-        
-        if not professional or not user:
-            raise HTTPException(status_code=404, detail="Professional or user not found")
-        
-        await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
-        
-        try:
-            email_client.send_mail(
-                subject=f"SEHATI — Appointment {status.title()}",
-                template_name="confirmed/appointment_status.html",
-                recipient=user.email,
-                context={
-                    "status": status,
-                    "appointment_date": appointment.appointment_date.strftime("%d %B %Y"),
-                    "appointment_time": appointment.appointment_time,
-                    "doctor_name": professional.fullname,
-                    "phone_number": professional.phone_number,
-                }
-            )
-        except Exception as e:
-            logger.error(f"Error Email : {str(e)}")
+        else:
+            professional = await crud_prof.get_by_id(session=session, id=appointment.professional_id)
+            user = await crud_user.get_user_by_id(session=session, id=appointment.user_id)
+            
+            if not professional or not user:
+                raise HTTPException(status_code=404, detail="Professional or user not found")
+            
+            await crud_app.update_status_to_confirm(session=session, id=appointment_id, status=status)
+            
+            try:
+                email_client.send_mail(
+                    subject=f"SEHATI — Appointment {status.title()}",
+                    template_name="confirmed/appointment_status.html",
+                    recipient=user.email,
+                    context={
+                        "status": status,
+                        "appointment_date": appointment.appointment_date.strftime("%d %B %Y"),
+                        "appointment_time": appointment.appointment_time,
+                        "doctor_name": professional.fullname,
+                        "phone_number": professional.phone_number,
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Error Email : {str(e)}")
         
         return templates.TemplateResponse(
             "confirmed/appoint_confirmed.html",
