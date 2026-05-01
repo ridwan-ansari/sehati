@@ -1,6 +1,9 @@
 from __future__ import annotations
 import re
+import hmac
+import hashlib
 from io import BytesIO
+from typing import Optional
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from loguru import logger
@@ -19,9 +22,11 @@ from app.src.router.recipe.crud import CRUDRecipe
 from app.src.core.session import get_async_session
 from app.src.utils.email_client import EmailClient
 from app.src.router.merchandise.crud import crud_merch
+from app.src.models.video import Video
+from app.src.router.video.crud import crud_video
 from app.src.models.user_nutrition import UserNutrition
 from app.src.utils.export import HealthDataExcelExporter
-from app.src.router.appointment.crud import crud_appointment
+from app.src.router.appointment.crud import crud_appointment, crud_professional
 from app.src.router.merchandise.crud import crud_merch_claim
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
@@ -37,11 +42,29 @@ email_client = EmailClient()
 auth_service = AuthService()
 token_service = TokenService()
 
+
+def _make_csrf_token(admin_token: str) -> str:
+    return hmac.new(
+        settings.SECRET_KEY.encode("utf-8"),
+        admin_token.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _verify_csrf_token(admin_token: str, csrf_token: str) -> bool:
+    expected = _make_csrf_token(admin_token)
+    return hmac.compare_digest(expected, csrf_token)
+
+
 def render_page(template, request, **context):
     context.setdefault("year", datetime.now().year)
+    admin_token = getattr(request.state, "admin_token", None)
+    if admin_token and "csrf_token" not in context:
+        context["csrf_token"] = _make_csrf_token(admin_token)
     return templates.TemplateResponse(template, {"request": request, **context})
 
-async def require_admin_cookie(admin_access: str = Cookie(None)):
+
+async def require_admin_cookie(request: Request, admin_access: str = Cookie(None)):
     if not admin_access:
         raise HTTPException(
             status_code=302,
@@ -56,6 +79,7 @@ async def require_admin_cookie(admin_access: str = Cookie(None)):
                 detail="Access denied",
                 headers={"Location": "/dashboard/login?error=Access+denied"}
             )
+        request.state.admin_token = admin_access
         return payload
     except HTTPException:
         raise
@@ -65,6 +89,17 @@ async def require_admin_cookie(admin_access: str = Cookie(None)):
             detail="Session expired",
             headers={"Location": "/dashboard/login?error=Session+expired"}
         )
+
+
+async def require_csrf(
+    request: Request,
+    csrf_token: str = Form(None),
+    admin_access: str = Cookie(None),
+):
+    if not admin_access:
+        raise HTTPException(status_code=403, detail="Missing admin session")
+    if not csrf_token or not _verify_csrf_token(admin_access, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
 @router.get("/login")
 async def login_page(request: Request, admin_access: str = Cookie(None)):
@@ -96,7 +131,10 @@ async def admin_login(
     return res
 
 @router.post("/logout")
-async def admin_logout():
+async def admin_logout(
+    _csrf: None = Depends(require_csrf),
+    _auth: dict = Depends(require_admin_cookie),
+):
     res = RedirectResponse("/dashboard/login", status_code=302)
     res.delete_cookie("admin_access")
     return res
@@ -876,3 +914,267 @@ async def update_appointment_status(
             url="/dashboard/appointments?error=Failed to update status",
             status_code=303
         )
+
+@router.get("/videos")
+async def videos_page(
+    request: Request,
+    title: Optional[str] = None,
+    page: int = 1,
+    limit: int = 10,
+    success: Optional[str] = None,
+    error: Optional[str] = None,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    offset = (page - 1) * limit
+    videos = await crud_video.get_all_admin(session, limit=limit, offset=offset, title=title)
+    total = await crud_video.count(session, title=title)
+    total_pages = (total + limit - 1) // limit
+    return render_page(
+        "admin/videos.html",
+        request,
+        videos=videos,
+        title=title,
+        page=page,
+        total_pages=total_pages,
+        limit=limit,
+        auth=auth,
+        success=success,
+        error=error,
+    )
+
+
+@router.get("/videos/create")
+async def video_create_page(request: Request, auth=Depends(require_admin_cookie)):
+    return render_page("admin/video_create.html", request, auth=auth)
+
+
+@router.post("/videos/create")
+async def create_video(
+    request: Request,
+    title: str = Form(...),
+    description: str = Form(None),
+    youtube_url: str = Form(...),
+    thumbnail: str = Form(None),
+    category: str = Form(None),
+    duration_seconds: str = Form(None),
+    is_active: str = Form(None),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    try:
+        dur = int(duration_seconds) if duration_seconds and duration_seconds.strip() else 0
+    except ValueError:
+        dur = 0
+    video = Video(
+        title=title,
+        description=description or None,
+        youtube_url=youtube_url,
+        thumbnail=thumbnail or None,
+        category=category or None,
+        duration_seconds=dur,
+        is_active=(is_active == "on"),
+    )
+    await crud_video.create(session=session, video=video)
+    return RedirectResponse("/dashboard/videos?success=Video+created+successfully", status_code=302)
+
+
+@router.post("/videos/delete/{video_id}")
+async def delete_video(
+    video_id: str,
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    deleted = await crud_video.soft_delete(session=session, id=video_id)
+    if not deleted:
+        return RedirectResponse("/dashboard/videos?error=Video+not+found", status_code=302)
+    return RedirectResponse("/dashboard/videos?success=Video+deleted", status_code=302)
+
+
+@router.post("/videos/toggle/{video_id}")
+async def toggle_video(
+    video_id: str,
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    video = await crud_video.get_by_id(id=video_id, session=session)
+    if not video:
+        return RedirectResponse("/dashboard/videos?error=Video+not+found", status_code=302)
+    await crud_video.update(session=session, id=video_id, data={"is_active": not video.is_active})
+    status = "activated" if not video.is_active else "deactivated"
+    return RedirectResponse(f"/dashboard/videos?success=Video+{status}", status_code=302)
+
+
+@router.get("/professionals")
+async def professionals_page(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    success: Optional[str] = None,
+    error: Optional[str] = None,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    offset = (page - 1) * limit
+    professionals = await crud_professional.list_all(session, limit=limit, offset=offset)
+    total = await crud_professional.count(session)
+    total_pages = (total + limit - 1) // limit
+    return render_page(
+        "admin/professionals.html",
+        request,
+        professionals=professionals,
+        page=page,
+        total_pages=total_pages,
+        limit=limit,
+        auth=auth,
+        success=success,
+        error=error,
+    )
+
+
+@router.get("/professionals/create")
+async def professional_create_page(request: Request, auth=Depends(require_admin_cookie)):
+    return render_page("admin/professional_create.html", request, auth=auth)
+
+
+@router.post("/professionals/create")
+async def create_professional(
+    request: Request,
+    fullname: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(None),
+    specialization: str = Form(...),
+    bio: str = Form(None),
+    hour_start: str = Form("09:00"),
+    hour_end: str = Form("17:00"),
+    day_monday: str = Form(None),
+    day_tuesday: str = Form(None),
+    day_wednesday: str = Form(None),
+    day_thursday: str = Form(None),
+    day_friday: str = Form(None),
+    day_saturday: str = Form(None),
+    day_sunday: str = Form(None),
+    is_active: str = Form(None),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    available_days = {
+        "monday": day_monday == "on",
+        "tuesday": day_tuesday == "on",
+        "wednesday": day_wednesday == "on",
+        "thursday": day_thursday == "on",
+        "friday": day_friday == "on",
+        "saturday": day_saturday == "on",
+        "sunday": day_sunday == "on",
+    }
+    available_hours = {"start": hour_start or "09:00", "end": hour_end or "17:00"}
+
+    try:
+        await crud_professional.create(
+            session=session,
+            data={
+                "fullname": fullname,
+                "email": email,
+                "phone_number": phone_number or None,
+                "specialization": specialization,
+                "bio": bio or None,
+                "available_days": available_days,
+                "available_hours": available_hours,
+                "is_active": is_active == "on",
+            },
+        )
+    except Exception as e:
+        logger.error(f"Create professional error: {e}")
+        return RedirectResponse(
+            "/dashboard/professionals/create?error=Email+already+exists+or+invalid+data",
+            status_code=302,
+        )
+    return RedirectResponse(
+        "/dashboard/professionals?success=Professional+created+successfully", status_code=302
+    )
+
+
+@router.get("/professionals/{professional_id}/edit")
+async def professional_edit_page(
+    request: Request,
+    professional_id: str,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    professional = await crud_professional.get_by_id(session=session, id=professional_id)
+    if not professional:
+        return RedirectResponse("/dashboard/professionals?error=Professional+not+found", status_code=302)
+    return render_page("admin/professional_create.html", request, auth=auth, professional=professional)
+
+
+@router.post("/professionals/{professional_id}/update")
+async def update_professional(
+    professional_id: str,
+    fullname: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(None),
+    specialization: str = Form(...),
+    bio: str = Form(None),
+    hour_start: str = Form("09:00"),
+    hour_end: str = Form("17:00"),
+    day_monday: str = Form(None),
+    day_tuesday: str = Form(None),
+    day_wednesday: str = Form(None),
+    day_thursday: str = Form(None),
+    day_friday: str = Form(None),
+    day_saturday: str = Form(None),
+    day_sunday: str = Form(None),
+    is_active: str = Form(None),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    available_days = {
+        "monday": day_monday == "on",
+        "tuesday": day_tuesday == "on",
+        "wednesday": day_wednesday == "on",
+        "thursday": day_thursday == "on",
+        "friday": day_friday == "on",
+        "saturday": day_saturday == "on",
+        "sunday": day_sunday == "on",
+    }
+    available_hours = {"start": hour_start or "09:00", "end": hour_end or "17:00"}
+
+    updated = await crud_professional.update(
+        session=session,
+        id=professional_id,
+        data={
+            "fullname": fullname,
+            "email": email,
+            "phone_number": phone_number or None,
+            "specialization": specialization,
+            "bio": bio or None,
+            "available_days": available_days,
+            "available_hours": available_hours,
+            "is_active": is_active == "on",
+        },
+    )
+    if not updated:
+        return RedirectResponse("/dashboard/professionals?error=Professional+not+found", status_code=302)
+    return RedirectResponse(
+        "/dashboard/professionals?success=Professional+updated+successfully", status_code=302
+    )
+
+
+@router.post("/professionals/{professional_id}/delete")
+async def delete_professional(
+    professional_id: str,
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    deleted = await crud_professional.delete(session=session, id=professional_id)
+    if not deleted:
+        return RedirectResponse("/dashboard/professionals?error=Professional+not+found", status_code=302)
+    return RedirectResponse(
+        "/dashboard/professionals?success=Professional+deleted", status_code=302
+    )

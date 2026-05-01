@@ -378,11 +378,28 @@
               <svg xmlns="http://www.w3.org/2000/svg"
                   fill="none" viewBox="0 0 24 24"
                   stroke-width="1.8" stroke="currentColor"
-                  class="w-5 h-5 mr-3 text-gray-500">
+                  class="w-4 h-4 mr-3 group-hover:text-[var(--primary)]">
                   <path stroke-linecap="round" stroke-linejoin="round"
                         d="M10.5 6h-5m0 0V4.5m0 1.5V7.5m0-1.5h5m8.25 12h-12a2.25 2.25 0 01-2.25-2.25v-7.5A2.25 2.25 0 016.75 6h6a2.25 2.25 0 012.25 2.25v2.25h2.25A2.25 2.25 0 0121 12.75v3a2.25 2.25 0 01-2.25 2.25z" />
               </svg>
-              <span class="text-sm">List</span>
+              <span class="text-sm">Food List</span>
+          </a>
+        </div>
+
+        <!-- VIDEOS SECTION -->
+        <div class="pt-4">
+          <div class="px-4 pb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Videos
+          </div>
+          <a href="/dashboard/videos"
+            class="menu-item flex items-center px-4 py-2 rounded-lg hover:bg-[var(--sidebar-hover)] transition-all duration-200 group {% if request.url.path.startswith('/dashboard/videos') %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke-width="1.5" stroke="currentColor"
+                class="w-4 h-4 mr-3 group-hover:text-[var(--primary)]">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+            </svg>
+            <span class="text-sm">Video List</span>
           </a>
         </div>
 
@@ -403,6 +420,7 @@
           </a>
         </div>
 
+        <!-- MANAGEMENT SECTION -->
         <div class="pt-4">
           <div class="px-4 pb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
             Management
@@ -416,6 +434,18 @@
                     d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
             </svg>
             <span class="text-sm">Appointments</span>
+          </a>
+
+          <!-- Professionals -->
+          <a href="/dashboard/professionals"
+            class="menu-item flex items-center px-4 py-2 rounded-lg hover:bg-[var(--sidebar-hover)] transition-all duration-200 group {% if request.url.path.startswith('/dashboard/professionals') %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke-width="1.5" stroke="currentColor"
+                class="w-4 h-4 mr-3 group-hover:text-[var(--primary)]">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+            <span class="text-sm">Professionals</span>
           </a>
         </div>
 
@@ -451,14 +481,14 @@
   <!-- MAIN CONTENT -->
   <main class="flex-1 flex flex-col main-content">
     
-    <!-- TOP NAVIGATION BAR (Mobile) -->
-    <header class="bg-white shadow-sm px-4 py-3 lg:px-8 lg:py-4 flex items-center justify-between sticky top-0 z-30 no-print">
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-white shadow-sm px-4 py-3 lg:px-8 lg:py-4 flex items-center justify-between sticky top-0 z-30 no-print border-b border-gray-100">
       <!-- Mobile Menu Button -->
-      <button onclick="toggleSidebar()" 
+      <button onclick="toggleSidebar()"
               class="mobile-menu-btn items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
              stroke-width="2" stroke="currentColor" class="w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" 
+          <path stroke-linecap="round" stroke-linejoin="round"
                 d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
       </button>
@@ -467,6 +497,16 @@
       <h1 class="text-lg font-bold text-gray-800 lg:hidden">
         {% block mobile_title %}Dashboard{% endblock %}
       </h1>
+
+      <!-- Right side: breadcrumb on desktop + admin badge -->
+      <div class="hidden lg:flex items-center gap-3 ml-auto">
+        <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Admin Panel</span>
+        <div class="w-px h-4 bg-gray-200"></div>
+        <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
+          <div class="w-2 h-2 rounded-full bg-green-400"></div>
+          <span class="text-xs font-semibold text-gray-600">Admin</span>
+        </div>
+      </div>
     </header>
 
     <!-- CONTENT AREA -->

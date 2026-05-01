@@ -14,10 +14,50 @@ class CRUDProfessional:
             select(Professional).where(Professional.is_active == True)
         )
         return result.scalars().all()
-    
+
     async def get_by_id(self, session: AsyncSession, id: str) -> Optional[Professional]:
         result = await session.execute(select(Professional).where(Professional.id == id))
         return result.scalar_one_or_none()
+
+    async def list_all(
+        self, session: AsyncSession, limit: int = 10, offset: int = 0
+    ) -> list:
+        result = await session.execute(
+            select(Professional)
+            .order_by(Professional.fullname.asc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return result.scalars().all()
+
+    async def count(self, session: AsyncSession) -> int:
+        result = await session.execute(select(func.count(Professional.id)))
+        return result.scalar()
+
+    async def create(self, session: AsyncSession, data: dict) -> Professional:
+        professional = Professional(**data)
+        session.add(professional)
+        await session.commit()
+        await session.refresh(professional)
+        return professional
+
+    async def update(self, session: AsyncSession, id: str, data: dict) -> Optional[Professional]:
+        professional = await self.get_by_id(session=session, id=id)
+        if not professional:
+            return None
+        for key, value in data.items():
+            setattr(professional, key, value)
+        await session.commit()
+        await session.refresh(professional)
+        return professional
+
+    async def delete(self, session: AsyncSession, id: str) -> bool:
+        professional = await self.get_by_id(session=session, id=id)
+        if not professional:
+            return False
+        await session.delete(professional)
+        await session.commit()
+        return True
 
 
 class CRUDAppointment:
@@ -192,3 +232,4 @@ class CRUDAppointment:
         return appointment
 
 crud_appointment = CRUDAppointment()
+crud_professional = CRUDProfessional()

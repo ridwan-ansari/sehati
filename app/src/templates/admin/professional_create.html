@@ -1,0 +1,186 @@
+{% extends "admin/base.html" %}
+{% block title %}{% if professional %}Edit Professional{% else %}Add Professional{% endif %}{% endblock %}
+{% block mobile_title %}{% if professional %}Edit{% else %}Add{% endif %} Professional{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <!-- Page Header -->
+  <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+    <a href="/dashboard/professionals"
+       class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-500 hover:text-gray-800">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+      </svg>
+    </a>
+    <h2 class="text-2xl font-extrabold text-gray-800">
+      {% if professional %}Edit Professional{% else %}Add New Professional{% endif %}
+    </h2>
+  </div>
+
+  {% if request.query_params.error %}
+  <div class="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+    <p class="font-semibold">{{ request.query_params.error }}</p>
+  </div>
+  {% endif %}
+
+  <div class="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
+    <form method="post"
+          action="{% if professional %}/dashboard/professionals/{{ professional.id }}/update{% else %}/dashboard/professionals/create{% endif %}"
+          class="space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <!-- Fullname and Email -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+            Full Name <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="fullname" required maxlength="100"
+                 value="{{ professional.fullname if professional else '' }}"
+                 placeholder="Dr. Jane Smith"
+                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+            Email <span class="text-red-500">*</span>
+          </label>
+          <input type="email" name="email" required maxlength="100"
+                 value="{{ professional.email if professional else '' }}"
+                 placeholder="doctor@clinic.com"
+                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+        </div>
+      </div>
+
+      <!-- Phone and Specialization -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
+          <input type="tel" name="phone_number" maxlength="20"
+                 value="{{ professional.phone_number if professional and professional.phone_number else '' }}"
+                 placeholder="+62 812 3456 7890"
+                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+            Specialization <span class="text-red-500">*</span>
+          </label>
+          <select name="specialization" required
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-white">
+            {% set specs = ['Doctor', 'Nutritionist', 'Psychologist', 'Dietitian', 'Physiotherapist', 'General Practitioner', 'Other'] %}
+            <option value="" disabled {% if not professional %}selected{% endif %}>Select specialization</option>
+            {% for spec in specs %}
+            <option value="{{ spec }}" {% if professional and professional.specialization == spec %}selected{% endif %}>{{ spec }}</option>
+            {% endfor %}
+            {% if professional and professional.specialization not in specs %}
+            <option value="{{ professional.specialization }}" selected>{{ professional.specialization }}</option>
+            {% endif %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Biography</label>
+        <textarea name="bio" rows="3"
+                  placeholder="Brief description of the professional's background and expertise..."
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition resize-none">{{ professional.bio if professional and professional.bio else '' }}</textarea>
+      </div>
+
+      <!-- Available Days -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Available Days</label>
+        <div class="flex flex-wrap gap-2">
+          {% set days = [
+            ('monday',    'Senin'),
+            ('tuesday',   'Selasa'),
+            ('wednesday', 'Rabu'),
+            ('thursday',  'Kamis'),
+            ('friday',    'Jumat'),
+            ('saturday',  'Sabtu'),
+            ('sunday',    'Minggu')
+          ] %}
+          {% for day_key, day_label in days %}
+          {% set is_checked = professional and professional.available_days and professional.available_days.get(day_key) %}
+          <div>
+            <input type="checkbox"
+                   id="cb_{{ day_key }}"
+                   name="day_{{ day_key }}"
+                   value="on"
+                   {% if is_checked %}checked{% endif %}
+                   class="hidden">
+            <button type="button"
+                    onclick="toggleDay('{{ day_key }}')"
+                    id="btn_{{ day_key }}"
+                    class="px-4 py-2 rounded-lg border-2 text-xs font-semibold transition-all select-none
+                           {% if is_checked %}border-yellow-400 bg-yellow-100 text-yellow-800{% else %}border-gray-200 text-gray-500 hover:border-gray-300{% endif %}">
+              {{ day_label }}
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="text-xs text-gray-400 mt-1.5">Klik hari yang tersedia untuk profesional ini.</p>
+      </div>
+
+      <!-- Available Hours -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Available Hours</label>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Start Time</label>
+            <input type="time" name="hour_start"
+                   value="{{ professional.available_hours.get('start', '09:00') if professional and professional.available_hours else '09:00' }}"
+                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">End Time</label>
+            <input type="time" name="hour_end"
+                   value="{{ professional.available_hours.get('end', '17:00') if professional and professional.available_hours else '17:00' }}"
+                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Status -->
+      <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
+        <input type="checkbox" name="is_active" id="is_active" value="on"
+               {% if not professional or professional.is_active %}checked{% endif %}
+               class="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]">
+        <label for="is_active" class="text-sm font-semibold text-gray-700 cursor-pointer">
+          Active — professional will be available for appointments
+        </label>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-[var(--primary)] text-gray-900 py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--accent)] hover:text-white transition-all duration-200">
+          {% if professional %}Update Professional{% else %}Save Professional{% endif %}
+        </button>
+        <a href="/dashboard/professionals"
+           class="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  function toggleDay(key) {
+    var cb  = document.getElementById('cb_'  + key);
+    var btn = document.getElementById('btn_' + key);
+    cb.checked = !cb.checked;
+    if (cb.checked) {
+      btn.classList.remove('border-gray-200', 'text-gray-500', 'hover:border-gray-300');
+      btn.classList.add('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
+    } else {
+      btn.classList.remove('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
+      btn.classList.add('border-gray-200', 'text-gray-500', 'hover:border-gray-300');
+    }
+  }
+</script>
+{% endblock %}
+
+{% endblock %}

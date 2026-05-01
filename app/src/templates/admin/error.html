@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https:; font-src https:; img-src 'self' data: https:; frame-ancestors 'none';">
+  <title>Error {{ status_code }} — SEHATI Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <style>
+    :root {
+      --primary: #FFC107;
+      --accent: #FF9800;
+      --background: #FAF9F0;
+      font-family: 'Inter', sans-serif;
+    }
+    body { background: var(--background); }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fade-in 0.45s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center px-4">
+
+  <div class="fade-in w-full max-w-md text-center">
+
+    <!-- Logo -->
+    <div class="flex items-center justify-center gap-2 mb-8">
+      <img src="/static/images/logo_sehati.png" alt="Sehati" class="h-9 w-auto object-contain">
+      <span class="text-2xl font-extrabold text-gray-800">SEHATI</span>
+      <span class="text-xs font-bold text-gray-400 uppercase tracking-widest self-end mb-1">Admin</span>
+    </div>
+
+    <!-- Error Card -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 px-8 py-10">
+
+      <!-- Status Icon -->
+      <div class="flex justify-center mb-5">
+        {% if status_code == 403 %}
+        <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-red-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
+        </div>
+        {% elif status_code == 400 or status_code == 422 %}
+        <div class="w-20 h-20 rounded-full bg-yellow-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-yellow-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+        </div>
+        {% elif status_code == 404 %}
+        <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-blue-400">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+        </div>
+        {% else %}
+        <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-red-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Status Code -->
+      <div class="text-6xl font-extrabold mb-2
+        {% if status_code == 403 %}text-red-500
+        {% elif status_code == 400 or status_code == 422 %}text-yellow-500
+        {% elif status_code == 404 %}text-blue-400
+        {% else %}text-red-500{% endif %}">
+        {{ status_code }}
+      </div>
+
+      <!-- Title -->
+      <h2 class="text-xl font-bold text-gray-800 mb-2">
+        {% if status_code == 400 %}Bad Request
+        {% elif status_code == 403 %}Access Forbidden
+        {% elif status_code == 404 %}Not Found
+        {% elif status_code == 405 %}Method Not Allowed
+        {% elif status_code == 409 %}Conflict
+        {% elif status_code == 422 %}Validation Error
+        {% elif status_code == 500 %}Server Error
+        {% elif status_code == 503 %}Service Unavailable
+        {% else %}Something Went Wrong
+        {% endif %}
+      </h2>
+
+      <!-- Message -->
+      <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+        {% if detail %}
+          {{ detail }}
+        {% elif status_code == 400 %}
+          Data yang dikirimkan tidak valid. Periksa kembali form dan coba lagi.
+        {% elif status_code == 403 %}
+          Anda tidak memiliki izin untuk melakukan aksi ini. Pastikan sesi admin masih aktif.
+        {% elif status_code == 404 %}
+          Halaman atau data yang Anda cari tidak ditemukan.
+        {% elif status_code == 405 %}
+          Metode permintaan tidak diizinkan untuk endpoint ini.
+        {% elif status_code == 422 %}
+          Data formulir tidak valid. Periksa kembali input Anda.
+        {% elif status_code == 500 %}
+          Terjadi kesalahan pada server. Tim kami sedang menanganinya.
+        {% elif status_code == 503 %}
+          Layanan sedang tidak tersedia. Coba beberapa saat lagi.
+        {% else %}
+          Terjadi kesalahan yang tidak diketahui.
+        {% endif %}
+      </p>
+
+      {% if status_code >= 500 or (status_code != 403 and status_code != 404 and detail is none) %}
+      <div class="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-6 text-left">
+        <p class="text-xs text-orange-700 font-semibold mb-0.5">Butuh bantuan?</p>
+        <p class="text-xs text-orange-600">
+          Hubungi developer di <span class="font-semibold">akarkode@gmail.com</span> dan sampaikan kode error <span class="font-mono font-bold">{{ status_code }}</span>.
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="flex flex-col gap-2.5">
+        <a href="javascript:history.back()"
+           class="w-full py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition">
+          Kembali
+        </a>
+        <a href="/dashboard/users"
+           class="w-full py-2.5 rounded-xl bg-[var(--primary)] text-gray-900 text-sm font-semibold hover:bg-[var(--accent)] hover:text-white transition">
+          Ke Dashboard
+        </a>
+      </div>
+    </div>
+
+    <p class="text-xs text-gray-400 mt-6">© {{ year }} SEHATI Admin</p>
+  </div>
+
+</body>
+</html>

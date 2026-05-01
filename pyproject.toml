@@ -6,7 +6,7 @@ authors = [
     {name = "mra"}
 ]
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
+requires-python = ">=3.10,<3.12"
 dependencies = [
     "alembic (>=1.17.1,<2.0.0)",
     "fastapi (>=0.120.4,<0.121.0)",
