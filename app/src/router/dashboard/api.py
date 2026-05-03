@@ -224,6 +224,23 @@ async def user_detail_page(
         auth=auth,
     )
 
+@router.post("/users/{user_id}/delete")
+async def delete_user(
+    request: Request,
+    user_id: str,
+    csrf_token: str = Form(...),
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    admin_token = getattr(request.state, "admin_token", None)
+    if not admin_token or not _verify_csrf_token(admin_token, csrf_token):
+        return RedirectResponse("/dashboard/users?error=Invalid+request", status_code=303)
+    deleted = await crud_user.delete_user(session, user_id)
+    if not deleted:
+        return RedirectResponse("/dashboard/users?error=User+not+found", status_code=303)
+    return RedirectResponse("/dashboard/users?success=User+deleted+successfully", status_code=303)
+
+
 @router.get("/reset/password")
 async def reset_password_page(request: Request):
     return render_page("admin/reset_password.html", request)
