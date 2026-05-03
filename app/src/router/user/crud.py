@@ -76,5 +76,14 @@ class CRUDUser:
         result = await session.execute(stmt)
         return result.scalars().all()
 
+    async def delete_user(self, session: AsyncSession, user_id: str) -> bool:
+        result = await session.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+        await session.delete(user)
+        await session.commit()
+        return True
+
 
 crud_user = CRUDUser()
