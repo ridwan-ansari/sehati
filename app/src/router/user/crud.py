@@ -1,9 +1,12 @@
 from __future__ import annotations
 from typing import List, Optional
-from sqlalchemy import select
+from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.src.models.user import User
+from app.src.models.merchandise import MerchandiseClaim
+from app.src.models.games import GameClaim
+from app.src.models.point import PointWallet
 
 
 class CRUDUser:
@@ -81,6 +84,9 @@ class CRUDUser:
         user = result.scalar_one_or_none()
         if not user:
             return False
+        await session.execute(sa_delete(MerchandiseClaim).where(MerchandiseClaim.user_id == user_id))
+        await session.execute(sa_delete(GameClaim).where(GameClaim.user_id == user_id))
+        await session.execute(sa_delete(PointWallet).where(PointWallet.user_id == user_id))
         await session.delete(user)
         await session.commit()
         return True
