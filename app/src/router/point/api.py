@@ -4,31 +4,30 @@ from app.src.core.security import AuthService
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
+from app.src.utils.i18n import get_lang, t
 from app.src.router.point.crud import CRUDPointWallet
 
 router = APIRouter()
 auth_service = AuthService()
 crud_wallet = CRUDPointWallet()
 
+
 @router.get("/leaderboard")
 async def leaderboard(
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         wallets = await crud_wallet.get_all(session=session)
-
-        data = [
+        response.status_code = 200
+        response.message = t("leaderboard_success", lang)
+        response.data = [
             {
                 "nickname": wallet.user.nickname,
                 "achievement_points": wallet.achievement_points,
-                "credit_points": wallet.credit_points
+                "credit_points": wallet.credit_points,
             }
             for wallet in wallets
         ]
-
-        response.status_code = 200
-        response.message = "Wallet ranking retrieved successfully."
-        response.data = data
-
     return response.build()

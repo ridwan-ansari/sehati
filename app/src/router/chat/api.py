@@ -8,6 +8,7 @@ from app.src.core.security import AuthService
 from app.src.router.chat.crud import CRUDChat
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
+from app.src.utils.i18n import get_lang, t
 from app.src.utils.connection_manager import ConnectionManager
 
 router = APIRouter()
@@ -17,12 +18,18 @@ auth_service = AuthService()
 manager = ConnectionManager()
 
 
+def _resolve_lang(accept_language: str) -> str:
+    primary = accept_language.split(",")[0].split(";")[0].split("-")[0].strip().lower()
+    return primary if primary in ("en", "id") else "en"
+
+
 @ws_router.websocket("/chat")
 async def chat_endpoint(
     websocket: WebSocket,
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
 ):
     sender_id = None
+    lang = _resolve_lang(websocket.headers.get("accept-language", "en"))
 
     try:
         token = websocket.headers.get("Authorization")
@@ -52,9 +59,7 @@ async def chat_endpoint(
             text = msg.get("message")
 
             if not receiver_id or not text:
-                await websocket.send_text(json.dumps({
-                    "error": "Invalid message format. Required: {to, message}"
-                }))
+                await websocket.send_text(json.dumps({"error": t("chat_invalid_format", lang)}))
                 continue
 
             room = await crud_chat.get_or_create_room(session, sender_id, receiver_id)
@@ -67,8 +72,8 @@ async def chat_endpoint(
                     "room_key": room.room_key,
                     "from": sender_id,
                     "message": text,
-                    "created_at": str(message.created_at + timedelta(hours=7))
-                })
+                    "created_at": str(message.created_at + timedelta(hours=7)),
+                }),
             )
 
             await websocket.send_text(json.dumps({
@@ -77,7 +82,7 @@ async def chat_endpoint(
                 "to": receiver_id,
                 "message": text,
                 "status": "sent",
-                "created_at": str(message.created_at + timedelta(hours=7))
+                "created_at": str(message.created_at + timedelta(hours=7)),
             }))
 
     except WebSocketDisconnect:
@@ -94,35 +99,27 @@ async def get_messages(
     limit: int = 20,
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         data = []
-
         room = await crud_chat.get_user_room_by_key(
-            session=session,
-            room_key=room_key,
-            user_id=authentication.get("id")
+            session=session, room_key=room_key, user_id=authentication.get("id")
         )
-
         if room:
             messages = await crud_chat.get_messages(
-                session=session,
-                room_id=room.id,
-                limit=limit,
-                offset=offset
+                session=session, room_id=room.id, limit=limit, offset=offset
             )
             for message in messages:
-                item = {
+                data.append({
                     "id": message.id,
                     "message": message.message,
                     "created_at": message.created_at + timedelta(hours=7),
-                    "type": "sender" if message.sender_id == authentication["id"] else "receiver"
-                }
-                data.append(item)
-
+                    "type": "sender" if message.sender_id == authentication["id"] else "receiver",
+                })
         response.status_code = 200
-        response.message = "Get Messages Successfully."
+        response.message = t("messages_success", lang)
         response.data = data
     return response.build()
 
@@ -132,16 +129,14 @@ async def get_rooms(
     limit: int = 20,
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         rooms = await crud_chat.get_user_rooms(
-            session=session,
-            user_id=authentication["id"],
-            limit=limit,
-            offset=offset
+            session=session, user_id=authentication["id"], limit=limit, offset=offset
         )
         response.status_code = 200
-        response.message = "Get Rooms Successfully."
+        response.message = t("rooms_success", lang)
         response.data = rooms
     return response.build()

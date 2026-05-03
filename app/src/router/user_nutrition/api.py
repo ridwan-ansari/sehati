@@ -9,6 +9,7 @@ from app.src.router.user.crud import CRUDUser
 from app.src.core.security import AuthService
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
+from app.src.utils.i18n import get_lang, t
 from app.src.models.user_nutrition import UserNutrition
 from app.src.utils.point_service import reward_user_points
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
@@ -18,66 +19,74 @@ from app.src.router.user_nutrition.schema import UserNutrionBaseModel
 router = APIRouter()
 crud_nutrition = CRUDUserNutrition()
 
+
 @router.get("/")
 async def get_list(
-        limit: int = None,
-        offset: int = None,
-        session: AsyncSession = Depends(get_async_session),
-        authentication: dict = Depends(AuthService().require_access_token)
-    ):
+    limit: int = None,
+    offset: int = None,
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(AuthService().require_access_token),
+    lang: str = Depends(get_lang),
+):
     with response_handler() as response:
         response.status_code = 200
-        response.message = "Get List User Successfully"
-        response.data = await crud_nutrition.get_list(session=session, user_id=authentication.get("id"), limit=limit, offset=offset)
+        response.message = t("nutrition_list_success", lang)
+        response.data = await crud_nutrition.get_list(
+            session=session, user_id=authentication.get("id"), limit=limit, offset=offset
+        )
     return response.build()
+
 
 @router.post("/")
 async def create(
-        user_nutrition: UserNutrionBaseModel,
-        session: AsyncSession = Depends(get_async_session),
-        authentication: dict = Depends(AuthService().require_access_token)
-    ):
+    user_nutrition: UserNutrionBaseModel,
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(AuthService().require_access_token),
+    lang: str = Depends(get_lang),
+):
     with response_handler() as response:
         user_id = authentication["id"]
         if await crud_nutrition.exists_today(session=session, user_id=user_id):
-            raise ValueError("Your submission has been received today. Please submit again tomorrow.")
-        
+            raise ValueError(t("already_submitted_today", lang))
+
         calculator = NutritionCalculator(session=session)
         user = await CRUDUser().get_user_by_id(session=session, id=user_id)
 
         result = await calculator.evaluate(
-            gender=user.gender, 
-            dob=user.date_of_birth, 
-            weight=user_nutrition.weight_kg, 
-            height=user_nutrition.height_cm
+            gender=user.gender,
+            dob=user.date_of_birth,
+            weight=user_nutrition.weight_kg,
+            height=user_nutrition.height_cm,
         )
-        
+
         response.data = await crud_nutrition.create(
-            session=session, 
+            session=session,
             user_nutrition=UserNutrition(**{
-                    **user_nutrition.model_dump(),
-                    "user_id":user.id,
-                    "bmi":result.get("bmi"),
-                    "status":result.get("status"),
-                    "ideal_weight_kg":result.get("ibw")   
-                }
-            )
+                **user_nutrition.model_dump(),
+                "user_id": user.id,
+                "bmi": result.get("bmi"),
+                "status": result.get("status"),
+                "ideal_weight_kg": result.get("ibw"),
+            }),
         )
         await reward_user_points(session=session, user_id=user_id, category=CategoryCode.bodyweight_monitoring)
         response.status_code = 201
-        response.message = "Create Successfully."
+        response.message = t("nutrition_created_success", lang)
     return response.build()
+
 
 @router.get("/latest")
 async def get_latest_data(
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(AuthService().require_access_token)
+    authentication: dict = Depends(AuthService().require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         response.status_code = 200
-        response.message = "Get Latest Data Successfully."
+        response.message = t("nutrition_latest_success", lang)
         response.data = await crud_nutrition.get_latest(session=session, user_id=authentication.get("id"))
     return response.build()
+
 
 @router.post("/calculator")
 async def nutrition_calculator(
@@ -87,13 +96,12 @@ async def nutrition_calculator(
     height: float = Form(...),
     activity: str = Form(None),
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(AuthService().require_access_token)
+    authentication: dict = Depends(AuthService().require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         calculator = NutritionCalculator(session=session)
         response.status_code = 200
-        response.message = "Successfully Calculate."
+        response.message = t("calculation_success", lang)
         response.data = await calculator.evaluate(gender, dob, weight, height, activity=activity)
     return response.build()
-        
-    
