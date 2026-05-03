@@ -40,8 +40,9 @@ async def register(user: UserRegisterSchema, session: AsyncSession = Depends(get
             raise ValueError("Nickname is already registered. Please use another nickname.")
         if user.picture and "/media/avatars/" not in user.picture:
             raise ValueError("The format picture is wrong, please check again.")
+        user.password = re.sub(r'[^a-zA-Z0-9]', '', user.password)
         if re.fullmatch(settings.PASSWORD_REGEX, user.password) is None:
-            raise ValueError("Password must be at least 8 chars, contain upper, lower, digit, and symbol.")
+            raise ValueError("Password must be at least 8 characters containing only letters and numbers.")
         
         today = date.today()
 
@@ -177,8 +178,9 @@ async def reset_password_confirm(
             raise ValueError("Invalid verification code or the code has expired.")
         user = loads(user)
         user = await crud_user.get_user_by_id(session=session, id=user.get("id"))
-        if re.fullmatch(settings.PASSWORD_REGEX, user.password) is None:
-            raise ValueError("Password must be at least 8 chars, contain upper, lower, digit, and symbol.")
+        new_password = re.sub(r'[^a-zA-Z0-9]', '', new_password)
+        if re.fullmatch(settings.PASSWORD_REGEX, new_password) is None:
+            raise ValueError("Password must be at least 8 characters containing only letters and numbers.")
         user.password = Hasher.hash_password(new_password)
         session.add(user)
         await session.commit()

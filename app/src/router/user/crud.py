@@ -67,5 +67,14 @@ class CRUDUser:
         result = await session.execute(stmt)
         return result.scalars().all()
 
+    async def get_active_users(self, session: AsyncSession) -> List[User]:
+        stmt = (
+            select(User)
+            .where(User.role == "user", User.verified.is_(True), User.active.is_(True))
+            .order_by(User.fullname.asc())
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
 
 crud_user = CRUDUser()

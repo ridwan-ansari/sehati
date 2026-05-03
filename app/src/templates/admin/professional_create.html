@@ -5,70 +5,116 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
 
-  <!-- Page Header -->
+  <!-- Header -->
   <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-    <a href="/dashboard/professionals"
-       class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-500 hover:text-gray-800">
+    <a href="/dashboard/professionals" class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-700">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>
       </svg>
     </a>
-    <h2 class="text-2xl font-extrabold text-gray-800">
-      {% if professional %}Edit Professional{% else %}Add New Professional{% endif %}
-    </h2>
+    <div>
+      <h2 class="text-2xl font-extrabold text-gray-800">
+        {% if professional %}Edit Professional{% else %}Add New Professional{% endif %}
+      </h2>
+      <p class="text-sm text-gray-400 mt-0.5">{% if professional %}Update professional information{% else %}Fill in the details to add a new professional{% endif %}</p>
+    </div>
   </div>
 
   {% if request.query_params.error %}
-  <div class="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
-    <p class="font-semibold">{{ request.query_params.error }}</p>
+  <div class="mb-4 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 shrink-0 mt-0.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374L10.052 3.378c.866-1.5 3.032-1.5 3.898 0l5.353 9.248ZM12 15.75h.007v.008H12v-.008Z"/>
+    </svg>
+    <p class="text-sm font-semibold">{{ request.query_params.error }}</p>
   </div>
   {% endif %}
 
-  <div class="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
-    <form method="post"
-          action="{% if professional %}/dashboard/professionals/{{ professional.id }}/update{% else %}/dashboard/professionals/create{% endif %}"
-          class="space-y-5">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <form method="post" enctype="multipart/form-data"
+        action="{% if professional %}/dashboard/professionals/{{ professional.id }}/update{% else %}/dashboard/professionals/create{% endif %}"
+        class="space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-      <!-- Fullname and Email -->
+    <!-- Profile Photo Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h3 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-bold">1</span>
+        Profile Photo
+      </h3>
+      <div class="flex items-center gap-5">
+        <!-- Avatar preview -->
+        <div class="relative shrink-0">
+          {% if professional and professional.picture %}
+          <img id="avatarPreview" src="{{ professional.picture }}" alt="Profile"
+               class="w-24 h-24 rounded-full object-cover border-4 border-gray-100 shadow-sm">
+          {% else %}
+          <div id="avatarPreview"
+               class="w-24 h-24 rounded-full flex items-center justify-center border-4 border-gray-100 shadow-sm text-2xl font-bold text-white"
+               style="background: linear-gradient(135deg, #FFC107, #FF9800);">
+            {% if professional %}{{ professional.fullname[0]|upper }}{% else %}?{% endif %}
+          </div>
+          {% endif %}
+          <!-- Edit overlay -->
+          <label for="pictureInput"
+                 class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-white">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/>
+            </svg>
+          </label>
+        </div>
+        <!-- Upload controls -->
+        <div class="flex-1">
+          <input type="file" name="picture" id="pictureInput" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+          <label for="pictureInput"
+                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-gray-300 hover:border-[var(--primary)] text-sm font-semibold text-gray-600 hover:text-gray-800 cursor-pointer transition bg-gray-50 hover:bg-yellow-50">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/>
+            </svg>
+            Upload Photo
+          </label>
+          <p id="photoFilename" class="text-xs text-gray-400 mt-2">
+            {% if professional and professional.picture %}Current photo saved{% else %}No file chosen. JPG, PNG or WebP — max 5 MB{% endif %}
+          </p>
+          {% if professional and professional.picture %}
+          <p class="text-xs text-gray-400 mt-1">Leave empty to keep the current photo.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Basic Info Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h3 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-bold">2</span>
+        Basic Information
+      </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-            Full Name <span class="text-red-500">*</span>
-          </label>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Full Name <span class="text-red-500">*</span></label>
           <input type="text" name="fullname" required maxlength="100"
                  value="{{ professional.fullname if professional else '' }}"
                  placeholder="Dr. Jane Smith"
-                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-            Email <span class="text-red-500">*</span>
-          </label>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Email <span class="text-red-500">*</span></label>
           <input type="email" name="email" required maxlength="100"
                  value="{{ professional.email if professional else '' }}"
                  placeholder="doctor@clinic.com"
-                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
         </div>
-      </div>
-
-      <!-- Phone and Specialization -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Phone Number</label>
           <input type="tel" name="phone_number" maxlength="20"
                  value="{{ professional.phone_number if professional and professional.phone_number else '' }}"
                  placeholder="+62 812 3456 7890"
-                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+                 class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-            Specialization <span class="text-red-500">*</span>
-          </label>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Specialization <span class="text-red-500">*</span></label>
           <select name="specialization" required
-                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-white">
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
             {% set specs = ['Doctor', 'Nutritionist', 'Psychologist', 'Dietitian', 'Physiotherapist', 'General Practitioner', 'Other'] %}
-            <option value="" disabled {% if not professional %}selected{% endif %}>Select specialization</option>
+            <option value="" disabled {% if not professional %}selected{% endif %}>Select specialization…</option>
             {% for spec in specs %}
             <option value="{{ spec }}" {% if professional and professional.specialization == spec %}selected{% endif %}>{{ spec }}</option>
             {% endfor %}
@@ -78,108 +124,149 @@
           </select>
         </div>
       </div>
-
-      <!-- Bio -->
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Biography</label>
+      <div class="mt-4">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Biography</label>
         <textarea name="bio" rows="3"
-                  placeholder="Brief description of the professional's background and expertise..."
-                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition resize-none">{{ professional.bio if professional and professional.bio else '' }}</textarea>
+                  placeholder="Brief description of the professional's background and expertise…"
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition resize-none bg-gray-50 focus:bg-white">{{ professional.bio if professional and professional.bio else '' }}</textarea>
       </div>
+    </div>
+
+    <!-- Schedule Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h3 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-bold">3</span>
+        Availability Schedule
+      </h3>
 
       <!-- Available Days -->
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Available Days</label>
+      <div class="mb-5">
+        <label class="block text-xs font-semibold text-gray-600 mb-2.5 uppercase tracking-wide">Available Days</label>
         <div class="flex flex-wrap gap-2">
           {% set days = [
-            ('monday',    'Senin'),
-            ('tuesday',   'Selasa'),
-            ('wednesday', 'Rabu'),
-            ('thursday',  'Kamis'),
-            ('friday',    'Jumat'),
-            ('saturday',  'Sabtu'),
-            ('sunday',    'Minggu')
+            ('monday',    'Mon'),
+            ('tuesday',   'Tue'),
+            ('wednesday', 'Wed'),
+            ('thursday',  'Thu'),
+            ('friday',    'Fri'),
+            ('saturday',  'Sat'),
+            ('sunday',    'Sun')
           ] %}
           {% for day_key, day_label in days %}
           {% set is_checked = professional and professional.available_days and professional.available_days.get(day_key) %}
           <div>
-            <input type="checkbox"
-                   id="cb_{{ day_key }}"
-                   name="day_{{ day_key }}"
-                   value="on"
-                   {% if is_checked %}checked{% endif %}
-                   class="hidden">
-            <button type="button"
-                    onclick="toggleDay('{{ day_key }}')"
-                    id="btn_{{ day_key }}"
-                    class="px-4 py-2 rounded-lg border-2 text-xs font-semibold transition-all select-none
-                           {% if is_checked %}border-yellow-400 bg-yellow-100 text-yellow-800{% else %}border-gray-200 text-gray-500 hover:border-gray-300{% endif %}">
+            <input type="checkbox" id="cb_{{ day_key }}" name="day_{{ day_key }}" value="on"
+                   {% if is_checked %}checked{% endif %} class="hidden">
+            <button type="button" onclick="toggleDay('{{ day_key }}')" id="btn_{{ day_key }}"
+                    class="w-12 h-10 rounded-lg border-2 text-xs font-bold transition-all select-none
+                           {% if is_checked %}border-yellow-400 bg-yellow-100 text-yellow-800{% else %}border-gray-200 text-gray-400 bg-gray-50 hover:border-gray-300 hover:text-gray-600{% endif %}">
               {{ day_label }}
             </button>
           </div>
           {% endfor %}
         </div>
-        <p class="text-xs text-gray-400 mt-1.5">Klik hari yang tersedia untuk profesional ini.</p>
+        <p class="text-xs text-gray-400 mt-2">Click to toggle available days.</p>
       </div>
 
       <!-- Available Hours -->
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Available Hours</label>
+        <label class="block text-xs font-semibold text-gray-600 mb-2.5 uppercase tracking-wide">Available Hours</label>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Start Time</label>
+            <label class="block text-xs text-gray-500 mb-1.5">Start Time</label>
             <input type="time" name="hour_start"
                    value="{{ professional.available_hours.get('start', '09:00') if professional and professional.available_hours else '09:00' }}"
-                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">End Time</label>
+            <label class="block text-xs text-gray-500 mb-1.5">End Time</label>
             <input type="time" name="hour_end"
                    value="{{ professional.available_hours.get('end', '17:00') if professional and professional.available_hours else '17:00' }}"
-                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Active Status -->
-      <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
-        <input type="checkbox" name="is_active" id="is_active" value="on"
-               {% if not professional or professional.is_active %}checked{% endif %}
-               class="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]">
-        <label for="is_active" class="text-sm font-semibold text-gray-700 cursor-pointer">
-          Active — professional will be available for appointments
-        </label>
-      </div>
+    <!-- Status Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-bold">4</span>
+        Status
+      </h3>
+      <label class="flex items-center gap-3 cursor-pointer group">
+        <div class="relative">
+          <input type="checkbox" name="is_active" id="is_active" value="on"
+                 {% if not professional or professional.is_active %}checked{% endif %}
+                 class="sr-only peer">
+          <div class="w-11 h-6 rounded-full border-2 border-gray-200 bg-gray-200 peer-checked:border-yellow-400 peer-checked:bg-yellow-400 transition-all duration-200"></div>
+          <div class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200 peer-checked:translate-x-5"></div>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition">Active</div>
+          <div class="text-xs text-gray-400">Professional will be visible and available for appointments</div>
+        </div>
+      </label>
+    </div>
 
-      <!-- Submit -->
-      <div class="flex gap-3 pt-2">
-        <button type="submit"
-                class="flex-1 bg-[var(--primary)] text-gray-900 py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--accent)] hover:text-white transition-all duration-200">
-          {% if professional %}Update Professional{% else %}Save Professional{% endif %}
-        </button>
-        <a href="/dashboard/professionals"
-           class="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">
-          Cancel
-        </a>
-      </div>
-    </form>
-  </div>
+    <!-- Actions -->
+    <div class="flex gap-3 pb-2">
+      <button type="submit"
+              class="flex-1 bg-[var(--primary)] text-gray-900 py-3 rounded-xl font-bold text-sm hover:bg-[var(--accent)] hover:text-white transition-all duration-200 shadow-sm">
+        {% if professional %}Update Professional{% else %}Save Professional{% endif %}
+      </button>
+      <a href="/dashboard/professionals"
+         class="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">
+        Cancel
+      </a>
+    </div>
+  </form>
 </div>
 
 {% block extra_js %}
 <script>
-  function toggleDay(key) {
-    var cb  = document.getElementById('cb_'  + key);
-    var btn = document.getElementById('btn_' + key);
-    cb.checked = !cb.checked;
-    if (cb.checked) {
-      btn.classList.remove('border-gray-200', 'text-gray-500', 'hover:border-gray-300');
-      btn.classList.add('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
-    } else {
-      btn.classList.remove('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
-      btn.classList.add('border-gray-200', 'text-gray-500', 'hover:border-gray-300');
-    }
+function toggleDay(key) {
+  var cb  = document.getElementById('cb_'  + key);
+  var btn = document.getElementById('btn_' + key);
+  cb.checked = !cb.checked;
+  if (cb.checked) {
+    btn.classList.remove('border-gray-200', 'text-gray-400', 'bg-gray-50', 'hover:border-gray-300', 'hover:text-gray-600');
+    btn.classList.add('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
+  } else {
+    btn.classList.remove('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
+    btn.classList.add('border-gray-200', 'text-gray-400', 'bg-gray-50', 'hover:border-gray-300', 'hover:text-gray-600');
   }
+}
+
+function previewPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+
+  // Validate size (5 MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File is too large. Maximum size is 5 MB.');
+    input.value = '';
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var preview = document.getElementById('avatarPreview');
+    // Replace div with img or update existing img src
+    if (preview.tagName === 'IMG') {
+      preview.src = e.target.result;
+    } else {
+      var img = document.createElement('img');
+      img.id = 'avatarPreview';
+      img.src = e.target.result;
+      img.className = 'w-24 h-24 rounded-full object-cover border-4 border-gray-100 shadow-sm';
+      img.alt = 'Preview';
+      preview.replaceWith(img);
+    }
+    document.getElementById('photoFilename').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+}
 </script>
 {% endblock %}
 

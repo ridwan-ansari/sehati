@@ -2,6 +2,7 @@ from __future__ import annotations
 import re
 import hmac
 import hashlib
+import asyncio
 from io import BytesIO
 from typing import Optional
 from openpyxl import Workbook
@@ -11,7 +12,8 @@ from zoneinfo import ZoneInfo
 from datetime import datetime
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Cookie, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, Cookie, UploadFile
+from typing import List as FormList
 
 from app.src.core.config import settings
 from app.src.router.user.crud import CRUDUser
@@ -33,8 +35,14 @@ from app.src.router.user_nutrition.crud import CRUDUserNutrition
 from app.src.utils.point_service import redeem_merchandise_points
 from app.src.router.point.crud import crud_wallet, crud_transaction
 from app.src.core.security import Hasher, TokenService, AuthService
+from app.src.router.dashboard.blast_crud import crud_blast_log
+from app.src.models.blast_log import BlastLog
 
 router = APIRouter()
+
+# In-process real-time progress tracker keyed by blast_id
+_blast_progress: dict[str, dict] = {}
+
 crud_user = CRUDUser()
 crud_recipe = CRUDRecipe()
 templates = get_templates()
@@ -1058,6 +1066,7 @@ async def create_professional(
     day_saturday: str = Form(None),
     day_sunday: str = Form(None),
     is_active: str = Form(None),
+    picture: UploadFile = File(None),
     session: AsyncSession = Depends(get_async_session),
     auth=Depends(require_admin_cookie),
     _csrf: None = Depends(require_csrf),
@@ -1073,6 +1082,14 @@ async def create_professional(
     }
     available_hours = {"start": hour_start or "09:00", "end": hour_end or "17:00"}
 
+    picture_url = None
+    if picture and picture.filename:
+        try:
+            filename = await save_upload_with_uuid(picture, folder="avatars")
+            picture_url = f"/media/avatars/{filename}"
+        except Exception as e:
+            logger.error(f"Picture upload failed: {e}")
+
     try:
         await crud_professional.create(
             session=session,
@@ -1082,6 +1099,7 @@ async def create_professional(
                 "phone_number": phone_number or None,
                 "specialization": specialization,
                 "bio": bio or None,
+                "picture": picture_url,
                 "available_days": available_days,
                 "available_hours": available_hours,
                 "is_active": is_active == "on",
@@ -1113,6 +1131,7 @@ async def professional_edit_page(
 
 @router.post("/professionals/{professional_id}/update")
 async def update_professional(
+    request: Request,
     professional_id: str,
     fullname: str = Form(...),
     email: str = Form(...),
@@ -1129,6 +1148,7 @@ async def update_professional(
     day_saturday: str = Form(None),
     day_sunday: str = Form(None),
     is_active: str = Form(None),
+    picture: UploadFile = File(None),
     session: AsyncSession = Depends(get_async_session),
     auth=Depends(require_admin_cookie),
     _csrf: None = Depends(require_csrf),
@@ -1144,20 +1164,25 @@ async def update_professional(
     }
     available_hours = {"start": hour_start or "09:00", "end": hour_end or "17:00"}
 
-    updated = await crud_professional.update(
-        session=session,
-        id=professional_id,
-        data={
-            "fullname": fullname,
-            "email": email,
-            "phone_number": phone_number or None,
-            "specialization": specialization,
-            "bio": bio or None,
-            "available_days": available_days,
-            "available_hours": available_hours,
-            "is_active": is_active == "on",
-        },
-    )
+    data = {
+        "fullname": fullname,
+        "email": email,
+        "phone_number": phone_number or None,
+        "specialization": specialization,
+        "bio": bio or None,
+        "available_days": available_days,
+        "available_hours": available_hours,
+        "is_active": is_active == "on",
+    }
+
+    if picture and picture.filename:
+        try:
+            filename = await save_upload_with_uuid(picture, folder="avatars")
+            data["picture"] = f"/media/avatars/{filename}"
+        except Exception as e:
+            logger.error(f"Picture upload failed: {e}")
+
+    updated = await crud_professional.update(session=session, id=professional_id, data=data)
     if not updated:
         return RedirectResponse("/dashboard/professionals?error=Professional+not+found", status_code=302)
     return RedirectResponse(
@@ -1177,4 +1202,172 @@ async def delete_professional(
         return RedirectResponse("/dashboard/professionals?error=Professional+not+found", status_code=302)
     return RedirectResponse(
         "/dashboard/professionals?success=Professional+deleted", status_code=302
+    )
+
+
+# ──────────────────────────── BLAST EMAIL ────────────────────────────────────
+
+@router.get("/blast")
+async def blast_page(
+    request: Request,
+    success: Optional[str] = None,
+    error: Optional[str] = None,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    users = await crud_user.get_active_users(session)
+    blast_history = await crud_blast_log.get_all(session, limit=20)
+    return render_page(
+        "admin/blast.html",
+        request,
+        users=users,
+        blast_history=blast_history,
+        auth=auth,
+        success=success,
+        error=error,
+    )
+
+
+async def _send_and_log_blast(blast_id: str, recipients: list, subject: str, body_html: str, cc: Optional[str]):
+    _blast_progress[blast_id] = {"sent": 0, "failed": 0, "total": len(recipients)}
+
+    def on_progress(sent: int, failed: int):
+        _blast_progress[blast_id]["sent"] = sent
+        _blast_progress[blast_id]["failed"] = failed
+
+    async_gen = get_async_session()
+    session = await async_gen.__anext__()
+    try:
+        result = await asyncio.to_thread(email_client.send_blast, recipients, subject, body_html, cc, on_progress)
+        status = "completed" if result["failed"] == 0 else ("partial_failed" if result["sent"] > 0 else "failed")
+        await crud_blast_log.update_status(session, blast_id, status, result["sent"], result["failed"], result.get("failed_emails", {}))
+    except Exception as e:
+        logger.error(f"Background blast task failed: {e}")
+        try:
+            await crud_blast_log.update_status(session, blast_id, "failed", 0, len(recipients), {})
+        except Exception:
+            pass
+    finally:
+        _blast_progress.pop(blast_id, None)
+        await session.close()
+
+
+@router.post("/blast")
+async def send_blast(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    subject: str = Form(...),
+    body: str = Form(...),
+    cc: str = Form(None),
+    recipient_mode: str = Form("all"),
+    selected_users: Optional[FormList[str]] = Form(default=None),
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    active_users = await crud_user.get_active_users(session)
+
+    if recipient_mode == "specific":
+        ids = set(selected_users or [])
+        if not ids:
+            if request.headers.get("X-Requested-With") == "fetch":
+                return {"status": "error", "message": "Please select at least one recipient"}
+            return RedirectResponse("/dashboard/blast?error=Please+select+at+least+one+recipient", status_code=302)
+        recipients = [u.email for u in active_users if u.id in ids]
+    else:
+        recipients = [u.email for u in active_users]
+
+    if not recipients:
+        if request.headers.get("X-Requested-With") == "fetch":
+            return {"status": "error", "message": "No valid recipients found"}
+        return RedirectResponse("/dashboard/blast?error=No+valid+recipients+found", status_code=302)
+
+    blast_html = email_client._render(
+        "emails/blast.html",
+        {"subject": subject, "body": body, "year": datetime.now().year},
+    )
+    cc_clean = cc.strip() if cc and cc.strip() else None
+
+    blast_log = await crud_blast_log.create(session, subject, body, recipients, cc_clean, auth.get("id"))
+    background_tasks.add_task(_send_and_log_blast, blast_log.id, recipients, subject, blast_html, cc_clean)
+
+    count = len(recipients)
+    if request.headers.get("X-Requested-With") == "fetch":
+        return {"status": "success", "blast_id": blast_log.id, "message": f"Email is being sent to {count} recipients"}
+    return RedirectResponse(
+        f"/dashboard/blast?success=Email+is+being+sent+to+{count}+recipients",
+        status_code=302,
+    )
+
+
+@router.get("/blast/{blast_id}/detail")
+async def blast_detail(
+    blast_id: str,
+    request: Request,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    blast = await crud_blast_log.get_by_id(session, blast_id)
+    if not blast:
+        raise HTTPException(status_code=404, detail="Blast not found")
+    return render_page(
+        "admin/blast_detail.html",
+        request,
+        blast=blast,
+        auth=auth,
+    )
+
+
+@router.get("/api/blast/{blast_id}/status")
+async def get_blast_status(
+    blast_id: str,
+    auth=Depends(require_admin_cookie),
+    session: AsyncSession = Depends(get_async_session),
+):
+    # Real-time in-memory progress (while task is running)
+    if blast_id in _blast_progress:
+        prog = _blast_progress[blast_id]
+        return {
+            "id": blast_id,
+            "status": "pending",
+            "sent_count": prog["sent"],
+            "failed_count": prog["failed"],
+            "total_count": prog["total"],
+        }
+    # Fallback to DB (task finished or historical)
+    blast = await crud_blast_log.get_by_id(session, blast_id)
+    if not blast:
+        raise HTTPException(status_code=404, detail="Blast not found")
+    return {
+        "id": blast.id,
+        "status": blast.status,
+        "sent_count": blast.sent_count,
+        "failed_count": blast.failed_count,
+        "total_count": len(blast.recipients),
+    }
+
+
+@router.post("/blast/{blast_id}/retry")
+async def retry_blast(
+    blast_id: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    blast = await crud_blast_log.get_by_id(session, blast_id)
+    if not blast:
+        return RedirectResponse("/dashboard/blast?error=Blast+not+found", status_code=302)
+
+    blast_html = email_client._render(
+        "emails/blast.html",
+        {"subject": blast.subject, "body": blast.body_html, "year": datetime.now().year},
+    )
+    background_tasks.add_task(_send_and_log_blast, blast.id, blast.recipients, blast.subject, blast_html, blast.cc)
+
+    count = len(blast.recipients)
+    return RedirectResponse(
+        f"/dashboard/blast?success=Retrying+email+to+{count}+recipients",
+        status_code=302,
     )

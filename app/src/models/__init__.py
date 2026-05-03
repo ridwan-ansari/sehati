@@ -13,3 +13,4 @@ from app.src.models.chat import ChatRoom, ChatParticipant, ChatMessage
 from app.src.models.point import PointCategory, PointWallet, PointTransaction
 from app.src.models.exercise_habit import ExerciseHabitQuestion, ExerciseHabitAnswer
 from app.src.models.food import Food, FoodDiaryAnalysis, FoodDiaryItem, FoodHabitAnswer, FoodHabitQuestion
+from app.src.models.blast_log import BlastLog

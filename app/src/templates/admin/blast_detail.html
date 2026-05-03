@@ -1,0 +1,169 @@
+{% extends "admin/base.html" %}
+{% block title %}Blast Details{% endblock %}
+{% block mobile_title %}Blast Details{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .status-badge {
+    display: inline-block; padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  .status-completed    { background: #DCFCE7; color: #166534; }
+  .status-pending      { background: #FEF3C7; color: #92400E; }
+  .status-partial_failed { background: #FED7AA; color: #92400E; }
+  .status-failed       { background: #FECACA; color: #991B1B; }
+
+  .recipient-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 8px; margin-bottom: 6px;
+    border: 1px solid transparent;
+  }
+  .recipient-row.success {
+    background: #F0FDF4; border-color: #BBF7D0;
+  }
+  .recipient-row.fail {
+    background: #FEF2F2; border-color: #FECACA;
+  }
+  .recipient-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 13px; font-weight: 700;
+  }
+  .recipient-icon.success { background: #22C55E; color: white; }
+  .recipient-icon.fail    { background: #EF4444; color: white; }
+  .recipient-email { font-size: 13px; font-weight: 600; color: #111827; }
+  .recipient-error { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Back -->
+<div class="mb-6">
+  <a href="/dashboard/blast" class="inline-flex items-center gap-2 text-sm text-[var(--primary)] hover:text-[var(--accent)] font-semibold transition">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+    </svg>
+    Back to Blasts
+  </a>
+</div>
+
+<!-- Header -->
+<div class="flex items-start justify-between gap-4 mb-6">
+  <div>
+    <h2 class="text-2xl font-extrabold text-gray-800 mb-1">{{ blast.subject }}</h2>
+    <p class="text-sm text-gray-400">{{ blast.created_at }}</p>
+  </div>
+  <span class="status-badge status-{{ blast.status }}">{{ blast.status|replace('_', ' ')|title }}</span>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-4 mb-8">
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+    <div class="text-3xl font-extrabold text-gray-800">{{ blast.recipients|length }}</div>
+    <div class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide">Total</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+    <div class="text-3xl font-extrabold text-green-500">{{ blast.sent_count }}</div>
+    <div class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide">Sent</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+    <div class="text-3xl font-extrabold text-red-400">{{ blast.failed_count }}</div>
+    <div class="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wide">Failed</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+
+  <!-- Failed recipients -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-red-50">
+      <div class="flex items-center gap-2">
+        <span class="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 text-red-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+          </svg>
+        </span>
+        <h3 class="text-sm font-bold text-gray-800">Failed
+          <span class="ml-1 text-xs font-normal text-gray-400">({{ blast.failed_count }})</span>
+        </h3>
+      </div>
+      {% if blast.status in ['partial_failed', 'failed'] %}
+      <form method="post" action="/dashboard/blast/{{ blast.id }}/retry">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600 transition">
+          Retry All
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    <div class="p-4 max-h-96 overflow-y-auto">
+      {% set failed_emails = blast.error_log.keys() | list if blast.error_log else [] %}
+      {% if failed_emails %}
+        {% for email in blast.recipients %}
+          {% if email in blast.error_log %}
+          <div class="recipient-row fail">
+            <div class="recipient-icon fail">✗</div>
+            <div class="flex-1 min-w-0">
+              <div class="recipient-email truncate">{{ email }}</div>
+              {% if blast.error_log[email] %}
+              <div class="recipient-error truncate" title="{{ blast.error_log[email] }}">{{ blast.error_log[email][:80] }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-8 text-xs text-gray-400">
+          {% if blast.failed_count == 0 %}
+            No failed recipients 🎉
+          {% else %}
+            Error details not available
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sent successfully -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-green-50">
+      <span class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 text-green-600">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+        </svg>
+      </span>
+      <h3 class="text-sm font-bold text-gray-800">Successfully Sent
+        <span class="ml-1 text-xs font-normal text-gray-400">({{ blast.sent_count }})</span>
+      </h3>
+    </div>
+    <div class="p-4 max-h-96 overflow-y-auto">
+      {% set has_sent = blast.sent_count > 0 %}
+      {% if has_sent %}
+        {% for email in blast.recipients %}
+          {% if email not in blast.error_log %}
+          <div class="recipient-row success">
+            <div class="recipient-icon success">✓</div>
+            <div class="flex-1 min-w-0">
+              <div class="recipient-email truncate">{{ email }}</div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-8 text-xs text-gray-400">No emails delivered.</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Email preview -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+  <h3 class="text-sm font-bold text-gray-800 mb-4">Email Content Preview</h3>
+  <div class="border border-gray-200 rounded-xl p-5 bg-gray-50 max-h-72 overflow-y-auto text-sm leading-relaxed text-gray-700">
+    {{ blast.body_html|safe }}
+  </div>
+</div>
+
+{% endblock %}
