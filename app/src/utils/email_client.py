@@ -2,8 +2,10 @@ from __future__ import annotations
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime
+from typing import List
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
+from loguru import logger
 from app.src.core.config import settings
 
 
@@ -91,5 +93,56 @@ class EmailClient:
     def send_mail(self, subject: str, template_name: str, recipient: str, context: dict):
         html = self._render(template_name=template_name, context=context)
         self._send(recipient, subject, html, "")
+
+    def send_blast(
+        self,
+        recipients: List[str],
+        subject: str,
+        body_html: str,
+        cc: str | None = None,
+        on_progress=None,
+    ) -> dict:
+        sent, failed = 0, 0
+        failed_emails: dict[str, str] = {}
+        try:
+            if self.is_ssl:
+                server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
+            else:
+                server = smtplib.SMTP(self.smtp_host, self.smtp_port)
+                server.starttls()
+            server.login(self.smtp_user, self.smtp_pass)
+
+            for recipient in recipients:
+                try:
+                    msg = EmailMessage()
+                    msg["Subject"] = subject
+                    msg["From"] = self.from_email
+                    msg["To"] = recipient
+                    if cc:
+                        msg["Cc"] = cc
+                    msg.set_content("Please view this email in an HTML-capable email client.")
+                    msg.add_alternative(body_html, subtype="html")
+                    server.send_message(msg)
+                    sent += 1
+                    if on_progress:
+                        on_progress(sent=sent, failed=failed)
+                except Exception as e:
+                    err_str = str(e)
+                    logger.error(f"Blast failed for {recipient}: {err_str}")
+                    failed_emails[recipient] = err_str
+                    failed += 1
+                    if on_progress:
+                        on_progress(sent=sent, failed=failed)
+
+            server.quit()
+        except Exception as e:
+            logger.error(f"Blast SMTP connection failed: {e}")
+            err_str = str(e)
+            for r in recipients[sent + failed:]:
+                failed_emails[r] = err_str
+            failed += len(recipients) - sent - failed
+
+        logger.info(f"Blast complete — sent: {sent}, failed: {failed}")
+        return {"sent": sent, "failed": failed, "failed_emails": failed_emails}
 
 email_client = EmailClient()

@@ -19,6 +19,6 @@ class Settings(BaseSettings):
     MEDIA_ROOT: str = "/var/sehati-media"
     MEDIA_URL: str = "/media"
     MAX_AVATAR_MB: int = 2
-    PASSWORD_REGEX: str = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+={}\[\]|:;\"'<>,.?/~`-])(?!.*\s).{8,}$"
+    PASSWORD_REGEX: str = r"^[a-zA-Z0-9]{8,}$"
 
 settings = Settings(_env_file='.env')

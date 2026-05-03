@@ -1,0 +1,478 @@
+{% extends "admin/base.html" %}
+{% block title %}Blast Email{% endblock %}
+{% block mobile_title %}Blast Email{% endblock %}
+
+{% block extra_styles %}
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+<style>
+  .ql-container { font-size: 14px; }
+  .ql-editor { min-height: 260px; }
+  .ql-toolbar { border-radius: 8px 8px 0 0; border-color: #E5E7EB !important; background: #F9FAFB; }
+  .ql-container { border-radius: 0 0 8px 8px; border-color: #E5E7EB !important; }
+  .ql-editor:focus { outline: none; }
+
+  .user-row { transition: background 0.12s; }
+  .user-row.selected { background: #FEFCE8; }
+  .user-row.selected .check-box { background: #FFC107; border-color: #FFC107; }
+  .check-box {
+    width: 16px; height: 16px; border-radius: 4px;
+    border: 2px solid #D1D5DB; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s;
+  }
+  .check-box svg { display: none; }
+  .user-row.selected .check-box svg { display: block; }
+
+  .blast-item { padding: 12px; border-bottom: 1px solid #F3F4F6; }
+  .blast-item:last-child { border-bottom: none; }
+  .blast-status {
+    display: inline-block; padding: 3px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 600; white-space: nowrap;
+  }
+  .status-completed { background: #DCFCE7; color: #166534; }
+  .status-pending { background: #FEF3C7; color: #92400E; }
+  .status-partial_failed { background: #FED7AA; color: #92400E; }
+  .status-failed { background: #FECACA; color: #991B1B; }
+
+  /* Confirm Modal */
+  #confirmModal, #sendingModal {
+    display: none;
+    position: fixed; inset: 0; z-index: 1000;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(2px);
+  }
+  #confirmModal.active, #sendingModal.active { display: flex; }
+  .modal-card {
+    background: white; border-radius: 16px; padding: 32px;
+    max-width: 420px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    animation: modalIn 0.2s ease-out;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(8px); }
+    to   { opacity: 1; transform: scale(1)   translateY(0); }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .spinner {
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 4px solid #FEF3C7;
+    border-top-color: #FFC107;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Toast Notifications -->
+<div class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+  {% if success %}
+  <div class="bg-green-500 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 w-80 pointer-events-auto fade-in">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
+    <span class="text-sm font-medium">{{ success }}</span>
+    <button onclick="this.parentElement.remove()" class="ml-auto text-white/70 hover:text-white text-lg leading-none">×</button>
+  </div>
+  {% endif %}
+  {% if error %}
+  <div class="bg-red-500 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 w-80 pointer-events-auto fade-in">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126Z"/></svg>
+    <span class="text-sm font-medium">{{ error }}</span>
+    <button onclick="this.parentElement.remove()" class="ml-auto text-white/70 hover:text-white text-lg leading-none">×</button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal">
+  <div class="modal-card text-center">
+    <div class="w-14 h-14 rounded-full bg-yellow-50 flex items-center justify-center mx-auto mb-5">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-yellow-500">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/>
+      </svg>
+    </div>
+    <h3 class="text-lg font-bold text-gray-900 mb-2">Send Email Blast?</h3>
+    <p class="text-sm text-gray-500 mb-1">Subject: <span id="confirmSubject" class="font-semibold text-gray-700"></span></p>
+    <p class="text-sm text-gray-500 mb-5">Recipients: <span id="confirmCount" class="font-semibold text-gray-700"></span> users</p>
+    <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-6 text-left flex gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-orange-500 shrink-0 mt-0.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374L10.052 3.378c.866-1.5 3.032-1.5 3.898 0l5.353 9.248ZM12 15.75h.007v.008H12v-.008Z"/>
+      </svg>
+      <p class="text-xs text-orange-700 leading-relaxed">This action cannot be undone once sent.</p>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeConfirm()" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
+        Cancel
+      </button>
+      <button onclick="doSendBlast()" id="confirmSendBtn" class="flex-1 py-2.5 rounded-xl bg-[var(--primary)] text-sm font-bold text-gray-900 hover:bg-[var(--accent)] hover:text-white transition">
+        Yes, Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Sending Progress Modal -->
+<div id="sendingModal">
+  <div class="modal-card text-center">
+    <div class="spinner mb-6"></div>
+    <h3 class="text-lg font-bold text-gray-900 mb-2">Sending Email Blast…</h3>
+    <p class="text-sm text-gray-500 mb-5">
+      <span id="sentCount">0</span> / <span id="totalCount">0</span> sent
+    </p>
+    <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-5">
+      <div id="progressBar" class="h-full rounded-full transition-all duration-300" style="background: var(--primary); width: 0%"></div>
+    </div>
+    <p class="text-xs text-gray-400">Please keep this page open while sending…</p>
+  </div>
+</div>
+
+<!-- Page Header -->
+<div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+  <h2 class="text-3xl font-extrabold text-gray-800 flex items-center gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-[var(--accent)]">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+    </svg>
+    Blast Email
+  </h2>
+  <span class="text-sm text-gray-400"><span class="font-semibold text-gray-700">{{ users|length }}</span> active users</span>
+</div>
+
+<!-- Two-column layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Left: Form -->
+  <div class="lg:col-span-2">
+    <form id="blastForm" class="space-y-4" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="body" id="bodyHidden">
+
+      <!-- 1. Subject -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <label class="block text-sm font-bold text-gray-700 mb-1.5">
+          Subject <span class="text-red-500">*</span>
+        </label>
+        <input type="text" name="subject" id="subjectInput" required maxlength="200"
+               placeholder="e.g. Latest Updates from SEHATI"
+               class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+      </div>
+
+      <!-- 2. Recipients -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <p class="text-sm font-bold text-gray-700 mb-3">Recipients <span class="text-red-500">*</span></p>
+        <div class="flex gap-3 mb-4">
+          <button type="button" id="btn_all" onclick="switchMode('all')"
+                  class="flex-1 flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-[var(--primary)] bg-yellow-50 text-left transition">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-yellow-600 shrink-0">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/>
+            </svg>
+            <div>
+              <div class="text-sm font-bold text-gray-800">All Active Users</div>
+              <div class="text-xs text-gray-500">{{ users|length }} recipients</div>
+            </div>
+          </button>
+          <button type="button" id="btn_specific" onclick="switchMode('specific')"
+                  class="flex-1 flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-gray-200 text-left transition hover:border-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400 shrink-0">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+            </svg>
+            <div>
+              <div class="text-sm font-bold text-gray-800">Specific Users</div>
+              <div class="text-xs text-gray-500" id="selectedCount">0 selected</div>
+            </div>
+          </button>
+        </div>
+
+        <input type="radio" name="recipient_mode" value="all" id="radio_all" checked class="hidden">
+        <input type="radio" name="recipient_mode" value="specific" id="radio_specific" class="hidden">
+
+        <div id="userListPanel" class="hidden">
+          <div class="flex items-center gap-2 mb-2">
+            <input type="text" id="userSearch" placeholder="Search by name or email…"
+                   oninput="filterUsers()"
+                   class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+            <button type="button" onclick="selectAllVisible()" class="px-3 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition whitespace-nowrap">Select All</button>
+            <button type="button" onclick="clearAll()" class="px-3 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 transition whitespace-nowrap">Clear</button>
+          </div>
+          <div id="userList" class="max-h-60 overflow-y-auto rounded-lg border border-gray-100 divide-y divide-gray-50">
+            {% for u in users %}
+            <div class="user-row flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-50"
+                 data-name="{{ u.fullname|lower }}" data-email="{{ u.email|lower }}" onclick="toggleUser(this)">
+              <div class="check-box">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none" class="w-2.5 h-2.5">
+                  <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <input type="checkbox" name="selected_users" value="{{ u.id }}" class="hidden user-cb">
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-gray-800 truncate">{{ u.fullname }}</div>
+                <div class="text-xs text-gray-400 truncate">{{ u.email }}</div>
+              </div>
+            </div>
+            {% else %}
+            <div class="px-3 py-6 text-center text-xs text-gray-400">No active users found.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. CC -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <label class="block text-sm font-bold text-gray-700 mb-1.5">
+          CC <span class="text-gray-400 font-normal text-xs">(optional)</span>
+        </label>
+        <input type="text" name="cc" placeholder="email@example.com, email2@example.com"
+               class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition">
+        <p class="text-xs text-gray-400 mt-1.5">Separate multiple addresses with a comma.</p>
+      </div>
+
+      <!-- 4. Body -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <label class="text-sm font-bold text-gray-700 block mb-2">
+          Message Body <span class="text-red-500">*</span>
+        </label>
+        <div id="quillEditor"></div>
+        <p class="text-xs text-gray-400 mt-2">Email will be wrapped with the SEHATI branded template automatically.</p>
+      </div>
+
+      <!-- Send Button -->
+      <button type="submit" id="sendBtn"
+              class="w-full flex items-center justify-center gap-2 bg-[var(--primary)] text-gray-900 py-3 rounded-xl font-bold text-sm hover:bg-[var(--accent)] hover:text-white transition-all duration-200 shadow-md">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/>
+        </svg>
+        Send Email Blast
+      </button>
+    </form>
+  </div>
+
+  <!-- Right: History -->
+  <div class="lg:col-span-1">
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden sticky top-20">
+      <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-5 py-4 border-b border-gray-200">
+        <h3 class="text-sm font-bold text-gray-800">Blast History</h3>
+        <p class="text-xs text-gray-500 mt-1">Latest 20 blasts</p>
+      </div>
+      <div class="divide-y divide-gray-100 max-h-[calc(100vh-200px)] overflow-y-auto">
+        {% if blast_history %}
+          {% for blast in blast_history %}
+          <a href="/dashboard/blast/{{ blast.id }}/detail" class="blast-item block hover:bg-gray-50 transition">
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+              <span class="text-xs font-semibold text-gray-800 line-clamp-2 flex-1">{{ blast.subject }}</span>
+              <span class="blast-status status-{{ blast.status }}">{{ blast.status|replace('_', ' ')|title }}</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-gray-500">
+              <span class="text-green-600 font-medium">✓ {{ blast.sent_count }}</span>
+              <span class="text-red-500 font-medium">✗ {{ blast.failed_count }}</span>
+              <span class="text-gray-400 ml-auto">{{ blast.created_at }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        {% else %}
+        <div class="blast-item text-center py-10">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-8 h-8 text-gray-300 mx-auto mb-2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75"/>
+          </svg>
+          <p class="text-xs text-gray-400">No blasts sent yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script>
+var quill = new Quill('#quillEditor', {
+  theme: 'snow',
+  placeholder: 'Write your email content here…',
+  modules: {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ header: [2, 3, false] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link'], ['clean']
+    ]
+  }
+});
+
+var currentMode = 'all';
+var pendingFormData = null;
+var pendingCount = 0;
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('radio_' + mode).checked = true;
+  var panel   = document.getElementById('userListPanel');
+  var btnAll  = document.getElementById('btn_all');
+  var btnSpec = document.getElementById('btn_specific');
+  if (mode === 'specific') {
+    panel.style.display = 'block';
+    btnSpec.style.borderColor = '#FFC107'; btnSpec.style.backgroundColor = '#FEFCE8';
+    btnAll.style.borderColor  = '#E5E7EB'; btnAll.style.backgroundColor  = '';
+  } else {
+    panel.style.display = 'none';
+    btnAll.style.borderColor  = '#FFC107'; btnAll.style.backgroundColor  = '#FEFCE8';
+    btnSpec.style.borderColor = '#E5E7EB'; btnSpec.style.backgroundColor = '';
+  }
+}
+
+function toggleUser(row) {
+  var cb = row.querySelector('.user-cb');
+  cb.checked = !cb.checked;
+  row.classList.toggle('selected', cb.checked);
+  updateCount();
+}
+function updateCount() {
+  var n = document.querySelectorAll('.user-cb:checked').length;
+  document.getElementById('selectedCount').textContent = n + ' selected';
+}
+function filterUsers() {
+  var q = document.getElementById('userSearch').value.toLowerCase();
+  document.querySelectorAll('.user-row').forEach(function(row) {
+    row.style.display = (row.dataset.name.includes(q) || row.dataset.email.includes(q)) ? '' : 'none';
+  });
+}
+function selectAllVisible() {
+  document.querySelectorAll('.user-row').forEach(function(row) {
+    if (row.style.display !== 'none') {
+      var cb = row.querySelector('.user-cb');
+      if (!cb.checked) { cb.checked = true; row.classList.add('selected'); }
+    }
+  });
+  updateCount();
+}
+function clearAll() {
+  document.querySelectorAll('.user-row').forEach(function(row) {
+    row.querySelector('.user-cb').checked = false;
+    row.classList.remove('selected');
+  });
+  updateCount();
+}
+
+// Confirm modal
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('active');
+  pendingFormData = null;
+}
+
+function doSendBlast() {
+  document.getElementById('confirmModal').classList.remove('active');
+  document.getElementById('sendingModal').classList.add('active');
+  document.getElementById('sentCount').textContent = '0';
+  document.getElementById('totalCount').textContent = pendingCount;
+  document.getElementById('progressBar').style.width = '0%';
+
+  fetch('/dashboard/blast', {
+    method: 'POST',
+    body: pendingFormData,
+    headers: { 'X-Requested-With': 'fetch' }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('Server error ' + r.status);
+    return r.json();
+  })
+  .then(function(data) {
+    if (data.status === 'success') {
+      pollBlastStatus(data.blast_id, pendingCount);
+    } else {
+      closeSending();
+      showError(data.message || 'Failed to send blast.');
+    }
+  })
+  .catch(function(err) {
+    closeSending();
+    showError('Request failed: ' + err.message);
+  });
+}
+
+function closeSending() {
+  document.getElementById('sendingModal').classList.remove('active');
+}
+
+function showError(msg) {
+  var el = document.createElement('div');
+  el.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 w-80 fade-in';
+  el.innerHTML = '<span class="text-sm font-medium">' + msg + '</span><button onclick="this.parentElement.remove()" class="ml-auto text-white/70 hover:text-white text-lg">×</button>';
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 6000);
+}
+
+function pollBlastStatus(blastId, totalCount) {
+  var polls = 0;
+  var maxPolls = 240; // 6 minutes at 1.5s each
+
+  var timer = setInterval(function() {
+    if (++polls >= maxPolls) {
+      clearInterval(timer);
+      closeSending();
+      window.location.href = '/dashboard/blast?error=Blast+timed+out,+check+history+for+status';
+      return;
+    }
+
+    fetch('/dashboard/api/blast/' + blastId + '/status')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var sent   = data.sent_count   || 0;
+        var failed = data.failed_count || 0;
+        var done   = sent + failed;
+        document.getElementById('sentCount').textContent  = done;
+        document.getElementById('totalCount').textContent = totalCount;
+        document.getElementById('progressBar').style.width = (totalCount > 0 ? (done / totalCount * 100) : 0) + '%';
+
+        if (data.status !== 'pending') {
+          clearInterval(timer);
+          setTimeout(function() {
+            closeSending();
+            window.location.href = '/dashboard/blast?success=' + sent + '+sent,+' + failed + '+failed';
+          }, 900);
+        }
+      })
+      .catch(function() {});
+  }, 1500);
+}
+
+// Form submit — show custom confirm modal instead of browser dialog
+document.getElementById('blastForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  e.stopImmediatePropagation(); // prevent base.html's global form handler
+
+  var bodyHtml = quill.root.innerHTML.trim();
+  if (!quill.getText().trim()) {
+    showError('Message body cannot be empty.');
+    return;
+  }
+  if (currentMode === 'specific' && document.querySelectorAll('.user-cb:checked').length === 0) {
+    showError('Please select at least one recipient.');
+    return;
+  }
+
+  var subject = document.getElementById('subjectInput').value.trim();
+  if (!subject) {
+    showError('Subject cannot be empty.');
+    return;
+  }
+
+  pendingCount = currentMode === 'all'
+    ? {{ users|length }}
+    : document.querySelectorAll('.user-cb:checked').length;
+
+  pendingFormData = new FormData(document.getElementById('blastForm'));
+  pendingFormData.set('body', bodyHtml);
+
+  document.getElementById('confirmSubject').textContent = subject;
+  document.getElementById('confirmCount').textContent   = pendingCount;
+  document.getElementById('confirmModal').classList.add('active');
+});
+
+// Close confirm when clicking outside the card
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+</script>
+{% endblock %}
