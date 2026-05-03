@@ -378,7 +378,7 @@ async def leaderboard_page(
     return render_page("admin/leaderboard.html", request, leaderboard=data, auth=auth)
 
 @router.get("/merchandise/upload")
-async def recipe_upload_page(
+async def merchandise_upload_page(
     request: Request,
     auth=Depends(require_admin_cookie)
 ):
