@@ -50,9 +50,14 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-100 p-5 hover:shadow-lg transition-shadow duration-200 card-hover">
     <!-- Header -->
     <div class="flex items-start gap-3 mb-4">
+      {% if p.picture %}
+      <img src="{{ p.picture }}" alt="{{ p.fullname }}"
+           class="w-12 h-12 rounded-full object-cover shrink-0 border-2 border-gray-100">
+      {% else %}
       <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-bold text-lg shrink-0">
         {{ p.fullname[0]|upper }}
       </div>
+      {% endif %}
       <div class="flex-1 min-w-0">
         <h3 class="font-bold text-gray-900 truncate">{{ p.fullname }}</h3>
         <span class="inline-block mt-0.5 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
