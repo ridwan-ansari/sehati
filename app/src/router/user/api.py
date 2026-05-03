@@ -108,7 +108,7 @@ async def profile(
     return response.build()
 
 @router.get("/{id}")
-async def profile(
+async def get_user_by_id(
     id: str,
     authentication: dict = Depends(auth_service.require_access_token),
     session: AsyncSession = Depends(get_async_session)
