@@ -6,10 +6,10 @@ from app.src.core.security import AuthService
 from app.src.models.point import CategoryCode
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
+from app.src.utils.i18n import get_lang, t
 from app.src.utils.point_service import reward_user_points
 from app.src.router.exercise.schema import ExerciseAnswerRequest
 from app.src.router.exercise.crud import crud_exercise_habit_answer, crud_exercise_habit_question
-
 
 router = APIRouter()
 auth_service = AuthService()
@@ -19,10 +19,11 @@ auth_service = AuthService()
 async def get_exercise_questions(
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         response.status_code = 200
-        response.message = "Exercise habit questions retrieved successfully."
+        response.message = t("exercise_questions_success", lang)
         response.data = await crud_exercise_habit_question.get_all_questions(session=session)
     return response.build()
 
@@ -31,12 +32,13 @@ async def get_exercise_questions(
 async def submit_exercise_answers(
     payload: ExerciseAnswerRequest,
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
-        user_id=authentication["id"]
+        user_id = authentication["id"]
         if await crud_exercise_habit_answer.exists_today(session=session, user_id=user_id):
-            raise ValueError("Your submission has been received today. Please submit again tomorrow.")
+            raise ValueError(t("already_submitted_today", lang))
         await crud_exercise_habit_answer.bulk_create_answers(
             session=session,
             user_id=user_id,
@@ -44,5 +46,5 @@ async def submit_exercise_answers(
         )
         await reward_user_points(session=session, user_id=user_id, category=CategoryCode.exercise_answer)
         response.status_code = 201
-        response.message = "Exercise habit answers submitted successfully."
+        response.message = t("exercise_answers_success", lang)
     return response.build()

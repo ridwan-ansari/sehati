@@ -7,6 +7,7 @@ from app.src.core.security import AuthService
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
 from app.src.models.recipe import RecipeRewardClaim
+from app.src.utils.i18n import get_lang, t
 from app.src.utils.point_service import reward_user_points
 from app.src.router.recipe.crud import CRUDRecipe, CRUDRecipeRewardClaim
 
@@ -23,10 +24,11 @@ async def get_recipe(
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         response.status_code = 200
-        response.message = "Recipe retrieved successfully."
+        response.message = t("recipe_list_success", lang)
         response.data = await crud_recipe.get_all(session=session, name=name, limit=limit, offset=offset)
     return response.build()
 
@@ -35,18 +37,21 @@ async def get_recipe(
 async def claim_point(
     recipe_id: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
-        user_id=authentication.get("id")
+        user_id = authentication.get("id")
         recipe = await crud_recipe.get_by_id(session=session, id=recipe_id)
         if not recipe:
-            raise ValueError("Recipe not found.")
-        
+            raise ValueError(t("recipe_not_found", lang))
         reward = await crud_recipe_reward.is_claim(session=session, recipe_id=recipe_id, user_id=user_id)
         if not reward:
-            await crud_recipe_reward.create(session=session, recipe_reward_claim=RecipeRewardClaim(**{"recipe_id":recipe.id, "user_id":user_id}))
+            await crud_recipe_reward.create(
+                session=session,
+                recipe_reward_claim=RecipeRewardClaim(**{"recipe_id": recipe.id, "user_id": user_id}),
+            )
             await reward_user_points(session=session, user_id=user_id, category=CategoryCode.read_menu_sehat)
         response.status_code = 201
-        response.message = "Congratulation, successfully reward claim."
+        response.message = t("reward_claimed_success", lang)
     return response.build()

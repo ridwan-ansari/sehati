@@ -10,6 +10,7 @@ from app.src.router.point.crud import crud_wallet
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
 from app.src.utils.email_client import email_client
+from app.src.utils.i18n import get_lang, t
 from app.src.router.merchandise.crud import crud_merch, crud_merch_claim
 
 router = APIRouter()
@@ -23,11 +24,14 @@ async def get_merchandise(
     offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         response.status_code = 200
-        response.message = "Merchandise retrieved successfully."
-        response.data = await crud_merch.get_all_with_claim_status(session=session, name=name, limit=limit, offset=offset, user_id=authentication.get("id"))
+        response.message = t("merchandise_list_success", lang)
+        response.data = await crud_merch.get_all_with_claim_status(
+            session=session, name=name, limit=limit, offset=offset, user_id=authentication.get("id")
+        )
     return response.build()
 
 
@@ -35,7 +39,8 @@ async def get_merchandise(
 async def claim_merchandise(
     merchandise_id: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         user_id = authentication.get("id")
@@ -44,19 +49,22 @@ async def claim_merchandise(
         merchandise = await crud_merch.get_by_id(id=merchandise_id, session=session)
         wallet = await crud_wallet.get_by_user(session=session, user_id=user_id)
         if wallet.credit_points < merchandise.price_points:
-            raise ValueError("Transaction failed: Insufficient points.")
+            raise ValueError(t("insufficient_points", lang))
         await crud_merch_claim.create(session=session, user_id=user_id, merchandise_id=merchandise_id)
         try:
-            email_client.send_claim_marchandise_notification(recipient=admin.email, context={
-                "user_name": user.fullname,
-                "nickname": user.nickname,
-                "merchandise_name": merchandise.name,
-                "user_points": wallet.credit_points,
-                "merchandise_price": merchandise.price_points,
-                "year": datetime.now().year
-            })
+            email_client.send_claim_marchandise_notification(
+                recipient=admin.email,
+                context={
+                    "user_name": user.fullname,
+                    "nickname": user.nickname,
+                    "merchandise_name": merchandise.name,
+                    "user_points": wallet.credit_points,
+                    "merchandise_price": merchandise.price_points,
+                    "year": datetime.now().year,
+                },
+            )
         except Exception as error:
             logger.error(error)
         response.status_code = 201
-        response.message = "Your claim has been sent to the admin. Once it is approved, you will receive an email"
+        response.message = t("claim_sent_to_admin", lang)
     return response.build()

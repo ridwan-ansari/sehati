@@ -7,6 +7,7 @@ from app.src.core.security import AuthService
 from app.src.router.forum.crud import CRUDForum
 from app.src.core.session import get_async_session
 from app.src.utils.handler import response_handler
+from app.src.utils.i18n import get_lang, t
 from app.src.utils.forum_utils import save_forum_image
 from app.src.utils.point_service import reward_user_points
 
@@ -14,37 +15,42 @@ router = APIRouter()
 crud_forum = CRUDForum()
 auth_service = AuthService()
 
+
 @router.post("/")
 async def create_post(
     caption: str | None = None,
     image: UploadFile = File(...),
     authentication: dict = Depends(auth_service.require_access_token),
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         user_id = authentication["id"]
         url = await save_forum_image(image)
         post = await crud_forum.create_post(
             session=session,
-            data={"user_id": user_id, "image_url": url, "caption": caption}
+            data={"user_id": user_id, "image_url": url, "caption": caption},
         )
         await reward_user_points(session=session, user_id=user_id, category=CategoryCode.forum_post)
         response.data = {"id": post.id, "image_url": post.image_url}
-        response.message = "Post created"
+        response.message = t("post_created", lang)
         response.status_code = 201
     return response.build()
+
 
 @router.post("/{post_id}/like")
 async def like_post(
     post_id: str,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         response.data = await crud_forum.toggle_like(session, post_id, authentication["id"])
-        response.message = "Updated"
+        response.message = t("like_updated", lang)
         response.status_code = 200
     return response.build()
+
 
 @router.post("/{post_id}/comment")
 async def add_comment(
@@ -52,27 +58,28 @@ async def add_comment(
     comment: str,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         c = await crud_forum.add_comment(
-            session,
-            {"post_id": post_id, "user_id": authentication["id"], "comment": comment}
+            session, {"post_id": post_id, "user_id": authentication["id"], "comment": comment}
         )
         response.data = {"id": c.id, "comment": c.comment}
-        response.message = "Comment added"
+        response.message = t("comment_added", lang)
         response.status_code = 201
     return response.build()
 
+
 @router.get("/")
 async def get_posts(
-    limit: int = 20, 
-    offset: int = 0, 
+    limit: int = 20,
+    offset: int = 0,
     session: AsyncSession = Depends(get_async_session),
-    authentication: dict = Depends(auth_service.require_access_token)
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         posts = await crud_forum.list_posts(session, limit, offset)
-
         post_ids = [p.id for p in posts]
         liked_posts = await crud_forum.get_user_liked_posts(session, authentication["id"], post_ids)
         response.data = [
@@ -87,23 +94,26 @@ async def get_posts(
                 "user": {
                     "id": post.user.id,
                     "nickname": post.user.nickname,
-                    "picture": post.user.picture
-                }
-            } for post in posts]
-        response.message = "OK"
+                    "picture": post.user.picture,
+                },
+            }
+            for post in posts
+        ]
+        response.message = t("posts_fetched", lang)
     return response.build()
+
 
 @router.get("/{post_id}")
 async def get_post_detail(
-    post_id: str, 
+    post_id: str,
     session: AsyncSession = Depends(get_async_session),
     authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
 ):
     with response_handler() as response:
         post = await crud_forum.get_post(session, post_id)
         liked = await crud_forum.get_user_liked(session=session, post_id=post_id, user_id=authentication["id"])
-
-        data = {
+        response.data = {
             "id": post.id,
             "caption": post.caption,
             "image_url": post.image_url,
@@ -114,7 +124,7 @@ async def get_post_detail(
             "user": {
                 "id": post.user.id,
                 "nickname": post.user.nickname,
-                "picture": post.user.picture
+                "picture": post.user.picture,
             },
             "comments": [
                 {
@@ -123,12 +133,11 @@ async def get_post_detail(
                     "user": {
                         "id": c.user.id,
                         "nickname": c.user.nickname,
-                        "picture": c.user.picture
-                    }
+                        "picture": c.user.picture,
+                    },
                 }
                 for c in post.comments
-            ]
+            ],
         }
-        response.data = data
-        response.message = "OK"
+        response.message = t("post_detail_fetched", lang)
     return response.build()
