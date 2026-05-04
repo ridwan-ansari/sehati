@@ -4,6 +4,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.user import User
+from app.src.utils.i18n import t
 from app.src.models.point import (
     PointCategory,
     PointWallet,
@@ -65,6 +66,7 @@ class CRUDPointWallet:
         wallet_type: WalletKind,
         amount: int,
         tx_type: TxType,
+        lang: str = "en",
     ) -> PointWallet:
         wallet = await self.get_by_user(session, user_id)
         if not wallet:
@@ -72,10 +74,10 @@ class CRUDPointWallet:
 
         if wallet_type == WalletKind.achievement:
             if tx_type == TxType.earn:
-                wallet.achievement_points += amount 
+                wallet.achievement_points += amount
             else:
                 if wallet.achievement_points < amount:
-                    raise ValueError("Transaction failed: Insufficient points.")
+                    raise ValueError(t("insufficient_points", lang))
                 wallet.achievement_points -= amount
             if wallet.achievement_points < 0:
                 wallet.achievement_points = 0
@@ -84,7 +86,7 @@ class CRUDPointWallet:
                 wallet.credit_points += amount
             else:
                 if wallet.credit_points < amount:
-                    raise ValueError("Transaction failed: Insufficient credit points.")
+                    raise ValueError(t("insufficient_credit_points", lang))
                 wallet.credit_points -= amount
             if wallet.credit_points < 0:
                 wallet.credit_points = 0

@@ -244,6 +244,14 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Leaderboard retrieved successfully.",
         "id": "Papan peringkat berhasil diambil.",
     },
+    "insufficient_credit_points": {
+        "en": "Transaction failed: Insufficient credit points.",
+        "id": "Transaksi gagal: Kredit poin tidak mencukupi.",
+    },
+    "point_category_not_found": {
+        "en": "Point category configuration not found. Please contact the administrator.",
+        "id": "Konfigurasi kategori poin tidak ditemukan. Silakan hubungi administrator.",
+    },
 
     # ── Chat ──────────────────────────────────────────────────────────────
     "chat_invalid_format": {
