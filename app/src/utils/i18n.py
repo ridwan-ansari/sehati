@@ -170,6 +170,26 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Your claim has been submitted. Once approved, you will receive an email.",
         "id": "Klaim Anda telah dikirim. Setelah disetujui, Anda akan menerima email.",
     },
+    "merchandise_not_found": {
+        "en": "Merchandise not found.",
+        "id": "Merchandise tidak ditemukan.",
+    },
+    "merchandise_inactive": {
+        "en": "Merchandise is not active.",
+        "id": "Merchandise tidak aktif.",
+    },
+    "merchandise_insufficient_stock": {
+        "en": "Insufficient stock. Available: {stock}.",
+        "id": "Stok tidak mencukupi. Tersedia: {stock}.",
+    },
+    "merchandise_already_claimed": {
+        "en": "You have already claimed this merchandise.",
+        "id": "Anda sudah mengklaim merchandise ini.",
+    },
+    "merchandise_claim_pending": {
+        "en": "You already have a pending claim for this merchandise.",
+        "id": "Anda sudah memiliki klaim merchandise ini yang sedang menunggu persetujuan.",
+    },
 
     # ── Video ─────────────────────────────────────────────────────────────
     "video_list_success": {
@@ -271,6 +291,18 @@ MESSAGES: dict[str, dict[str, str]] = {
     "sleep_time_invalid": {
         "en": "Wake up time must be after sleep time.",
         "id": "Waktu bangun harus setelah waktu tidur.",
+    },
+    "sleep_date_invalid": {
+        "en": "Sleep time must be yesterday or today.",
+        "id": "Waktu tidur harus kemarin atau hari ini.",
+    },
+    "wake_up_date_invalid": {
+        "en": "Wake up time must be today.",
+        "id": "Waktu bangun harus hari ini.",
+    },
+    "sleep_already_submitted_today": {
+        "en": "You have already submitted a sleep record today.",
+        "id": "Anda sudah menyimpan catatan tidur hari ini.",
     },
     "sleep_created_success": {
         "en": "Sleep record created successfully.",

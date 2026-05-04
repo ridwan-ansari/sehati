@@ -3,6 +3,7 @@ from sqlalchemy.orm import aliased, selectinload
 from sqlalchemy import select, func, case, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.models.merchandise import Merchandise, MerchandiseClaim
+from app.src.utils.i18n import t
 
 class CRUDMerchandise:
 
@@ -123,19 +124,20 @@ class CRUDMerchandiseClaim:
         session: AsyncSession,
         user_id: str,
         merchandise_id: str,
-        quantity: int = 1
+        quantity: int = 1,
+        lang: str = "en",
     ) -> MerchandiseClaim:
-        
+
         merchandise = await session.get(Merchandise, merchandise_id)
-        
+
         if not merchandise:
-            raise ValueError("Merchandise not found")
-        
+            raise ValueError(t("merchandise_not_found", lang))
+
         if not merchandise.active:
-            raise ValueError("Merchandise is not active")
-        
+            raise ValueError(t("merchandise_inactive", lang))
+
         if merchandise.stock < quantity:
-            raise ValueError(f"Insufficient stock. Available: {merchandise.stock}")
+            raise ValueError(t("merchandise_insufficient_stock", lang, stock=str(merchandise.stock)))
 
         existing_claim = await session.execute(
             select(MerchandiseClaim)
@@ -149,9 +151,9 @@ class CRUDMerchandiseClaim:
 
         if existing_claim:
             if existing_claim.status == "approved":
-                raise ValueError("You has already claimed this merchandise")
+                raise ValueError(t("merchandise_already_claimed", lang))
             if existing_claim.status == "pending":
-                raise ValueError("User has already claimed this merchandise with pending status.")
+                raise ValueError(t("merchandise_claim_pending", lang))
 
         total_points = merchandise.price_points * quantity
         

@@ -3,33 +3,35 @@ from datetime import datetime, timedelta, date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.src.models.sleep import Sleep
+from app.src.utils.i18n import t
 
 
 class CRUDSleep:
 
     async def create(
-        self, 
-        session: AsyncSession, 
-        user_id: str, 
-        sleep_time: datetime, 
-        wake_up_time: datetime, 
-        target_sleep_hours: int
+        self,
+        session: AsyncSession,
+        user_id: str,
+        sleep_time: datetime,
+        wake_up_time: datetime,
+        target_sleep_hours: int,
+        lang: str = "en",
     ):
         today = date.today()
         yesterday = today - timedelta(days=1)
-        
+
         sleep_date = sleep_time.date()
         wake_up_date = wake_up_time.date()
-        
+
         if sleep_date not in [yesterday, today]:
-            raise ValueError("Sleep time must be yesterday or today")
-        
+            raise ValueError(t("sleep_date_invalid", lang))
+
         if wake_up_date != today:
-            raise ValueError("Wake up time must be today")
-        
+            raise ValueError(t("wake_up_date_invalid", lang))
+
         if wake_up_time <= sleep_time:
-            raise ValueError("Wake up time must be after sleep time")
-        
+            raise ValueError(t("sleep_time_invalid", lang))
+
         stmt = select(func.count(Sleep.id)).where(
             and_(
                 Sleep.user_id == user_id,
@@ -38,9 +40,9 @@ class CRUDSleep:
         )
         result = await session.execute(stmt)
         count = result.scalar()
-        
+
         if count > 0:
-            raise ValueError("You have already submitted a sleep record today")
+            raise ValueError(t("sleep_already_submitted_today", lang))
         
         sleep_duration_minutes = int((wake_up_time - sleep_time).total_seconds() / 60)
 
