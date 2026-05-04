@@ -73,7 +73,7 @@ async def user_claim_games(
             session=session, game_id=game_id, user_id=authentication.get("id")
         )
         if not claim:
-            await claim_games(session=session, user_id=authentication.get("id"), game_id=game_id)
+            await claim_games(session=session, user_id=authentication.get("id"), game_id=game_id, lang=lang)
         response.status_code = 200
         response.message = t("game_claimed_success", lang)
     return response.build()
