@@ -50,7 +50,7 @@ async def claim_merchandise(
         wallet = await crud_wallet.get_by_user(session=session, user_id=user_id)
         if wallet.credit_points < merchandise.price_points:
             raise ValueError(t("insufficient_points", lang))
-        await crud_merch_claim.create(session=session, user_id=user_id, merchandise_id=merchandise_id)
+        await crud_merch_claim.create(session=session, user_id=user_id, merchandise_id=merchandise_id, lang=lang)
         try:
             email_client.send_claim_marchandise_notification(
                 recipient=admin.email,

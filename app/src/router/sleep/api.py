@@ -29,6 +29,7 @@ async def create_sleep_record(
             sleep_time=data.sleep_time,
             wake_up_time=data.wake_up_time,
             target_sleep_hours=data.target_sleep_hours,
+            lang=lang,
         )
         response.status_code = 201
         response.message = t("sleep_created_success", lang)
