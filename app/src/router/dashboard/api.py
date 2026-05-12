@@ -902,18 +902,19 @@ async def appointments_page(
     total = await crud_appointment.count(session=session, username=username, status=status)
     total_pages = (total + limit - 1) // limit
 
-    return templates.TemplateResponse("admin/appointments.html", {
-        "request": request,
-        "appointments": appointments,
-        "username": username,
-        "status": status,
-        "page": page,
-        "total_pages": total_pages,
-        "limit": limit,
-        "auth": auth,
-        "success": success,
-        "error": error,
-    })
+    return render_page(
+        "admin/appointments.html",
+        request,
+        appointments=appointments,
+        username=username,
+        status=status,
+        page=page,
+        total_pages=total_pages,
+        limit=limit,
+        auth=auth,
+        success=success,
+        error=error,
+    )
 
 
 @router.post("/appointments/update/{appointment_id}/{new_status}")
@@ -939,6 +940,25 @@ async def update_appointment_status(
             url="/dashboard/appointments?error=Failed to update status",
             status_code=303
         )
+
+
+@router.post("/appointments/delete/{appointment_id}")
+async def delete_appointment(
+    appointment_id: str,
+    session: AsyncSession = Depends(get_async_session),
+    auth=Depends(require_admin_cookie),
+    _csrf: None = Depends(require_csrf),
+):
+    deleted = await crud_appointment.delete(session=session, id=appointment_id)
+    if not deleted:
+        return RedirectResponse(
+            url="/dashboard/appointments?error=Appointment+not+found",
+            status_code=303,
+        )
+    return RedirectResponse(
+        url="/dashboard/appointments?success=Appointment+deleted",
+        status_code=303,
+    )
 
 @router.get("/videos")
 async def videos_page(
