@@ -223,13 +223,21 @@ class CRUDAppointment:
         query = select(Appointment).filter(Appointment.id == id)
         result = await session.execute(query)
         appointment = result.scalar_one_or_none()
-        
+
         if appointment:
             appointment.status = status
             await session.commit()
             await session.refresh(appointment)
-        
+
         return appointment
+
+    async def delete(self, session: AsyncSession, id: str) -> bool:
+        appointment = await self.get_by_id(session=session, id=id)
+        if not appointment:
+            return False
+        await session.delete(appointment)
+        await session.commit()
+        return True
 
 crud_appointment = CRUDAppointment()
 crud_professional = CRUDProfessional()
