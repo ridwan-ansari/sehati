@@ -47,6 +47,30 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Invalid or expired token.",
         "id": "Token tidak valid atau sudah kedaluwarsa.",
     },
+    "token_expired": {
+        "en": "Token has expired.",
+        "id": "Token sudah kedaluwarsa.",
+    },
+    "token_malformed": {
+        "en": "Invalid token.",
+        "id": "Token tidak valid.",
+    },
+    "token_validation_failed": {
+        "en": "Token validation failed: {error}",
+        "id": "Validasi token gagal: {error}",
+    },
+    "access_token_invalid": {
+        "en": "Invalid access token.",
+        "id": "Token akses tidak valid.",
+    },
+    "refresh_token_invalid": {
+        "en": "Invalid refresh token.",
+        "id": "Token refresh tidak valid.",
+    },
+    "admin_access_required": {
+        "en": "Admin access required.",
+        "id": "Akses admin diperlukan.",
+    },
     "verification_code_invalid": {
         "en": "Invalid verification code. Please enter the correct one and try again.",
         "id": "Kode verifikasi tidak valid. Silakan masukkan kode yang benar dan coba lagi.",
@@ -236,6 +260,25 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Appointment detail retrieved successfully.",
         "id": "Detail janji temu berhasil diambil.",
     },
+    "professional_not_available_on_day": {
+        "en": "The professional is not available on {day}.",
+        "id": "Profesional tidak tersedia pada hari {day}.",
+    },
+    "professional_schedule_unset": {
+        "en": "The professional has not set their availability schedule yet.",
+        "id": "Profesional belum mengatur jadwal ketersediaan.",
+    },
+    "appointment_time_outside_hours": {
+        "en": "Selected time is outside available hours ({start} - {end}).",
+        "id": "Waktu yang dipilih di luar jam tersedia ({start} - {end}).",
+    },
+    "day_monday":    {"en": "Monday",    "id": "Senin"},
+    "day_tuesday":   {"en": "Tuesday",   "id": "Selasa"},
+    "day_wednesday": {"en": "Wednesday", "id": "Rabu"},
+    "day_thursday":  {"en": "Thursday",  "id": "Kamis"},
+    "day_friday":    {"en": "Friday",    "id": "Jumat"},
+    "day_saturday":  {"en": "Saturday",  "id": "Sabtu"},
+    "day_sunday":    {"en": "Sunday",    "id": "Minggu"},
 
     # ── Forum ─────────────────────────────────────────────────────────────
     "post_created": {

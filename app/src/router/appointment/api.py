@@ -1,5 +1,6 @@
 from loguru import logger
 from typing import Literal
+from datetime import time as dt_time
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Request, HTTPException
 
@@ -13,7 +14,12 @@ from app.src.utils.i18n import get_lang, t
 from app.src.utils.point_service import reward_user_points
 from app.src.core.security import AuthService, TokenService
 from app.src.router.appointment.schema import AppointmentCreateSchema
-from app.src.router.appointment.crud import CRUDProfessional, CRUDAppointment
+from app.src.router.appointment.crud import (
+    CRUDProfessional,
+    CRUDAppointment,
+    WEEKDAY_TO_KEY,
+    normalize_available_hours,
+)
 
 router = APIRouter()
 templates = get_templates()
@@ -53,6 +59,29 @@ async def create_appointment(
 
         if not prof:
             raise ValueError(t("doctor_not_found", lang))
+
+        day_key = WEEKDAY_TO_KEY[data.appointment_date.weekday()]
+        if not (prof.available_days or {}).get(day_key):
+            raise ValueError(
+                t("professional_not_available_on_day", lang, day=t(f"day_{day_key}", lang))
+            )
+
+        hours_map = normalize_available_hours(prof.available_hours, prof.available_days)
+        day_hours = hours_map.get(day_key)
+        if not day_hours:
+            raise ValueError(t("professional_schedule_unset", lang))
+
+        start = dt_time.fromisoformat(day_hours["start"])
+        end = dt_time.fromisoformat(day_hours["end"])
+        if not (start <= data.appointment_time <= end):
+            raise ValueError(
+                t(
+                    "appointment_time_outside_hours",
+                    lang,
+                    start=day_hours["start"],
+                    end=day_hours["end"],
+                )
+            )
 
         if prof.specialization == "Nutritionist/Dietitian" and not await crud_app.exists_this_week(
             session=session, user_id=user_id, professional_id=prof.id
