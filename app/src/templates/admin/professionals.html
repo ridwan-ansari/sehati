@@ -95,33 +95,38 @@
       {% endif %}
     </div>
 
-    <!-- Available Days -->
-    {% if p.available_days %}
+    <!-- Availability Schedule -->
+    {% set days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}
+    {% set day_short = {'monday':'Mon','tuesday':'Tue','wednesday':'Wed','thursday':'Thu','friday':'Fri','saturday':'Sat','sunday':'Sun'} %}
+    {% set hours_map = p.available_hours or {} %}
+    {% set legacy_start = hours_map.get('start') %}
+    {% set legacy_end = hours_map.get('end') %}
     <div class="mb-4">
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Available Days</p>
-      <div class="flex flex-wrap gap-1">
-        {% set days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}
-        {% set day_short = {'monday':'Mon','tuesday':'Tue','wednesday':'Wed','thursday':'Thu','friday':'Fri','saturday':'Sat','sunday':'Sun'} %}
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Availability</p>
+      <div class="space-y-1">
+        {% set has_any = namespace(v=false) %}
         {% for day in days %}
-          {% if p.available_days.get(day) %}
-          <span class="px-2 py-0.5 bg-[var(--primary)]/20 text-yellow-800 text-xs font-semibold rounded">{{ day_short[day] }}</span>
-          {% else %}
-          <span class="px-2 py-0.5 bg-gray-50 text-gray-300 text-xs rounded">{{ day_short[day] }}</span>
+          {% set day_entry = hours_map.get(day) %}
+          {% set is_day_active = p.available_days and p.available_days.get(day) %}
+          {% if day_entry is mapping and day_entry.get('start') and day_entry.get('end') %}
+            {% set has_any.v = true %}
+            <div class="flex items-center justify-between text-xs">
+              <span class="px-2 py-0.5 bg-[var(--primary)]/20 text-yellow-800 font-semibold rounded">{{ day_short[day] }}</span>
+              <span class="text-gray-600 font-mono">{{ day_entry.get('start') }} – {{ day_entry.get('end') }}</span>
+            </div>
+          {% elif is_day_active and legacy_start and legacy_end %}
+            {% set has_any.v = true %}
+            <div class="flex items-center justify-between text-xs">
+              <span class="px-2 py-0.5 bg-[var(--primary)]/20 text-yellow-800 font-semibold rounded">{{ day_short[day] }}</span>
+              <span class="text-gray-600 font-mono">{{ legacy_start }} – {{ legacy_end }}</span>
+            </div>
           {% endif %}
         {% endfor %}
+        {% if not has_any.v %}
+          <p class="text-xs text-gray-400 italic">No schedule set.</p>
+        {% endif %}
       </div>
     </div>
-    {% endif %}
-
-    <!-- Available Hours -->
-    {% if p.available_hours %}
-    <div class="flex items-center gap-2 text-sm text-gray-600 mb-4">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-400">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-      </svg>
-      <span>{{ p.available_hours.get('start', '—') }} – {{ p.available_hours.get('end', '—') }}</span>
-    </div>
-    {% endif %}
 
     <!-- Bio -->
     {% if p.bio %}

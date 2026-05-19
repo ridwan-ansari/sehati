@@ -8,10 +8,33 @@ from app.src.models.user import User
 from app.src.models.professionals import Professional, Appointment
 
 
+DAY_KEYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+WEEKDAY_TO_KEY = {i: key for i, key in enumerate(DAY_KEYS)}
+
+
+def normalize_available_hours(available_hours: Optional[dict], available_days: Optional[dict]) -> dict:
+    if not available_hours:
+        return {}
+    if any(d in available_hours and isinstance(available_hours[d], dict) for d in DAY_KEYS):
+        return {
+            d: available_hours[d]
+            for d in DAY_KEYS
+            if isinstance(available_hours.get(d), dict)
+            and available_hours[d].get("start")
+            and available_hours[d].get("end")
+        }
+    start = available_hours.get("start")
+    end = available_hours.get("end")
+    if not (start and end):
+        return {}
+    days = available_days or {}
+    return {d: {"start": start, "end": end} for d in DAY_KEYS if days.get(d)}
+
+
 class CRUDProfessional:
     async def list_professionals(self, session: AsyncSession):
         result = await session.execute(
-            select(Professional).where(Professional.is_active == True)
+            select(Professional).where(Professional.is_active.is_(True))
         )
         return result.scalars().all()
 

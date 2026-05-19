@@ -28,7 +28,12 @@ from app.src.models.video import Video
 from app.src.router.video.crud import crud_video
 from app.src.models.user_nutrition import UserNutrition
 from app.src.utils.export import HealthDataExcelExporter
-from app.src.router.appointment.crud import crud_appointment, crud_professional
+from app.src.router.appointment.crud import (
+    crud_appointment,
+    crud_professional,
+    DAY_KEYS,
+    normalize_available_hours,
+)
 from app.src.router.merchandise.crud import crud_merch_claim
 from app.src.utils.file_service import save_upload_with_uuid
 from app.src.router.user_nutrition.crud import CRUDUserNutrition
@@ -1085,6 +1090,29 @@ async def professional_create_page(request: Request, auth=Depends(require_admin_
     return render_page("admin/professional_create.html", request, auth=auth)
 
 
+def _parse_per_day_schedule(form) -> tuple[dict, dict, Optional[str]]:
+    """Read day_<key>, start_<key>, end_<key> form fields. Returns
+    (available_days, available_hours, error_message)."""
+    available_days = {d: form.get(f"day_{d}") == "on" for d in DAY_KEYS}
+    available_hours: dict[str, dict[str, str]] = {}
+
+    if not any(available_days.values()):
+        return {}, {}, "Please+select+at+least+one+available+day"
+
+    for d, enabled in available_days.items():
+        if not enabled:
+            continue
+        start = (form.get(f"start_{d}") or "").strip()
+        end = (form.get(f"end_{d}") or "").strip()
+        if not start or not end:
+            return {}, {}, f"Please+set+start+and+end+time+for+{d.capitalize()}"
+        if start >= end:
+            return {}, {}, f"Start+time+must+be+before+end+time+for+{d.capitalize()}"
+        available_hours[d] = {"start": start, "end": end}
+
+    return available_days, available_hours, None
+
+
 @router.post("/professionals/create")
 async def create_professional(
     request: Request,
@@ -1093,31 +1121,18 @@ async def create_professional(
     phone_number: str = Form(None),
     specialization: str = Form(...),
     bio: str = Form(None),
-    hour_start: str = Form("09:00"),
-    hour_end: str = Form("17:00"),
-    day_monday: str = Form(None),
-    day_tuesday: str = Form(None),
-    day_wednesday: str = Form(None),
-    day_thursday: str = Form(None),
-    day_friday: str = Form(None),
-    day_saturday: str = Form(None),
-    day_sunday: str = Form(None),
     is_active: str = Form(None),
     picture: UploadFile = File(None),
     session: AsyncSession = Depends(get_async_session),
     auth=Depends(require_admin_cookie),
     _csrf: None = Depends(require_csrf),
 ):
-    available_days = {
-        "monday": day_monday == "on",
-        "tuesday": day_tuesday == "on",
-        "wednesday": day_wednesday == "on",
-        "thursday": day_thursday == "on",
-        "friday": day_friday == "on",
-        "saturday": day_saturday == "on",
-        "sunday": day_sunday == "on",
-    }
-    available_hours = {"start": hour_start or "09:00", "end": hour_end or "17:00"}
+    form = await request.form()
+    available_days, available_hours, err = _parse_per_day_schedule(form)
+    if err:
+        return RedirectResponse(
+            f"/dashboard/professionals/create?error={err}", status_code=302
+        )
 
     picture_url = None
     if picture and picture.filename:
@@ -1163,7 +1178,14 @@ async def professional_edit_page(
     professional = await crud_professional.get_by_id(session=session, id=professional_id)
     if not professional:
         return RedirectResponse("/dashboard/professionals?error=Professional+not+found", status_code=302)
-    return render_page("admin/professional_create.html", request, auth=auth, professional=professional)
+    schedule = normalize_available_hours(professional.available_hours, professional.available_days)
+    return render_page(
+        "admin/professional_create.html",
+        request,
+        auth=auth,
+        professional=professional,
+        schedule=schedule,
+    )
 
 
 @router.post("/professionals/{professional_id}/update")
@@ -1175,31 +1197,18 @@ async def update_professional(
     phone_number: str = Form(None),
     specialization: str = Form(...),
     bio: str = Form(None),
-    hour_start: str = Form("09:00"),
-    hour_end: str = Form("17:00"),
-    day_monday: str = Form(None),
-    day_tuesday: str = Form(None),
-    day_wednesday: str = Form(None),
-    day_thursday: str = Form(None),
-    day_friday: str = Form(None),
-    day_saturday: str = Form(None),
-    day_sunday: str = Form(None),
     is_active: str = Form(None),
     picture: UploadFile = File(None),
     session: AsyncSession = Depends(get_async_session),
     auth=Depends(require_admin_cookie),
     _csrf: None = Depends(require_csrf),
 ):
-    available_days = {
-        "monday": day_monday == "on",
-        "tuesday": day_tuesday == "on",
-        "wednesday": day_wednesday == "on",
-        "thursday": day_thursday == "on",
-        "friday": day_friday == "on",
-        "saturday": day_saturday == "on",
-        "sunday": day_sunday == "on",
-    }
-    available_hours = {"start": hour_start or "09:00", "end": hour_end or "17:00"}
+    form = await request.form()
+    available_days, available_hours, err = _parse_per_day_schedule(form)
+    if err:
+        return RedirectResponse(
+            f"/dashboard/professionals/{professional_id}/edit?error={err}", status_code=302
+        )
 
     data = {
         "fullname": fullname,

@@ -134,57 +134,45 @@
 
     <!-- Schedule Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+      <h3 class="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
         <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-bold">3</span>
-        Availability Schedule
+        Availability Schedule <span class="text-red-500">*</span>
       </h3>
+      <p class="text-xs text-gray-400 mb-4">Tick each day this professional is available and set the working hours for that day. At least one day is required.</p>
 
-      <!-- Available Days -->
-      <div class="mb-5">
-        <label class="block text-xs font-semibold text-gray-600 mb-2.5 uppercase tracking-wide">Available Days</label>
-        <div class="flex flex-wrap gap-2">
-          {% set days = [
-            ('monday',    'Mon'),
-            ('tuesday',   'Tue'),
-            ('wednesday', 'Wed'),
-            ('thursday',  'Thu'),
-            ('friday',    'Fri'),
-            ('saturday',  'Sat'),
-            ('sunday',    'Sun')
-          ] %}
-          {% for day_key, day_label in days %}
-          {% set is_checked = professional and professional.available_days and professional.available_days.get(day_key) %}
-          <div>
-            <input type="checkbox" id="cb_{{ day_key }}" name="day_{{ day_key }}" value="on"
-                   {% if is_checked %}checked{% endif %} class="hidden">
-            <button type="button" onclick="toggleDay('{{ day_key }}')" id="btn_{{ day_key }}"
-                    class="w-12 h-10 rounded-lg border-2 text-xs font-bold transition-all select-none
-                           {% if is_checked %}border-yellow-400 bg-yellow-100 text-yellow-800{% else %}border-gray-200 text-gray-400 bg-gray-50 hover:border-gray-300 hover:text-gray-600{% endif %}">
-              {{ day_label }}
-            </button>
+      <div class="space-y-2">
+        {% set days = [
+          ('monday',    'Monday'),
+          ('tuesday',   'Tuesday'),
+          ('wednesday', 'Wednesday'),
+          ('thursday',  'Thursday'),
+          ('friday',    'Friday'),
+          ('saturday',  'Saturday'),
+          ('sunday',    'Sunday')
+        ] %}
+        {% for day_key, day_label in days %}
+          {% set day_hours = (schedule.get(day_key) if schedule else None) or {} %}
+          {% set is_checked = day_hours and day_hours.get('start') and day_hours.get('end') %}
+          <div class="flex items-center gap-3 py-2 px-3 rounded-lg border border-gray-100 bg-gray-50/50">
+            <label class="flex items-center gap-2 w-32 shrink-0 cursor-pointer">
+              <input type="checkbox" id="cb_{{ day_key }}" name="day_{{ day_key }}" value="on"
+                     {% if is_checked %}checked{% endif %}
+                     onchange="toggleDayRow('{{ day_key }}')"
+                     class="w-4 h-4 rounded text-yellow-500 focus:ring-yellow-400 border-gray-300">
+              <span class="text-sm font-semibold text-gray-700">{{ day_label }}</span>
+            </label>
+            <div class="flex-1 grid grid-cols-2 gap-2">
+              <input type="time" name="start_{{ day_key }}" id="start_{{ day_key }}"
+                     value="{{ day_hours.get('start', '') }}"
+                     {% if not is_checked %}disabled{% endif %}
+                     class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-white disabled:bg-gray-100 disabled:text-gray-400">
+              <input type="time" name="end_{{ day_key }}" id="end_{{ day_key }}"
+                     value="{{ day_hours.get('end', '') }}"
+                     {% if not is_checked %}disabled{% endif %}
+                     class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-white disabled:bg-gray-100 disabled:text-gray-400">
+            </div>
           </div>
-          {% endfor %}
-        </div>
-        <p class="text-xs text-gray-400 mt-2">Click to toggle available days.</p>
-      </div>
-
-      <!-- Available Hours -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-2.5 uppercase tracking-wide">Available Hours</label>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1.5">Start Time</label>
-            <input type="time" name="hour_start"
-                   value="{{ professional.available_hours.get('start', '09:00') if professional and professional.available_hours else '09:00' }}"
-                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1.5">End Time</label>
-            <input type="time" name="hour_end"
-                   value="{{ professional.available_hours.get('end', '17:00') if professional and professional.available_hours else '17:00' }}"
-                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none transition bg-gray-50 focus:bg-white">
-          </div>
-        </div>
+        {% endfor %}
       </div>
     </div>
 
@@ -225,18 +213,63 @@
 
 {% block extra_js %}
 <script>
-function toggleDay(key) {
-  var cb  = document.getElementById('cb_'  + key);
-  var btn = document.getElementById('btn_' + key);
-  cb.checked = !cb.checked;
+function toggleDayRow(key) {
+  var cb    = document.getElementById('cb_'    + key);
+  var start = document.getElementById('start_' + key);
+  var end   = document.getElementById('end_'   + key);
   if (cb.checked) {
-    btn.classList.remove('border-gray-200', 'text-gray-400', 'bg-gray-50', 'hover:border-gray-300', 'hover:text-gray-600');
-    btn.classList.add('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
+    start.disabled = false;
+    end.disabled = false;
+    start.required = true;
+    end.required = true;
   } else {
-    btn.classList.remove('border-yellow-400', 'bg-yellow-100', 'text-yellow-800');
-    btn.classList.add('border-gray-200', 'text-gray-400', 'bg-gray-50', 'hover:border-gray-300', 'hover:text-gray-600');
+    start.disabled = true;
+    end.disabled = true;
+    start.required = false;
+    end.required = false;
+    start.value = '';
+    end.value = '';
   }
 }
+
+// initialise: enabled rows require time inputs
+document.addEventListener('DOMContentLoaded', function() {
+  ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(function(key) {
+    var cb = document.getElementById('cb_' + key);
+    if (cb && cb.checked) {
+      document.getElementById('start_' + key).required = true;
+      document.getElementById('end_'   + key).required = true;
+    }
+  });
+});
+
+// final client-side guard before submit
+document.querySelector('form').addEventListener('submit', function(e) {
+  var anyChecked = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+    .some(function(k) { return document.getElementById('cb_' + k).checked; });
+  if (!anyChecked) {
+    e.preventDefault();
+    alert('Please select at least one available day and set its hours.');
+    return;
+  }
+  var keys = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    if (!document.getElementById('cb_' + k).checked) continue;
+    var s = document.getElementById('start_' + k).value;
+    var en = document.getElementById('end_'   + k).value;
+    if (!s || !en) {
+      e.preventDefault();
+      alert('Please set start and end time for ' + k.charAt(0).toUpperCase() + k.slice(1) + '.');
+      return;
+    }
+    if (s >= en) {
+      e.preventDefault();
+      alert('Start time must be before end time for ' + k.charAt(0).toUpperCase() + k.slice(1) + '.');
+      return;
+    }
+  }
+});
 
 function previewPhoto(input) {
   if (!input.files || !input.files[0]) return;

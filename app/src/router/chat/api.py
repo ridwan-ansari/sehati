@@ -42,7 +42,7 @@ async def chat_endpoint(
             await websocket.close(code=4001)
             return
 
-        payload = await auth_service._decode_token(token_value)
+        payload = await auth_service._decode_token(token_value, lang)
         sender_id = payload.get("id")
 
         if not sender_id:
