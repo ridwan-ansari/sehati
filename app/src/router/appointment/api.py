@@ -1,6 +1,6 @@
 from loguru import logger
 from typing import Literal
-from datetime import time as dt_time
+from datetime import time as dt_time, datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Request, HTTPException
 
@@ -103,7 +103,9 @@ async def create_appointment(
             },
         )
 
-        code = token_service.generate_token(payload={"id": ap.id}, token_type="appointment")
+        appointment_dt = datetime.combine(data.appointment_date, data.appointment_time, tzinfo=timezone.utc)
+        hours_until_appointment = (appointment_dt - datetime.now(timezone.utc)).total_seconds() / 3600
+        code = token_service.generate_token(payload={"id": ap.id}, token_type="appointment", expires_in_hours=max(hours_until_appointment, 1))
         try:
             email_client.send_appointment(
                 recipient=prof.email,
