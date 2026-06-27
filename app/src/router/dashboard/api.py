@@ -930,11 +930,32 @@ async def update_appointment_status(
     session: AsyncSession = Depends(get_async_session),
 ):
     try:
-        await crud_appointment.update_status(
+        appointment = await crud_appointment.update_status(
             session=session,
             id=appointment_id,
             status=new_status
         )
+
+        if appointment and new_status in ("approved", "rejected"):
+            try:
+                user = await crud_user.get_user_by_id(session=session, id=appointment.user_id)
+                professional = await crud_professional.get_by_id(session=session, id=appointment.professional_id)
+                if user and professional:
+                    email_client.send_mail(
+                        subject=f"SEHATI — Appointment {new_status.title()}",
+                        template_name="confirmed/appointment_status.html",
+                        recipient=user.email,
+                        context={
+                            "status": new_status,
+                            "appointment_date": appointment.appointment_date.strftime("%d %B %Y"),
+                            "appointment_time": appointment.appointment_time,
+                            "doctor_name": professional.fullname,
+                            "phone_number": professional.phone_number,
+                        },
+                    )
+            except Exception as e:
+                logger.error(f"Error sending appointment status email: {str(e)}")
+
         return RedirectResponse(
             url="/dashboard/appointments?success=Status updated successfully",
             status_code=303
