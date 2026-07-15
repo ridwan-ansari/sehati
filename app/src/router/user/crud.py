@@ -79,6 +79,15 @@ class CRUDUser:
         result = await session.execute(stmt)
         return result.scalars().all()
 
+    async def update_fcm_token(self, session: AsyncSession, user_id: str, token: str | None) -> None:
+        result = await session.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return
+        user.fcm_token = token
+        session.add(user)
+        await session.commit()
+
     async def delete_user(self, session: AsyncSession, user_id: str) -> bool:
         result = await session.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()

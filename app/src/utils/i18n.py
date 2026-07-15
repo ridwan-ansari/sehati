@@ -329,6 +329,14 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Chat rooms retrieved successfully.",
         "id": "Daftar ruang obrolan berhasil diambil.",
     },
+    "fcm_token_saved": {
+        "en": "Device token saved successfully.",
+        "id": "Token perangkat berhasil disimpan.",
+    },
+    "chat_notif_sent": {
+        "en": "Chat notification processed.",
+        "id": "Notifikasi obrolan berhasil diproses.",
+    },
 
     # ── Sleep ─────────────────────────────────────────────────────────────
     "sleep_time_invalid": {

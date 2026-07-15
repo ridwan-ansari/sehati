@@ -4,7 +4,7 @@ from loguru import logger
 from random import randint
 from json import loads, dumps
 from datetime import datetime, date
-from fastapi import Depends, APIRouter, Form
+from fastapi import Depends, APIRouter, Form, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.src.models.user import User
@@ -210,4 +210,18 @@ async def reset_password_confirm(
 
         response.status_code = 200
         response.message = t("password_reset_success", lang)
+    return response.build()
+
+
+@router.post("/save-tokenFcm")
+async def save_token_fcm(
+    token_fcm: str = Body(..., embed=True),
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
+):
+    with response_handler() as response:
+        await crud_user.update_fcm_token(session=session, user_id=authentication["id"], token=token_fcm)
+        response.status_code = 200
+        response.message = t("fcm_token_saved", lang)
     return response.build()
