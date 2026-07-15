@@ -20,5 +20,6 @@ class Settings(BaseSettings):
     MEDIA_URL: str = "/media"
     MAX_AVATAR_MB: int = 2
     PASSWORD_REGEX: str = r"^(?=.*[A-Za-z])(?=.*\d).{8,}$"
+    FIREBASE_CREDENTIALS_PATH: str = "account/firebase-service-account.json"
 
 settings = Settings(_env_file='.env')

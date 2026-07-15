@@ -2,10 +2,12 @@ from __future__ import annotations
 import json
 from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Body
 
 from app.src.core.security import AuthService
 from app.src.router.chat.crud import CRUDChat
+from app.src.router.user.crud import CRUDUser
+from app.src.utils.fcm_client import fcm_client
 from app.src.utils.handler import response_handler
 from app.src.core.session import get_async_session
 from app.src.utils.i18n import get_lang, t
@@ -14,6 +16,7 @@ from app.src.utils.connection_manager import ConnectionManager
 router = APIRouter()
 ws_router = APIRouter()
 crud_chat = CRUDChat()
+crud_user = CRUDUser()
 auth_service = AuthService()
 manager = ConnectionManager()
 
@@ -139,4 +142,43 @@ async def get_rooms(
         response.status_code = 200
         response.message = t("rooms_success", lang)
         response.data = rooms
+    return response.build()
+
+
+@router.post("/send-chat-notif")
+async def send_chat_notif(
+    receiver_id: str = Body(...),
+    message: str = Body(...),
+    room_key: str = Body(...),
+    room_id: str = Body(...),
+    token_fcm: str | None = Body(default=None),
+    session: AsyncSession = Depends(get_async_session),
+    authentication: dict = Depends(auth_service.require_access_token),
+    lang: str = Depends(get_lang),
+):
+    with response_handler() as response:
+        # sender identity always comes from the JWT, never the request body — otherwise
+        # any authenticated user could spoof push notifications as any other user.
+        sender = await crud_user.get_user_by_id(session=session, id=authentication["id"])
+        receiver = await crud_user.get_user_by_id(session=session, id=receiver_id)
+        target_token = token_fcm or (receiver.fcm_token if receiver else None)
+
+        if target_token:
+            _, is_invalid = await fcm_client.send(
+                token=target_token,
+                title=sender.fullname if sender else "SEHATI",
+                body=message,
+                data={
+                    "type": "chat",
+                    "room_id": room_id,
+                    "room_key": room_key,
+                    "sender_id": authentication["id"],
+                    "sender_picture": (sender.picture or "") if sender else "",
+                },
+            )
+            if is_invalid and receiver:
+                await crud_user.update_fcm_token(session=session, user_id=receiver.id, token=None)
+
+        response.status_code = 200
+        response.message = t("chat_notif_sent", lang)
     return response.build()

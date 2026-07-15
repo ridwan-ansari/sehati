@@ -22,6 +22,7 @@ class User(Base, TimestampMixin):
     gender: Mapped[str] = mapped_column(Enum("male", "female", name="gender_enum"), nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[str] = mapped_column(Enum("admin", "user", name="role_enum"), default="user", nullable=False)
+    fcm_token: Mapped[str | None] = mapped_column(String(255))
 
     # --- Relationships ---
     user_nutritions = relationship("UserNutrition", back_populates="user", cascade="all, delete-orphan")
