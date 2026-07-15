@@ -1,227 +1,227 @@
 # SEHATI
 
-SEHATI adalah backend platform kesehatan digital untuk remaja (target usia 14–19 tahun) yang membantu memantau gizi, kebiasaan makan, aktivitas fisik, tidur, dan kondisi kesehatan secara umum. Selain sisi self-monitoring, platform ini juga menyediakan program engagement (poin, leaderboard, redeem merchandise/games), konten edukasi (video, resep, forum sosial), serta layanan konsultasi dengan tenaga profesional (dokter/psikolog) lewat sistem janji temu (appointment).
+SEHATI is a digital health backend for teenagers (target age 14–19) that helps track nutrition, eating habits, physical activity, sleep, and overall health status. Beyond self-monitoring, the platform also runs an engagement program (points, leaderboard, merchandise/games redemption), educational content (videos, recipes, social forum), and consultation with health professionals (doctors/psychologists) through an appointment system.
 
-Dibangun dengan FastAPI (async), PostgreSQL, dan dashboard admin berbasis Jinja2 untuk pengelolaan konten dan operasional harian.
+Built with FastAPI (async), PostgreSQL, and a Jinja2-based admin dashboard for content management and day-to-day operations.
 
 ---
 
-## 1. Gambaran Bisnis
+## 1. Business Overview
 
-SEHATI menjalankan dua sisi produk dalam satu backend:
+SEHATI runs two product surfaces on a single backend:
 
-| Sisi | Untuk siapa | Fungsi utama |
+| Surface | For whom | Main function |
 |---|---|---|
-| **API publik** (`/api/*`) | Aplikasi mobile/web pengguna (remaja) | Registrasi & login, isi kuesioner gizi/aktivitas, catat makanan/tidur/berat-tinggi, ikut forum, kumpulkan & tukar poin, booking konsultasi dengan profesional, chat |
-| **Dashboard admin** (`/dashboard/*`) | Tim internal/admin SEHATI | Kelola konten (resep, video, game, merchandise), kelola data master (makanan, profesional), moderasi & approval (klaim merchandise, appointment), kirim email blast, lihat leaderboard & ekspor data kesehatan |
+| **Public API** (`/api/*`) | User-facing mobile/web app (teenagers) | Register & login, fill nutrition/activity questionnaires, log food/sleep/weight-height, join the forum, earn & redeem points, book consultations with professionals, chat |
+| **Admin dashboard** (`/dashboard/*`) | Internal SEHATI team | Manage content (recipes, videos, games, merchandise), manage master data (foods, professionals), moderate & approve (merchandise claims, appointments), send email blasts, view leaderboard & export health data |
 
-**Mengapa ini penting secara bisnis:**
-- **Retensi & engagement** didorong lewat sistem poin ganda — *achievement points* (untuk leaderboard, tidak bisa dibelanjakan) dan *credit points* (bisa ditukar game/merchandise) — supaya user rutin mengisi data kesehatan hariannya.
-- **Kepatuhan medis** dijaga lewat kalkulasi status gizi standar WHO (BMI-for-age z-score) dan estimasi kebutuhan energi (EER), bukan sekadar kalkulator BMI generik — relevan untuk populasi remaja yang jadi target aplikasi.
-- **Kanal konsultasi profesional** (appointment) memberi jalur eskalasi dari self-monitoring ke tenaga ahli sungguhan, dengan alur konfirmasi/penolakan yang bisa dilakukan profesional langsung dari email (tanpa perlu login).
+**Why this matters for the business:**
+- **Retention & engagement** are driven by a dual-wallet point system — *achievement points* (leaderboard score, non-spendable) and *credit points* (redeemable for games/merchandise) — to keep users logging their health data regularly.
+- **Clinical accuracy** is preserved through WHO-standard nutrition status calculation (BMI-for-age z-score) and Estimated Energy Requirement (EER), not a generic BMI calculator — relevant given the app's adolescent target population.
+- **Professional consultation channel** (appointment) provides an escalation path from self-monitoring to a real expert, with a confirm/reject flow the professional can complete straight from an email link (no login required).
 
 ---
 
-## 2. Arsitektur & Teknologi
+## 2. Architecture & Technology
 
-- **Framework**: FastAPI (async), disajikan lewat Uvicorn.
-- **Database**: PostgreSQL, diakses lewat SQLAlchemy 2.0 (async, `asyncpg`) + migrasi skema dengan Alembic (`alembic/versions/`).
-- **Cache/state sementara**: Redis — dipakai untuk menyimpan data registrasi/reset-password yang belum terverifikasi (dengan TTL), sebelum dipindah ke tabel `User` permanen.
-- **Autentikasi**:
-  - API publik: JWT bearer token (`Authorization: Bearer ...`), diterbitkan oleh `TokenService` (`app/src/core/security.py`) dengan klaim `type` per keperluan (`access`, `refresh`, `reset_password`, `appointment`, dst). Password di-hash dengan Argon2.
-  - Dashboard admin: JWT yang sama tapi disimpan sebagai cookie httponly `admin_access` (bukan header), plus proteksi CSRF (HMAC token) untuk semua form `POST`.
-- **Email**: SMTP + template HTML Jinja2 (`app/src/templates/emails/`) — verifikasi akun, reset password, notifikasi appointment, approval/rejection klaim merchandise, email blast massal.
-- **Real-time chat**: WebSocket (`/ws/chat`) dengan connection manager in-memory, riwayat pesan tetap tersimpan di database.
-- **Deploy**: GitHub Actions (`.github/workflows/deploy.yml`) memicu `deploy.sh` di VPS setiap push ke `main`.
+- **Framework**: FastAPI (async), served via Uvicorn.
+- **Database**: PostgreSQL, accessed through SQLAlchemy 2.0 (async, `asyncpg`) with schema migrations managed by Alembic (`alembic/versions/`).
+- **Cache / transient state**: Redis — holds not-yet-verified registration/reset-password data (with TTL) before it's promoted to a permanent `User` row.
+- **Authentication**:
+  - Public API: JWT bearer tokens (`Authorization: Bearer ...`), issued by `TokenService` (`app/src/core/security.py`) with a `type` claim per purpose (`access`, `refresh`, `reset_password`, `appointment`, etc.). Passwords are hashed with Argon2.
+  - Admin dashboard: the same JWT mechanism, but stored as an httponly `admin_access` cookie (not a header), plus CSRF protection (HMAC token) on every `POST` form.
+- **Email**: SMTP + Jinja2 HTML templates (`app/src/templates/emails/`) — account verification, password reset, appointment notifications, merchandise claim approval/rejection, mass email blasts.
+- **Real-time chat**: WebSocket (`/ws/chat`) with an in-memory connection manager; message history is persisted to the database.
+- **Deployment**: GitHub Actions (`.github/workflows/deploy.yml`) triggers `deploy.sh` on the VPS on every push to `main`.
 
-Struktur kode:
+Code layout:
 ```
-app/src/router/<domain>/api.py    → endpoint per domain
-app/src/router/<domain>/crud.py   → query database
-app/src/router/<domain>/schema.py → validasi request/response (Pydantic)
-app/src/models/                   → definisi tabel (SQLAlchemy ORM)
+app/src/router/<domain>/api.py    → endpoints per domain
+app/src/router/<domain>/crud.py   → database queries
+app/src/router/<domain>/schema.py → request/response validation (Pydantic)
+app/src/models/                   → table definitions (SQLAlchemy ORM)
 app/src/core/                     → config, security/JWT, DB session, templates
-app/src/utils/                    → logic lintas-domain (kalkulator gizi, sistem poin, email, dll)
-app/src/templates/                → halaman dashboard admin & template email (Jinja2)
+app/src/utils/                    → cross-domain logic (nutrition calculator, point system, email, etc.)
+app/src/templates/                → admin dashboard pages & email templates (Jinja2)
 ```
 
 ---
 
-## 3. Konsep Poin (Gamifikasi)
+## 3. Points Concept (Gamification)
 
-Setiap aktivitas berikut memberi poin (dikonfigurasi lewat `PointCategory`, dieksekusi lewat `point_service.reward_user_points`):
-- Login harian (1x/hari)
-- Mengisi kuesioner DQQ (Diet Quality Questionnaire) — 1x/hari
-- Mengisi kuesioner PAQ-A (Physical Activity Assessment) — 1x/hari
-- Mengisi food diary — 1x/hari
-- Mencatat pengukuran gizi (berat/tinggi) — 1x/hari
-- Menonton video edukasi, membaca resep — 1x per konten
-- Membuat post forum, memasang reminder
+Each of the following activities awards points (configured via `PointCategory`, executed through `point_service.reward_user_points`):
+- Daily login (1x/day)
+- Filling the DQQ (Diet Quality Questionnaire) — 1x/day
+- Filling the PAQ-A (Physical Activity Assessment) — 1x/day
+- Submitting a food diary entry — 1x/day
+- Logging a nutrition measurement (weight/height) — 1x/day
+- Watching an educational video, reading a recipe — 1x per content item
+- Creating a forum post, setting a reminder
 
-Poin masuk ke dua "dompet" sekaligus: **achievement points** (skor leaderboard, permanen) dan **credit points** (saldo yang bisa dibelanjakan). Credit points bisa ditukar untuk **klaim game** atau **redeem merchandise** (butuh approval admin). Pengecekan "sudah submit hari ini?" dilakukan di masing-masing endpoint pemanggil, bukan di `point_service` itu sendiri.
+Points land in two "wallets" at once: **achievement points** (permanent leaderboard score) and **credit points** (spendable balance). Credit points can be redeemed to **claim a game** or **redeem merchandise** (requires admin approval). The "already submitted today?" check is each calling endpoint's own responsibility, not `point_service`'s.
 
 ---
 
-## 4. Referensi Endpoint
+## 4. Endpoint Reference
 
-Semua endpoint API publik berprefix `/api` dan butuh header `Authorization: Bearer <access_token>` kecuali disebutkan lain.
+All public API endpoints are prefixed with `/api` and require an `Authorization: Bearer <access_token>` header unless stated otherwise.
 
-### 4.1 Autentikasi — `/api/auth`
-| Method | Path | Fungsi |
+### 4.1 Authentication — `/api/auth`
+| Method | Path | Purpose |
 |---|---|---|
-| POST | `/register` | Daftar akun baru (validasi usia 14–19, email/nickname unik, regex password). Data disimpan sementara di Redis, kode verifikasi 6 digit dikirim via email (TTL 1 jam). |
-| POST | `/login` | Login email+password, terbitkan `access_token` (6 jam) + `refresh_token` (24 jam), beri poin login harian. |
-| POST | `/refresh` | Tukar refresh token → access token baru (12 jam). |
-| POST | `/verify/account` | Konfirmasi kode registrasi → buat baris `User` + wallet poin permanen. |
-| POST | `/reset-password` | Minta reset password, kirim kode 6 digit (TTL 15 menit) bila email terdaftar (tidak membocorkan status keberadaan akun). |
-| POST | `/reset-password/confirm` | Konfirmasi kode + set password baru. |
+| POST | `/register` | Register a new account (validates age 14–19, unique email/nickname, password regex). Data is held temporarily in Redis; a 6-digit verification code is emailed (1h TTL). |
+| POST | `/login` | Login with email+password, issues an `access_token` (6h) + `refresh_token` (24h), awards daily login points. |
+| POST | `/refresh` | Exchange a refresh token for a new access token (12h). |
+| POST | `/verify/account` | Confirm the registration code → creates the `User` row + a permanent point wallet. |
+| POST | `/reset-password` | Request a password reset; emails a 6-digit code (15 min TTL) if the email exists (does not leak account existence). |
+| POST | `/reset-password/confirm` | Confirm the reset code + set a new password. |
 
-### 4.2 Profil Pengguna — `/api/users`
-| Method | Path | Fungsi |
+### 4.2 User Profile — `/api/users`
+| Method | Path | Purpose |
 |---|---|---|
-| GET | `/` | Cari/list pengguna lain (untuk chat/forum). |
-| POST | `/profile/picture` | Upload foto profil (divalidasi content-type + magic bytes + batas ukuran). |
-| GET | `/profile` | Profil sendiri, termasuk saldo poin & ranking leaderboard. |
-| GET | `/{id}` | Profil publik pengguna lain. |
-| GET | `/notification/reminder` | Ringkasan tugas harian yang belum diselesaikan (kuesioner/diary/self-monitoring). |
+| GET | `/` | Search/list other users (for chat/forum). |
+| POST | `/profile/picture` | Upload a profile picture (validated by content-type + magic bytes + size limit). |
+| GET | `/profile` | Own profile, including point balance & leaderboard rank. |
+| GET | `/{id}` | Another user's public profile. |
+| GET | `/notification/reminder` | Summary of today's incomplete tasks (questionnaires/diary/self-monitoring). |
 
-### 4.3 Gizi & Antropometri — `/api/user/nutrition`
-| Method | Path | Fungsi |
+### 4.3 Nutrition & Anthropometry — `/api/user/nutrition`
+| Method | Path | Purpose |
 |---|---|---|
-| GET | `/` | Riwayat pengukuran gizi pengguna. |
-| POST | `/` | Catat berat/tinggi hari ini → hitung BMI, status gizi (z-score WHO), berat ideal (1x/hari, beri poin). |
-| GET | `/latest` | Pengukuran terakhir. |
-| POST | `/calculator` | Kalkulator BMI/EER berdiri sendiri (tanpa disimpan) — input `dob`, `gender`, `weight`, `height`, `activity`. |
+| GET | `/` | User's nutrition measurement history. |
+| POST | `/` | Log today's weight/height → computes BMI, nutrition status (WHO z-score), ideal weight (1x/day, awards points). |
+| GET | `/latest` | Latest nutrition record. |
+| POST | `/calculator` | Standalone BMI/EER calculator (no persistence) — input `dob`, `gender`, `weight`, `height`, `activity`. |
 
-### 4.4 Kebiasaan Makan / DQQ + Food Diary — `/api/habit`
-| Method | Path | Fungsi |
+### 4.4 Eating Habits / DQQ + Food Diary — `/api/habit`
+| Method | Path | Purpose |
 |---|---|---|
-| GET | `/food` | Cari makanan di database referensi kalori. |
-| GET | `/food/questions` | Ambil pertanyaan kuesioner DQQ (Diet Quality Questionnaire). |
-| POST | `/food/answers` | Submit jawaban DQQ hari ini (1x/hari, beri poin). |
-| POST | `/food/diary` | Submit food diary (daftar makanan + porsi hari ini) → hitung total kalori vs EER (1x/hari, beri poin). |
-| GET | `/food/diary/analysis` | Riwayat analisis food diary. |
+| GET | `/food` | Search the reference food/calorie database. |
+| GET | `/food/questions` | Fetch the DQQ (Diet Quality Questionnaire) questions. |
+| POST | `/food/answers` | Submit today's DQQ answers (1x/day, awards points). |
+| POST | `/food/diary` | Submit a food diary (list of foods + portions for today) → computes total calories vs. EER (1x/day, awards points). |
+| GET | `/food/diary/analysis` | History of food diary analysis records. |
 
-### 4.5 Aktivitas Fisik / PAQ-A — `/api/exercise`
-| Method | Path | Fungsi |
+### 4.5 Physical Activity / PAQ-A — `/api/exercise`
+| Method | Path | Purpose |
 |---|---|---|
-| GET | `/questions` | Ambil pertanyaan kuesioner PAQ-A (Physical Activity Assessment). |
-| POST | `/answers` | Submit jawaban hari ini (1x/hari, beri poin). |
+| GET | `/questions` | Fetch the PAQ-A (Physical Activity Assessment) questions. |
+| POST | `/answers` | Submit today's answers (1x/day, awards points). |
 
-### 4.6 Tidur — `/api/sleep`
-| Method | Path | Fungsi |
+### 4.6 Sleep — `/api/sleep`
+| Method | Path | Purpose |
 |---|---|---|
-| POST | `/` | Catat sesi tidur (`sleep_time`, `wake_up_time`, `target_sleep_hours`); durasi dihitung otomatis. |
-| GET | `/` | Riwayat tidur (paginasi). |
+| POST | `/` | Log a sleep session (`sleep_time`, `wake_up_time`, `target_sleep_hours`); duration is computed automatically. |
+| GET | `/` | Sleep history (paginated). |
 
-### 4.7 Pengingat — `/api/reminders`
-CRUD penuh (`GET /`, `POST /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}`) untuk reminder custom milik user (jam, hari aktif, pesan). Pembuatan reminder memberi poin.
+### 4.7 Reminders — `/api/reminders`
+Full CRUD (`GET /`, `POST /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}`) for a user's custom reminders (time, active days, message). Creating a reminder awards points.
 
-### 4.8 Janji Temu Profesional — `/api/appointment`
-| Method | Path | Fungsi |
+### 4.8 Professional Appointments — `/api/appointment`
+| Method | Path | Purpose |
 |---|---|---|
-| GET | `/professionals` | List dokter/psikolog yang tersedia untuk booking. |
-| POST | `/` | Buat janji temu — validasi jadwal ketersediaan profesional per hari, beri poin (konseling gizi 1x/minggu, psikolog 1x/bulan), kirim email konfirmasi ke profesional berisi tautan approve/reject bertoken JWT. |
-| GET | `/` | List appointment milik user sendiri. |
-| GET | `/{appointment_id}` | Detail satu appointment. |
-| GET | `/{status}/{code}` | **Publik, tanpa login** — tautan dari email yang diklik profesional untuk approve/reject appointment (`status` = `approved`/`rejected`, `code` = token JWT sekali pakai); mengirim email status ke pasien. |
+| GET | `/professionals` | List doctors/psychologists available for booking. |
+| POST | `/` | Create an appointment — validates the professional's per-day availability, awards points (nutrition counseling 1x/week, psychologist counseling 1x/month), emails the professional a confirmation link with a JWT approve/reject token. |
+| GET | `/` | List the requesting user's own appointments. |
+| GET | `/{appointment_id}` | Detail of one appointment. |
+| GET | `/{status}/{code}` | **Public, no login required** — the link a professional clicks from email to approve/reject an appointment (`status` = `approved`/`rejected`, `code` = a single-use JWT token); sends a status email to the patient. |
 
-### 4.9 Chat Real-time — `/ws/chat` + `/api/chat`
-| Method | Path | Fungsi |
+### 4.9 Real-time Chat — `/ws/chat` + `/api/chat`
+| Method | Path | Purpose |
 |---|---|---|
-| WS | `/ws/chat` | Chat 1:1 real-time. Token dikirim via header `Authorization` atau query `?token=`. Kirim `{to, message}`, diterima sebagai `{room_id, from, message, ...}`. |
-| GET | `/api/chat/rooms` | List room chat milik user + preview pesan terakhir. |
-| GET | `/api/chat/messages/{room_key}` | Riwayat pesan dalam satu room (paginasi). |
+| WS | `/ws/chat` | Real-time 1:1 chat. Token sent via the `Authorization` header or `?token=` query param. Send `{to, message}`, receive `{room_id, from, message, ...}`. |
+| GET | `/api/chat/rooms` | List the user's chat rooms + last-message preview. |
+| GET | `/api/chat/messages/{room_key}` | Message history for one room (paginated). |
 
-### 4.10 Forum Sosial — `/api/forum`
-| Method | Path | Fungsi |
+### 4.10 Social Forum — `/api/forum`
+| Method | Path | Purpose |
 |---|---|---|
-| POST | `/` | Buat post (gambar + caption), beri poin. |
-| GET | `/` | Feed post (paginasi), termasuk jumlah like/komentar & status `is_liked`. |
-| GET | `/{post_id}` | Detail post + semua komentar. |
+| POST | `/` | Create a post (image + caption), awards points. |
+| GET | `/` | Post feed (paginated), including like/comment counts & `is_liked` status. |
+| GET | `/{post_id}` | Post detail + all comments. |
 | POST | `/{post_id}/like` | Toggle like. |
-| POST | `/{post_id}/comment` | Tambah komentar. |
+| POST | `/{post_id}/comment` | Add a comment. |
 
-### 4.11 Konten Edukasi & Reward
-| Domain | Endpoint | Fungsi |
+### 4.11 Educational Content & Rewards
+| Domain | Endpoints | Purpose |
 |---|---|---|
-| Video — `/api/video` | `GET /`, `POST /claim-point` | List video edukasi; klaim poin nonton (1x per video). |
-| Resep — `/api/recipe` | `GET /`, `POST /claim-point` | List resep sehat; klaim poin baca (1x per resep). |
-| Game — `/api/games` | `GET /`, `GET /{id}/play`, `POST /{id}/claim` | List game; mainkan (jika sudah diklaim); klaim game dengan menukar credit points. |
-| Merchandise — `/api/merchandise` | `GET /`, `POST /claim` | List merchandise; ajukan klaim (menunggu approval admin) dengan menukar credit points. |
-| Leaderboard — `/api/point` | `GET /leaderboard` | Ranking semua pengguna berdasarkan achievement points. |
+| Video — `/api/video` | `GET /`, `POST /claim-point` | List educational videos; claim watch points (1x per video). |
+| Recipe — `/api/recipe` | `GET /`, `POST /claim-point` | List healthy recipes; claim read points (1x per recipe). |
+| Games — `/api/games` | `GET /`, `GET /{id}/play`, `POST /{id}/claim` | List games; play (if already claimed); claim a game by spending credit points. |
+| Merchandise — `/api/merchandise` | `GET /`, `POST /claim` | List merchandise; submit a claim (pending admin approval) by spending credit points. |
+| Leaderboard — `/api/point` | `GET /leaderboard` | Rank all users by achievement points. |
 
-### 4.12 Dashboard Admin — `/dashboard`
-Autentikasi cookie session (`admin_access`), bukan bearer token. Semua form `POST` dilindungi CSRF token.
+### 4.12 Admin Dashboard — `/dashboard`
+Cookie-session authentication (`admin_access`), not bearer tokens. Every `POST` form is protected by a CSRF token.
 
-| Area | Endpoint utama | Fungsi |
+| Area | Main endpoints | Purpose |
 |---|---|---|
-| Login | `GET/POST /login`, `POST /logout` | Login admin & kelola sesi. |
-| Pengguna | `GET /users`, `GET /users/{id}`, `POST /users/{id}/delete`, `GET/POST /reset/password[/confirm]` | Kelola & moderasi akun pengguna, reset password atas nama user. |
-| Resep | `GET /recipes`, `GET/POST /recipes/upload` | Kelola konten resep. |
-| Video | `GET /videos`, `GET/POST /videos/create`, `POST /videos/delete/{id}`, `POST /videos/toggle/{id}` | Kelola konten video edukasi + status aktif/nonaktif. |
-| Game | `GET /games`, `GET/POST /games/create`, `GET /games/{id}/view` | Kelola katalog game. |
-| Makanan | `GET /foods`, `GET/POST /foods/create`, `POST /foods/update/{id}`, `POST /foods/delete/{id}` | Kelola database referensi makanan/kalori. |
-| Merchandise | `GET/POST /merchandise/upload`, `GET /merchandise`, `POST /merchandise/update/{id}`, `GET /merchandise/claims`, `POST /merchandise/claims/{id}/approve|reject` | Kelola katalog merchandise & approval klaim redeem. |
-| Profesional | `GET /professionals`, `GET/POST /professionals/create`, `GET /professionals/{id}/edit`, `POST /professionals/{id}/update|delete` | Kelola data dokter/psikolog termasuk jadwal ketersediaan per hari. |
-| Appointment | `GET /appointments`, `POST /appointments/update/{id}/{status}`, `POST /appointments/delete/{id}` | Alternatif in-dashboard untuk konfirmasi/tolak/hapus appointment (selain via email). |
-| Transaksi Poin | `GET /transactions`, `GET /transactions/export` | Lihat & ekspor (Excel) buku besar transaksi poin. |
-| Leaderboard | `GET /leaderboard` | Lihat ranking poin seluruh pengguna. |
-| Ekspor Data Kesehatan | `GET /export/health-data` | Ekspor massal data gizi/kesehatan pengguna ke Excel. |
-| Email Blast | `GET/POST /blast`, `GET /blast/{id}/detail`, `GET /api/blast/{id}/status`, `POST /blast/{id}/retry` | Kirim email massal ke segmen pengguna, pantau progres pengiriman, retry yang gagal. |
+| Login | `GET/POST /login`, `POST /logout` | Admin login & session management. |
+| Users | `GET /users`, `GET /users/{id}`, `POST /users/{id}/delete`, `GET/POST /reset/password[/confirm]` | Manage & moderate user accounts, reset a user's password on their behalf. |
+| Recipes | `GET /recipes`, `GET/POST /recipes/upload` | Manage recipe content. |
+| Videos | `GET /videos`, `GET/POST /videos/create`, `POST /videos/delete/{id}`, `POST /videos/toggle/{id}` | Manage educational video content + active/inactive status. |
+| Games | `GET /games`, `GET/POST /games/create`, `GET /games/{id}/view` | Manage the games catalog. |
+| Foods | `GET /foods`, `GET/POST /foods/create`, `POST /foods/update/{id}`, `POST /foods/delete/{id}` | Manage the reference food/calorie database. |
+| Merchandise | `GET/POST /merchandise/upload`, `GET /merchandise`, `POST /merchandise/update/{id}`, `GET /merchandise/claims`, `POST /merchandise/claims/{id}/approve|reject` | Manage the merchandise catalog & approve redemption claims. |
+| Professionals | `GET /professionals`, `GET/POST /professionals/create`, `GET /professionals/{id}/edit`, `POST /professionals/{id}/update|delete` | Manage doctor/psychologist records including per-day availability schedules. |
+| Appointments | `GET /appointments`, `POST /appointments/update/{id}/{status}`, `POST /appointments/delete/{id}` | In-dashboard alternative to confirm/reject/delete appointments (besides the email flow). |
+| Point Transactions | `GET /transactions`, `GET /transactions/export` | View & export (Excel) the point transaction ledger. |
+| Leaderboard | `GET /leaderboard` | View the point ranking of all users. |
+| Health Data Export | `GET /export/health-data` | Bulk export of users' nutrition/health records to Excel. |
+| Email Blast | `GET/POST /blast`, `GET /blast/{id}/detail`, `GET /api/blast/{id}/status`, `POST /blast/{id}/retry` | Send mass email to user segments, track send progress, retry failed sends. |
 
-### 4.13 Halaman Publik Lain
-- `GET /` → redirect ke `/dashboard/login`.
-- `GET /privacy-policy`, `GET /term-of-service` → halaman kebijakan (statis, Jinja2).
+### 4.13 Other Public Pages
+- `GET /` → redirects to `/dashboard/login`.
+- `GET /privacy-policy`, `GET /term-of-service` → static policy pages (Jinja2).
 
 ---
 
-## 5. Modul Data Inti (Model)
+## 5. Core Data Modules (Models)
 
-| Model | Makna bisnis |
+| Model | Business meaning |
 |---|---|
-| `user.py` | Akun/profil pengguna — entitas pusat tempat data domain lain menggantung, punya flag role (user/admin). |
-| `user_nutrition.py` | Snapshot pengukuran tubuh (tinggi/berat/BMI/status/berat ideal) pada satu waktu. |
-| `bmi_reference.py` | Tabel referensi standar deviasi BMI-for-age (WHO) per gender/usia, dasar perhitungan z-score gizi. |
-| `food.py` | Database referensi makanan/kalori, kuesioner DQQ, dan entri food diary harian. |
-| `exercise_habit.py` | Kuesioner PAQ-A dan jawaban harian pengguna. |
-| `sleep.py` | Catatan sesi tidur (waktu tidur/bangun, durasi, target). |
-| `reminder.py` | Pengingat berulang milik pengguna (jam, hari aktif, pesan). |
-| `point.py` | Sistem gamifikasi — kategori poin, dompet ganda (achievement/credit) per pengguna, buku besar transaksi. |
-| `games.py` | Katalog game yang bisa diklaim dengan poin + status klaim per pengguna. |
-| `merchandise.py` | Katalog merchandise fisik yang bisa ditukar poin + status klaim (pending/approved/rejected). |
-| `recipe.py` | Konten resep sehat + catatan klaim poin "baca resep". |
-| `video.py` | Katalog video edukasi + catatan klaim poin "tonton video". |
-| `forum.py` | Post forum sosial (gambar+caption) beserta like dan komentar. |
-| `chat.py` | Room chat 1:1, partisipan, dan riwayat pesan. |
-| `professionals.py` | Data dokter/psikolog (termasuk jadwal ketersediaan) dan appointment yang dibuat pengguna terhadap mereka. |
-| `blast_log.py` | Log pengiriman email blast massal (subjek/isi/penerima/hasil kirim) oleh admin. |
+| `user.py` | User account/profile — the central entity most other domain data hangs off of, with a role flag (user/admin). |
+| `user_nutrition.py` | A point-in-time body measurement snapshot (height/weight/BMI/status/ideal weight). |
+| `bmi_reference.py` | WHO BMI-for-age standard-deviation reference table per gender/age, the basis for the nutrition z-score calculation. |
+| `food.py` | Reference food/calorie database, DQQ questionnaire, and daily food diary entries. |
+| `exercise_habit.py` | PAQ-A questionnaire and users' daily answers. |
+| `sleep.py` | A logged sleep session (sleep/wake time, duration, target). |
+| `reminder.py` | A user's recurring reminder (time, active days, message). |
+| `point.py` | The gamification system — point categories, each user's dual wallet (achievement/credit), and the transaction ledger. |
+| `games.py` | Catalog of point-claimable games + each user's claim status. |
+| `merchandise.py` | Catalog of point-redeemable physical merchandise + claim status (pending/approved/rejected). |
+| `recipe.py` | Healthy recipe content + records of the "read a recipe" point claim. |
+| `video.py` | Educational video catalog + records of the "watch video" point claim. |
+| `forum.py` | Social forum posts (image + caption) with their likes and comments. |
+| `chat.py` | 1:1 chat rooms, their participants, and message history. |
+| `professionals.py` | Doctor/psychologist records (including availability schedule) and the appointments users book with them. |
+| `blast_log.py` | Log of a mass email blast (subject/body/recipients/send results) sent by an admin. |
 
 ---
 
-## 6. Logika Bisnis Kunci
+## 6. Key Business Logic
 
-**Kalkulator Gizi** (`app/src/utils/nutrition_calculator.py`)
-Menghitung BMI dari berat/tinggi, mencocokkan ke tabel `BMIReference` (standar deviasi WHO) berdasarkan usia tepat (tahun+bulan) dengan interpolasi antar band usia, lalu mengklasifikasikan status gizi (Severely Underweight/Underweight/Normal/Overweight/Obese). Juga menghitung berat badan ideal (rumus Broca — potongan 10% untuk laki-laki, 15% untuk perempuan) dan Estimated Energy Requirement (EER) memakai persamaan IOM/DRI dengan koefisien aktivitas fisik berbeda per gender. **Dibatasi hingga usia 19 tahun 0 bulan** — sesuai target populasi remaja aplikasi ini, di luar itu akan raise error.
+**Nutrition Calculator** (`app/src/utils/nutrition_calculator.py`)
+Computes BMI from weight/height, matches it against the `BMIReference` table (WHO standard deviations) based on the user's exact age (years + months) with interpolation between adjacent age bands, then classifies nutrition status (Severely Underweight/Underweight/Normal/Overweight/Obese). Also computes ideal body weight (Broca formula — 10% deduction for males, 15% for females) and Estimated Energy Requirement (EER) using IOM/DRI equations with gender-specific physical-activity coefficients. **Capped at age 19 years 0 months** — matching the app's teen target population; raises an error beyond that.
 
-**Sistem Poin** (`app/src/utils/point_service.py`)
-`reward_user_points` mengambil nilai poin dari `PointCategory` lalu mengkredit dua dompet sekaligus (achievement + credit) dengan satu baris transaksi per dompet. `redeem_merchandise_points`/`claim_games` adalah alur sebaliknya: cek saldo credit cukup, debit, catat transaksi. Pengecekan "sudah klaim/submit hari ini" jadi tanggung jawab masing-masing endpoint pemanggil, bukan service ini.
+**Point System** (`app/src/utils/point_service.py`)
+`reward_user_points` looks up the point value from `PointCategory` and credits both wallets at once (achievement + credit) with one transaction row per wallet. `redeem_merchandise_points`/`claim_games` are the reverse flow: check sufficient credit balance, debit, log the transaction. The "already claimed/submitted today" check is each calling endpoint's responsibility, not this service's.
 
 ---
 
-## 7. Menjalankan Secara Lokal
+## 7. Running Locally
 
 ```bash
 poetry install
-# buat file .env berisi DATABASE_URL, REDIS_*, SMTP_*, SECRET_KEY, dst — lihat app/src/core/config.py
+# create a .env file with DATABASE_URL, REDIS_*, SMTP_*, SECRET_KEY, etc. — see app/src/core/config.py
 alembic upgrade head
 uvicorn main:app --reload
 ```
 
-Variabel environment wajib (lihat `app/src/core/config.py`): `SECRET_KEY`, `DATABASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SENDER`. Redis (`REDIS_HOST`/`REDIS_PORT`) dipakai untuk state registrasi/reset-password sementara.
+Required environment variables (see `app/src/core/config.py`): `SECRET_KEY`, `DATABASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SENDER`. Redis (`REDIS_HOST`/`REDIS_PORT`) holds transient registration/reset-password state.
 
-Dokumentasi interaktif API tersedia otomatis di `/docs` (Swagger UI) selama server berjalan.
+Interactive API docs are automatically available at `/docs` (Swagger UI) while the server is running.
 
 ## 8. Deployment
 
-Push ke branch `main` men-trigger GitHub Actions (`.github/workflows/deploy.yml`) yang SSH ke VPS dan menjalankan `deploy.sh`.
+A push to the `main` branch triggers GitHub Actions (`.github/workflows/deploy.yml`), which SSHes into the VPS and runs `deploy.sh`.
